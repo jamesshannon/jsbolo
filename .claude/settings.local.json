@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:dialup.party)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:stephank.github.io)",
+      "WebFetch(domain:www.mobygames.com)",
+      "WebFetch(domain:archive.org)",
+      "WebFetch(domain:www.winbolo.com)",
+      "WebFetch(domain:fiatjaf.com)",
+      "Bash(git clone:*)",
+      "Bash(git init:*)",
+      "Bash(pnpm install:*)",
+      "Bash(npm --version:*)",
+      "Bash(npm install:*)",
+      "Bash(pnpm build:*)",
+      "Bash(pnpm dev)",
+      "Bash(git add:*)"
+    ]
+  }
+}

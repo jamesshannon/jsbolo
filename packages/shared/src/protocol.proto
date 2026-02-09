@@ -1,0 +1,205 @@
+syntax = "proto3";
+
+package jsbolo;
+
+// Client -> Server messages
+
+message PlayerInput {
+  uint32 sequence = 1;           // For input buffering/reconciliation
+  uint32 tick = 2;               // Client's current tick
+  bool accelerating = 3;
+  bool braking = 4;
+  bool turning_clockwise = 5;
+  bool turning_counter_clockwise = 6;
+  bool shooting = 7;
+  BuildOrder build_order = 8;
+  RangeAdjustment range_adjustment = 9;
+}
+
+message BuildOrder {
+  enum Action {
+    NONE = 0;
+    FOREST = 1;      // Harvest trees
+    ROAD = 2;        // Build road
+    REPAIR = 3;      // Repair pillbox/building
+    BOAT = 4;        // Build boat
+    BUILDING = 5;    // Build wall
+    PILLBOX = 6;     // Place pillbox
+    MINE = 7;        // Lay mine
+  }
+
+  Action action = 1;
+  uint32 target_x = 2;  // World coordinates
+  uint32 target_y = 3;
+}
+
+enum RangeAdjustment {
+  NONE = 0;
+  INCREASE = 1;
+  DECREASE = 2;
+}
+
+// Server -> Client messages
+
+message ServerUpdate {
+  uint32 tick = 1;
+  repeated TankState tanks = 2;
+  repeated BuilderState builders = 3;
+  repeated ShellState shells = 4;
+  repeated ExplosionState explosions = 5;
+  repeated TerrainChange terrain_changes = 6;
+  repeated PillboxState pillboxes = 7;
+  repeated BaseState bases = 8;
+}
+
+message TankState {
+  uint32 id = 1;
+  uint32 x = 2;           // World coordinates
+  uint32 y = 3;
+  uint32 direction = 4;   // 0-255 (256 = full circle)
+  float speed = 5;
+  uint32 armor = 6;
+  uint32 shells = 7;
+  uint32 mines = 8;
+  uint32 trees = 9;
+  uint32 team = 10;
+  bool on_boat = 11;
+  uint32 reload = 12;     // Reload timer
+  float firing_range = 13;
+}
+
+message BuilderState {
+  uint32 id = 1;
+  uint32 owner_tank_id = 2;
+  uint32 x = 3;
+  uint32 y = 4;
+  uint32 target_x = 5;
+  uint32 target_y = 6;
+  BuilderOrder order = 7;
+  uint32 trees = 8;
+  bool has_mine = 9;
+  uint32 team = 10;
+}
+
+enum BuilderOrder {
+  IN_TANK = 0;
+  WAITING = 1;
+  RETURNING = 2;
+  PARACHUTING = 3;
+  HARVESTING = 10;
+  BUILDING_ROAD = 11;
+  REPAIRING = 12;
+  BUILDING_BOAT = 13;
+  BUILDING_WALL = 14;
+  PLACING_PILLBOX = 15;
+  LAYING_MINE = 16;
+}
+
+message ShellState {
+  uint32 id = 1;
+  uint32 x = 2;
+  uint32 y = 3;
+  uint32 direction = 4;
+  uint32 owner_tank_id = 5;
+}
+
+message ExplosionState {
+  uint32 id = 1;
+  uint32 x = 2;
+  uint32 y = 3;
+  ExplosionType type = 4;
+  uint32 frame = 5;  // Animation frame
+}
+
+enum ExplosionType {
+  SMALL = 0;
+  LARGE = 1;
+  MINE = 2;
+}
+
+message TerrainChange {
+  uint32 tile_x = 1;
+  uint32 tile_y = 2;
+  uint32 terrain_type = 3;  // Maps to TerrainType enum
+  bool has_mine = 4;
+}
+
+message PillboxState {
+  uint32 id = 1;
+  uint32 tile_x = 2;
+  uint32 tile_y = 3;
+  uint32 armor = 4;
+  uint32 owner_team = 5;  // 255 = neutral
+  bool in_tank = 6;       // Being carried by tank
+}
+
+message BaseState {
+  uint32 id = 1;
+  uint32 tile_x = 2;
+  uint32 tile_y = 3;
+  uint32 armor = 4;
+  uint32 shells = 5;
+  uint32 mines = 6;
+  uint32 owner_team = 7;  // 255 = neutral
+}
+
+// Object lifecycle messages
+
+message CreateEntity {
+  oneof entity {
+    TankState tank = 1;
+    BuilderState builder = 2;
+    ShellState shell = 3;
+    ExplosionState explosion = 4;
+    PillboxState pillbox = 5;
+    BaseState base = 6;
+  }
+}
+
+message DestroyEntity {
+  enum EntityType {
+    TANK = 0;
+    BUILDER = 1;
+    SHELL = 2;
+    EXPLOSION = 3;
+    PILLBOX = 4;
+    BASE = 5;
+  }
+
+  EntityType type = 1;
+  uint32 id = 2;
+}
+
+// Initial connection messages
+
+message WelcomeMessage {
+  uint32 player_id = 1;
+  uint32 assigned_team = 2;
+  uint32 current_tick = 3;
+  MapData map = 4;
+}
+
+message MapData {
+  uint32 width = 1;   // In tiles
+  uint32 height = 2;
+  bytes terrain = 3;  // Packed terrain data
+  repeated PillboxState pillboxes = 4;
+  repeated BaseState bases = 5;
+}
+
+// Wrapper message types for WebSocket framing
+
+message ClientMessage {
+  oneof message {
+    PlayerInput input = 1;
+  }
+}
+
+message ServerMessage {
+  oneof message {
+    WelcomeMessage welcome = 1;
+    ServerUpdate update = 2;
+    CreateEntity create = 3;
+    DestroyEntity destroy = 4;
+  }
+}
