@@ -1,5 +1,5 @@
 /**
- * Tank entity
+ * Server-side tank simulation
  */
 
 import {
@@ -7,17 +7,19 @@ import {
   TANK_ACCELERATION,
   TANK_DECELERATION,
   DIRECTION_UNITS_FULL_CIRCLE,
-  DIRECTION_PER_SIXTEENTH,
   TANK_STARTING_ARMOR,
   TANK_STARTING_SHELLS,
   TANK_STARTING_MINES,
   TANK_STARTING_TREES,
-  TILE_SIZE_PIXELS,
-} from '@shared';
-import type {InputState} from '../input/keyboard.js';
+  TILE_SIZE_WORLD,
+  type PlayerInput,
+} from '@jsbolo/shared';
 
-export class Tank {
-  // Position (in pixels, not world units for simplicity in Phase 1)
+export class ServerTank {
+  id: number;
+  team: number;
+
+  // Position in world units (not pixels)
   x: number;
   y: number;
 
@@ -37,16 +39,19 @@ export class Tank {
   reload = 0;
   firingRange = 7;
 
-  constructor(tileX: number, tileY: number) {
-    // Start at center of tile
-    this.x = tileX * TILE_SIZE_PIXELS + TILE_SIZE_PIXELS / 2;
-    this.y = tileY * TILE_SIZE_PIXELS + TILE_SIZE_PIXELS / 2;
+  constructor(id: number, team: number, tileX: number, tileY: number) {
+    this.id = id;
+    this.team = team;
+
+    // Start at center of tile (in world coordinates)
+    this.x = (tileX + 0.5) * TILE_SIZE_WORLD;
+    this.y = (tileY + 0.5) * TILE_SIZE_WORLD;
   }
 
   /**
-   * Update tank state based on input
+   * Update tank based on player input and terrain
    */
-  update(input: InputState, terrainSpeedMultiplier: number): void {
+  update(input: PlayerInput, terrainSpeedMultiplier: number): void {
     this.updateTurning(input);
     this.updateSpeed(input, terrainSpeedMultiplier);
     this.updatePosition();
@@ -56,16 +61,15 @@ export class Tank {
     }
   }
 
-  private updateTurning(input: InputState): void {
-    const maxTurn = 4; // Max turn rate per tick
+  private updateTurning(input: PlayerInput): void {
+    const maxTurn = 4;
 
-    // Update turn speed with acceleration
-    if (input.turningLeft && !input.turningRight) {
+    if (input.turningCounterClockwise && !input.turningClockwise) {
       if (this.turnSpeed < 10) {
         this.turnSpeed = Math.min(10, this.turnSpeed + 1);
       }
       this.direction = (this.direction - maxTurn + DIRECTION_UNITS_FULL_CIRCLE) % DIRECTION_UNITS_FULL_CIRCLE;
-    } else if (input.turningRight && !input.turningLeft) {
+    } else if (input.turningClockwise && !input.turningCounterClockwise) {
       if (this.turnSpeed > -10) {
         this.turnSpeed = Math.max(-10, this.turnSpeed - 1);
       }
@@ -75,55 +79,38 @@ export class Tank {
     }
   }
 
-  private updateSpeed(input: InputState, terrainSpeedMultiplier: number): void {
-    // Apply terrain speed multiplier (0.0 = impassable, 1.0 = full speed)
+  private updateSpeed(input: PlayerInput, terrainSpeedMultiplier: number): void {
     const maxSpeed = TANK_MAX_SPEED * terrainSpeedMultiplier;
 
-    // Force slowdown if terrain requires it
     if (this.speed > maxSpeed) {
       this.speed = Math.max(maxSpeed, this.speed - TANK_DECELERATION);
-    }
-    // Player input
-    else if (input.accelerating && !input.braking) {
+    } else if (input.accelerating && !input.braking) {
       this.speed = Math.min(maxSpeed, this.speed + TANK_ACCELERATION);
     } else if (input.braking && !input.accelerating) {
       this.speed = Math.max(0, this.speed - TANK_DECELERATION);
     } else if (!input.accelerating && !input.braking) {
-      // Natural deceleration
       this.speed = Math.max(0, this.speed - TANK_DECELERATION / 2);
     }
   }
 
   private updatePosition(): void {
     if (this.speed > 0) {
-      // Convert direction (0-255) to radians
-      // In Bolo, 0 = North, rotation is clockwise
       const radians = ((DIRECTION_UNITS_FULL_CIRCLE - this.direction) * 2 * Math.PI) / DIRECTION_UNITS_FULL_CIRCLE;
 
       this.x += Math.cos(radians) * this.speed;
       this.y += Math.sin(radians) * this.speed;
 
-      // Simple bounds checking (Phase 1)
-      // TODO: Proper collision detection in later phases
-      this.x = Math.max(0, Math.min(this.x, TILE_SIZE_PIXELS * 256));
-      this.y = Math.max(0, Math.min(this.y, TILE_SIZE_PIXELS * 256));
+      // Bounds checking
+      const maxCoord = TILE_SIZE_WORLD * 256;
+      this.x = Math.max(0, Math.min(this.x, maxCoord));
+      this.y = Math.max(0, Math.min(this.y, maxCoord));
     }
   }
 
-  /**
-   * Get the tank's direction as a 16-directional index (for sprite selection)
-   */
-  getDirection16(): number {
-    return Math.round((this.direction - 1) / DIRECTION_PER_SIXTEENTH) % 16;
-  }
-
-  /**
-   * Get tile position
-   */
   getTilePosition(): {x: number; y: number} {
     return {
-      x: Math.floor(this.x / TILE_SIZE_PIXELS),
-      y: Math.floor(this.y / TILE_SIZE_PIXELS),
+      x: Math.floor(this.x / TILE_SIZE_WORLD),
+      y: Math.floor(this.y / TILE_SIZE_WORLD),
     };
   }
 }

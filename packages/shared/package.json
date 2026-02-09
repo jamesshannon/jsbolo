@@ -12,9 +12,11 @@
     }
   },
   "scripts": {
-    "build": "tsc",
+    "build": "npm run proto && tsc && npm run copy-generated",
     "dev": "tsc --watch",
-    "clean": "rm -rf dist",
+    "proto": "bash scripts/compile-proto.sh",
+    "copy-generated": "cp -r src/generated dist/",
+    "clean": "rm -rf dist src/generated",
     "type-check": "tsc --noEmit",
     "lint": "eslint src"
   },
@@ -23,6 +25,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.11.16",
+    "protobufjs-cli": "^2.0.0",
     "typescript": "^5.3.3"
   }
 }

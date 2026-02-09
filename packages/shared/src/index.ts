@@ -5,3 +5,4 @@
 export * from './constants.js';
 export * from './terrain.js';
 export * from './types.js';
+export * from './network-protocol.js';

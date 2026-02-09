@@ -91,8 +91,12 @@ export class Game {
   private update(): void {
     const inputState = this.input.getState();
 
-    // Update tank
-    this.tank.update(inputState);
+    // Get terrain speed multiplier at tank's current position
+    const tilePos = this.tank.getTilePosition();
+    const terrainSpeed = this.world.getTankSpeedAt(tilePos.x, tilePos.y);
+
+    // Update tank with terrain-based speed
+    this.tank.update(inputState, terrainSpeed);
 
     // Center camera on tank
     this.camera.centerOn(this.tank.x, this.tank.y);

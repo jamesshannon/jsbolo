@@ -16,7 +16,14 @@
       "Bash(npm install:*)",
       "Bash(pnpm build:*)",
       "Bash(pnpm dev)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nInitial project setup - Phase 1 complete\n\n- Set up monorepo structure with pnpm workspaces\n- Configured TypeScript, ESLint, Prettier \\(Google Style Guide\\)\n- Created shared package with game constants and types\n- Extracted and documented sprites from Orona\n- Implemented Phase 1 client:\n  * Tank entity with Bolo physics\n  * Keyboard input handling\n  * Camera system with viewport culling\n  * Sprite sheet rendering\n  * Procedural test map generation\n  * Fixed timestep game loop \\(50 TPS\\)\n- Configured Vite dev server\n- Added comprehensive documentation\n\nPhase 1 deliverables complete:\n✓ Basic rendering \\(terrain, tank sprite\\)\n✓ Tank movement \\(keyboard input\\)\n✓ Camera following tank\n✓ Map loading \\(procedural test map\\)\n✓ Game loop with debug HUD\n\nNext: Phase 2 - Multiplayer networking\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(curl:*)",
+      "Bash(chmod:*)",
+      "Bash(pnpm run proto:*)",
+      "Bash(pnpm add:*)",
+      "Bash(cat:*)",
+      "Bash(node:*)"
     ]
   }
 }
