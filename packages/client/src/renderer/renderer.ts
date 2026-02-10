@@ -15,10 +15,10 @@ import type {Tank} from '../entities/tank.js';
  */
 const TERRAIN_TILES: Record<TerrainType, {x: number; y: number}> = {
   [TerrainType.GRASS]: {x: 2, y: 1},         // '.' - green grass
-  [TerrainType.FOREST]: {x: 0, y: 1},        // '#' - forest (needs auto-tiling, using base)
+  [TerrainType.FOREST]: {x: 3, y: 1},        // '#' - dense forest tile (default before auto-tiling)
   [TerrainType.SWAMP]: {x: 7, y: 1},         // '~' - swamp
   [TerrainType.RIVER]: {x: 30, y: 2},        // ' ' - water (enclosed)
-  [TerrainType.ROAD]: {x: 0, y: 1},          // '=' - road (needs auto-tiling, using base)
+  [TerrainType.ROAD]: {x: 0, y: 0},          // '=' - horizontal road tile (default before auto-tiling)
   [TerrainType.CRATER]: {x: 5, y: 1},        // '%' - crater
   [TerrainType.BUILDING]: {x: 6, y: 1},      // '|' - isolated building
   [TerrainType.RUBBLE]: {x: 4, y: 1},        // ':' - rubble
