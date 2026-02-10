@@ -87,6 +87,44 @@ export class World {
   }
 
   /**
+   * Get terrain types of 8-directional neighbors for auto-tiling.
+   * Returns null for out-of-bounds neighbors.
+   *
+   * Order: [N, NE, E, SE, S, SW, W, NW]
+   */
+  getNeighbors(tileX: number, tileY: number): (TerrainType | null)[] {
+    const offsets = [
+      [0, -1],  // North
+      [1, -1],  // Northeast
+      [1, 0],   // East
+      [1, 1],   // Southeast
+      [0, 1],   // South
+      [-1, 1],  // Southwest
+      [-1, 0],  // West
+      [-1, -1], // Northwest
+    ];
+
+    return offsets.map(([dx, dy]) => {
+      const nx = tileX + dx;
+      const ny = tileY + dy;
+
+      if (nx < 0 || nx >= MAP_SIZE_TILES || ny < 0 || ny >= MAP_SIZE_TILES) {
+        return null; // Out of bounds
+      }
+
+      return this.map[ny]![nx]!.terrain;
+    });
+  }
+
+  /**
+   * Get 4-cardinal neighbors (N, E, S, W) for simpler auto-tiling.
+   */
+  getCardinalNeighbors(tileX: number, tileY: number): (TerrainType | null)[] {
+    const neighbors = this.getNeighbors(tileX, tileY);
+    return [neighbors[0], neighbors[2], neighbors[4], neighbors[6]]; // N, E, S, W
+  }
+
+  /**
    * Get tank speed multiplier at tile position
    */
   getTankSpeedAt(tileX: number, tileY: number): number {

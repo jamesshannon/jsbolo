@@ -9,7 +9,11 @@
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "type-check": "tsc --noEmit",
-    "lint": "eslint src"
+    "lint": "eslint src",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@jsbolo/shared": "workspace:*",
@@ -17,7 +21,10 @@
   },
   "devDependencies": {
     "@types/node": "^20.11.16",
+    "@vitest/ui": "^4.0.18",
+    "jsdom": "^24.0.0",
     "typescript": "^5.3.3",
-    "vite": "^5.0.12"
+    "vite": "^5.0.12",
+    "vitest": "^4.0.18"
   }
 }
