@@ -122,6 +122,12 @@ export class Renderer {
       } else if (cell.terrain === TerrainType.BUILDING) {
         const neighbors = world.getNeighbors(tileX, tileY);
         tileDef = AutoTiler.getBuildingTile(neighbors);
+      } else if (cell.terrain === TerrainType.BOAT && cell.direction !== undefined) {
+        // Directional boats: use direction to pick sprite variant
+        // Boat sprites: row 6, columns 8-11 for N/E/S/W
+        // Direction: 0=north, 64=east, 128=south, 192=west
+        const directionIndex = Math.round(cell.direction / 64) % 4;
+        tileDef = {x: 8 + directionIndex, y: 6};
       } else {
         // Use static mapping for non-auto-tiled terrain
         tileDef = TERRAIN_TILES[cell.terrain] || TERRAIN_TILES[TerrainType.GRASS];

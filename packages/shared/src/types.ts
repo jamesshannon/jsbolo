@@ -111,6 +111,7 @@ export interface MapCell {
   terrain: TerrainType;
   hasMine: boolean;
   terrainLife: number; // Health points for destructible terrain
+  direction?: number; // Direction for directional terrain (boats): 0-255, 0=north, 64=east, 128=south, 192=west
 }
 
 /** Player input state */

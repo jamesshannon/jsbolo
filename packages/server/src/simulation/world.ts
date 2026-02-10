@@ -229,7 +229,7 @@ export class ServerWorld {
     return this.map[tileY]![tileX]!.terrain;
   }
 
-  setTerrainAt(tileX: number, tileY: number, terrain: TerrainType): void {
+  setTerrainAt(tileX: number, tileY: number, terrain: TerrainType, direction?: number): void {
     if (
       tileX < 0 ||
       tileX >= MAP_SIZE_TILES ||
@@ -241,6 +241,9 @@ export class ServerWorld {
     const cell = this.map[tileY]![tileX]!;
     cell.terrain = terrain;
     cell.terrainLife = getTerrainInitialLife(terrain);
+    if (direction !== undefined) {
+      cell.direction = direction;
+    }
   }
 
   hasMineAt(tileX: number, tileY: number): boolean {

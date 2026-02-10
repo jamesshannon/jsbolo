@@ -304,6 +304,47 @@ describe('Boat Movement', () => {
       // Tank should be on grass
       expect(session['world'].getTerrainAt(129, 128)).toBe(TerrainType.GRASS);
     });
+
+    it('should orient boat opposite to disembark direction', () => {
+      // Boat should face backward so tank can re-board by reversing
+      const playerId = session.addPlayer(mockWs, 0);
+      const player = session['players'].get(playerId)!;
+
+      // Tank on boat in river, facing east (direction = 0)
+      player.tank.x = 128.5 * 256;
+      player.tank.y = 128.5 * 256;
+      player.tank.onBoat = true;
+      player.tank.direction = 0; // Facing east
+      player.tank.speed = 12;
+
+      session['world'].setTerrainAt(128, 128, TerrainType.RIVER);
+      session['world'].setTerrainAt(129, 128, TerrainType.GRASS);
+
+      // Move tank east onto grass
+      player.lastInput = {
+        sequence: 1,
+        tick: 1,
+        accelerating: true,
+        braking: false,
+        turningClockwise: false,
+        turningCounterClockwise: false,
+        shooting: false,
+        buildOrder: null,
+        rangeAdjustment: 0,
+      };
+
+      // Move until disembark
+      for (let i = 0; i < 30; i++) {
+        session['update']();
+        if (!player.tank.onBoat) break;
+      }
+
+      // Check boat direction - should face west (opposite of east)
+      const world = session['world'];
+      const boatCell = world['map'][128][128]; // Access internal map
+      expect(boatCell.terrain).toBe(TerrainType.BOAT);
+      expect(boatCell.direction).toBe(128); // Opposite of 0 is 128 (west faces east coast)
+    });
   });
 
   describe('Re-boarding', () => {

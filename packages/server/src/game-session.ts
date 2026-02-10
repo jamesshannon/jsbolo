@@ -317,10 +317,12 @@ export class GameSession {
             // Tank moved onto land - disembark and leave boat behind
             tank.onBoat = false;
             // Place BOAT tile at the water position tank just left
+            // Boat faces opposite direction so tank can re-board by backing up
             // (Assumption: this is always RIVER since you can't disembark from deep sea)
-            this.world.setTerrainAt(prevTile.x, prevTile.y, 9); // BOAT
+            const boatDirection = (tank.direction + 128) % 256;
+            this.world.setTerrainAt(prevTile.x, prevTile.y, 9, boatDirection); // BOAT
             this.terrainChanges.add(`${prevTile.x},${prevTile.y}`);
-            console.log(`Tank ${tank.id} disembarked at (${newTile.x}, ${newTile.y}), left boat at (${prevTile.x}, ${prevTile.y})`);
+            console.log(`Tank ${tank.id} disembarked at (${newTile.x}, ${newTile.y}), left boat facing ${boatDirection} at (${prevTile.x}, ${prevTile.y})`);
           }
         }
       } else {
