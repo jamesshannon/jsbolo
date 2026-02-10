@@ -88,8 +88,8 @@ export class AutoTiler {
     const [N, _NE, E, _SE, S, _SW, W, _NW] = neighbors;
 
     // Categorize each neighbor
-    const categorize = (t: TerrainType | null): 'r' | 'w' | 'l' => {
-      if (t === null) return 'l';
+    const categorize = (t: TerrainType | null | undefined): 'r' | 'w' | 'l' => {
+      if (t === null || t === undefined) return 'l';
       if (t === TerrainType.ROAD) return 'r';
       if (t === TerrainType.RIVER || t === TerrainType.DEEP_SEA || t === TerrainType.BOAT) return 'w';
       return 'l';

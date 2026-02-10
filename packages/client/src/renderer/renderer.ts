@@ -5,6 +5,7 @@
 import {TILE_SIZE_PIXELS, TerrainType} from '@shared';
 import {SpriteSheet} from './sprite-sheet.js';
 import {Camera} from './camera.js';
+import {AutoTiler} from './auto-tiler.js';
 import type {World} from '../world/world.js';
 import type {Tank} from '../entities/tank.js';
 
@@ -108,16 +109,31 @@ export class Renderer {
       const screenX = worldX - camPos.x;
       const screenY = worldY - camPos.y;
 
-      const tileDef = TERRAIN_TILES[cell.terrain];
-      if (tileDef) {
-        this.baseSprites.drawTile(
-          this.ctx,
-          tileDef.x,
-          tileDef.y,
-          screenX,
-          screenY
-        );
+      // Determine sprite coordinates based on terrain type
+      let tileDef: {x: number; y: number};
+
+      // Apply auto-tiling for supported terrain types
+      if (cell.terrain === TerrainType.FOREST) {
+        const neighbors = world.getNeighbors(tileX, tileY);
+        tileDef = AutoTiler.getForestTile(neighbors);
+      } else if (cell.terrain === TerrainType.ROAD) {
+        const neighbors = world.getNeighbors(tileX, tileY);
+        tileDef = AutoTiler.getRoadTile(neighbors);
+      } else if (cell.terrain === TerrainType.BUILDING) {
+        const neighbors = world.getNeighbors(tileX, tileY);
+        tileDef = AutoTiler.getBuildingTile(neighbors);
+      } else {
+        // Use static mapping for non-auto-tiled terrain
+        tileDef = TERRAIN_TILES[cell.terrain] || TERRAIN_TILES[TerrainType.GRASS];
       }
+
+      this.baseSprites.drawTile(
+        this.ctx,
+        tileDef.x,
+        tileDef.y,
+        screenX,
+        screenY
+      );
 
       // Draw mine indicator if present
       if (cell.hasMine) {

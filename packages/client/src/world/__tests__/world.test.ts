@@ -95,7 +95,7 @@ describe('World Neighbor Queries', () => {
       const neighbors = world.getNeighbors(128, 128);
 
       // All neighbors should be valid (no nulls)
-      neighbors.forEach((neighbor, index) => {
+      neighbors.forEach((neighbor) => {
         expect(neighbor).not.toBeNull();
         expect(Object.values(TerrainType)).toContain(neighbor);
       });

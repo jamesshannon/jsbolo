@@ -93,7 +93,7 @@ export class World {
    * Order: [N, NE, E, SE, S, SW, W, NW]
    */
   getNeighbors(tileX: number, tileY: number): (TerrainType | null)[] {
-    const offsets = [
+    const offsets: [number, number][] = [
       [0, -1],  // North
       [1, -1],  // Northeast
       [1, 0],   // East
@@ -105,8 +105,8 @@ export class World {
     ];
 
     return offsets.map(([dx, dy]) => {
-      const nx = tileX + dx;
-      const ny = tileY + dy;
+      const nx = tileX + dx!;
+      const ny = tileY + dy!;
 
       if (nx < 0 || nx >= MAP_SIZE_TILES || ny < 0 || ny >= MAP_SIZE_TILES) {
         return null; // Out of bounds
@@ -121,7 +121,7 @@ export class World {
    */
   getCardinalNeighbors(tileX: number, tileY: number): (TerrainType | null)[] {
     const neighbors = this.getNeighbors(tileX, tileY);
-    return [neighbors[0], neighbors[2], neighbors[4], neighbors[6]]; // N, E, S, W
+    return [neighbors[0]!, neighbors[2]!, neighbors[4]!, neighbors[6]!]; // N, E, S, W
   }
 
   /**
