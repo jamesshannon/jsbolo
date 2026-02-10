@@ -1,6 +1,8 @@
 /**
  * Auto-tiling system for neighbor-aware sprite selection.
  * Based on Orona's implementation (map.coffee lines 100-360).
+ *
+ * Coordinates verified against actual Orona source code.
  */
 
 import {TerrainType} from '@shared';
@@ -15,11 +17,11 @@ export class AutoTiler {
    * Get sprite coordinates for a forest tile based on neighbors.
    * Only checks 4-cardinal directions (no diagonals).
    *
-   * Returns 9 possible sprite variants:
-   * - Fully surrounded: no exposed edges
-   * - Single edge exposed: 4 variants (N/E/S/W)
-   * - Two opposite edges: 2 variants (N+S, E+W)
-   * - Two adjacent edges (corners): 4 variants (NE/SE/SW/NW)
+   * Orona logic (map.coffee lines 321-337):
+   * - Corners (2 adjacent filled): (9-12, 9)
+   * - Single edges (only 1 filled): (13-16, 9)
+   * - Isolated (none filled): (8, 9)
+   * - Everything else (3 or 4 filled): (3, 1)
    */
   static getForestTile(neighbors: (TerrainType | null)[]): TileCoord {
     const [N, _NE, E, _SE, S, _SW, W, _NW] = neighbors;
@@ -30,62 +32,60 @@ export class AutoTiler {
     const south = S === TerrainType.FOREST;
     const west = W === TerrainType.FOREST;
 
-    // Fully surrounded (no edges)
-    if (north && east && south && west) {
+    // Corners (2 adjacent filled) - Orona lines 328-331
+    if (!north && !west && east && south) {
+      return {x: 9, y: 9}; // NW quadrant open
+    }
+    if (!north && west && !east && south) {
+      return {x: 10, y: 9}; // NE quadrant open
+    }
+    if (north && west && !east && !south) {
+      return {x: 11, y: 9}; // SE quadrant open
+    }
+    if (north && !west && east && !south) {
+      return {x: 12, y: 9}; // SW quadrant open
+    }
+
+    // Single edges (only 1 filled) - Orona lines 332-335
+    if (north && !west && !east && !south) {
+      return {x: 16, y: 9}; // Only north filled
+    }
+    if (!north && !west && !east && south) {
+      return {x: 15, y: 9}; // Only south filled
+    }
+    if (!north && west && !east && !south) {
+      return {x: 14, y: 9}; // Only west filled
+    }
+    if (!north && !west && east && !south) {
+      return {x: 13, y: 9}; // Only east filled
+    }
+
+    // Isolated (none filled) - Orona line 336
+    if (!north && !west && !east && !south) {
       return {x: 8, y: 9};
     }
 
-    // Two opposite edges
-    if (north && south && !east && !west) {
-      return {x: 14, y: 9}; // Vertical strip
-    }
-    if (east && west && !north && !south) {
-      return {x: 15, y: 9}; // Horizontal strip
-    }
-
-    // Corners (two adjacent edges)
-    if (!north && east && !south && west) {
-      return {x: 9, y: 9}; // NW corner (north + west open)
-    }
-    if (!north && !east && south && west) {
-      return {x: 10, y: 9}; // NE corner
-    }
-    if (north && !east && !south && west) {
-      return {x: 11, y: 9}; // SE corner
-    }
-    if (north && east && !south && !west) {
-      return {x: 12, y: 9}; // SW corner
-    }
-
-    // Single edges
-    if (!north && east && south && west) {
-      return {x: 13, y: 9}; // North edge open
-    }
-    if (north && !east && south && west) {
-      return {x: 14, y: 9}; // East edge open
-    }
-    if (north && east && !south && west) {
-      return {x: 15, y: 9}; // South edge open
-    }
-    if (north && east && south && !west) {
-      return {x: 16, y: 9}; // West edge open
-    }
-
-    // Default: dense forest (isolated or unhandled case)
+    // Default: dense forest (3 or 4 filled, or 2 opposite) - Orona line 337
     return {x: 3, y: 1};
   }
 
   /**
    * Get sprite coordinates for a road tile based on neighbors.
-   * Checks all 8 directions and categorizes neighbors as:
+   * Checks cardinal directions and categorizes neighbors as:
    * - 'r': Road (connected)
    * - 'w': Water (RIVER, DEEP_SEA, BOAT)
    * - 'l': Land (everything else)
    *
-   * Returns 31+ possible variants for intersections, corners, T-junctions, etc.
+   * Orona logic (map.coffee lines 263-319):
+   * - 4-way intersection: (10, 0)
+   * - T-junctions: (12-15, 0)
+   * - Corners with diagonals: (6-9, 0)
+   * - Corners without diagonals: (2-5, 0)
+   * - Straights: (0, 1) horizontal, (1, 1) vertical
+   * - Water crossings: (16-30, 0)
    */
   static getRoadTile(neighbors: (TerrainType | null)[]): TileCoord {
-    const [N, _NE, E, _SE, S, _SW, W, _NW] = neighbors;
+    const [N, NE, E, SE, S, SW, W, NW] = neighbors;
 
     // Categorize each neighbor
     const categorize = (t: TerrainType | null | undefined): 'r' | 'w' | 'l' => {
@@ -96,48 +96,127 @@ export class AutoTiler {
     };
 
     const north = categorize(N);
+    const northEast = categorize(NE);
     const east = categorize(E);
+    const southEast = categorize(SE);
     const south = categorize(S);
+    const southWest = categorize(SW);
     const west = categorize(W);
+    const northWest = categorize(NW);
 
-    // Count road connections
-    const roadCount = [north, east, south, west].filter(c => c === 'r').length;
+    // Special pattern: cross with all diagonals non-road (Orona line 280)
+    if (northWest !== 'r' && north === 'r' && northEast !== 'r' &&
+        west === 'r' && east === 'r' &&
+        southWest !== 'r' && south === 'r' && southEast !== 'r') {
+      return {x: 11, y: 0};
+    }
 
-    // 4-way intersection (all roads)
-    if (roadCount === 4) {
+    // 4-way intersection (Orona line 282)
+    if (north === 'r' && east === 'r' && south === 'r' && west === 'r') {
       return {x: 10, y: 0};
     }
 
-    // 3-way junctions (T-junctions)
-    if (roadCount === 3) {
-      if (north !== 'r') return {x: 12, y: 0}; // T pointing down
-      if (east !== 'r') return {x: 13, y: 0};  // T pointing left
-      if (south !== 'r') return {x: 14, y: 0}; // T pointing up
-      if (west !== 'r') return {x: 15, y: 0};  // T pointing right
+    // Water crossings (Orona lines 283-294)
+    if (west === 'w' && east === 'w' && north === 'w' && south === 'w') {
+      return {x: 26, y: 0}; // Surrounded by water
+    }
+    if (east === 'r' && south === 'r' && west === 'w' && north === 'w') {
+      return {x: 20, y: 0};
+    }
+    if (west === 'r' && south === 'r' && east === 'w' && north === 'w') {
+      return {x: 21, y: 0};
+    }
+    if (north === 'r' && west === 'r' && south === 'w' && east === 'w') {
+      return {x: 22, y: 0};
+    }
+    if (east === 'r' && north === 'r' && west === 'w' && south === 'w') {
+      return {x: 23, y: 0};
+    }
+    if (north === 'w' && south === 'w') {
+      return {x: 24, y: 0}; // Water above and below
+    }
+    if (west === 'w' && east === 'w') {
+      return {x: 25, y: 0}; // Water left and right
+    }
+    if (north === 'w' && south === 'r') {
+      return {x: 16, y: 0};
+    }
+    if (east === 'w' && west === 'r') {
+      return {x: 17, y: 0};
+    }
+    if (south === 'w' && north === 'r') {
+      return {x: 18, y: 0};
+    }
+    if (west === 'w' && east === 'r') {
+      return {x: 19, y: 0};
     }
 
-    // Straight roads (2 opposite connections)
-    if (roadCount === 2) {
-      if (north === 'r' && south === 'r') return {x: 1, y: 0}; // Vertical
-      if (east === 'r' && west === 'r') return {x: 0, y: 0};   // Horizontal
-
-      // Corners (2 adjacent connections)
-      if (north === 'r' && east === 'r') return {x: 6, y: 0}; // NE corner
-      if (east === 'r' && south === 'r') return {x: 7, y: 0}; // SE corner
-      if (south === 'r' && west === 'r') return {x: 8, y: 0}; // SW corner
-      if (west === 'r' && north === 'r') return {x: 9, y: 0}; // NW corner
+    // T-junctions with diagonal enhancements (Orona lines 296-299)
+    if (east === 'r' && south === 'r' && north === 'r' && (northEast === 'r' || southEast === 'r')) {
+      return {x: 27, y: 0};
+    }
+    if (west === 'r' && east === 'r' && south === 'r' && (southWest === 'r' || southEast === 'r')) {
+      return {x: 28, y: 0};
+    }
+    if (west === 'r' && north === 'r' && south === 'r' && (southWest === 'r' || northWest === 'r')) {
+      return {x: 29, y: 0};
+    }
+    if (west === 'r' && east === 'r' && north === 'r' && (northEast === 'r' || northWest === 'r')) {
+      return {x: 30, y: 0};
     }
 
-    // Dead ends (1 connection)
-    if (roadCount === 1) {
-      if (north === 'r') return {x: 2, y: 0}; // Road from north
-      if (east === 'r') return {x: 3, y: 0};  // Road from east
-      if (south === 'r') return {x: 4, y: 0}; // Road from south
-      if (west === 'r') return {x: 5, y: 0};  // Road from west
+    // T-junctions (Orona lines 301-304)
+    if (west === 'r' && east === 'r' && south === 'r') {
+      return {x: 12, y: 0}; // T pointing up (no north)
+    }
+    if (west === 'r' && north === 'r' && south === 'r') {
+      return {x: 13, y: 0}; // T pointing right (no east)
+    }
+    if (west === 'r' && east === 'r' && north === 'r') {
+      return {x: 14, y: 0}; // T pointing down (no south)
+    }
+    if (east === 'r' && north === 'r' && south === 'r') {
+      return {x: 15, y: 0}; // T pointing left (no west)
     }
 
-    // Isolated road (no connections)
-    return {x: 0, y: 0}; // Horizontal segment as default
+    // Corners with diagonals (Orona lines 306-309)
+    if (south === 'r' && east === 'r' && southEast === 'r') {
+      return {x: 6, y: 0}; // SE corner with diagonal
+    }
+    if (south === 'r' && west === 'r' && southWest === 'r') {
+      return {x: 7, y: 0}; // SW corner with diagonal
+    }
+    if (north === 'r' && west === 'r' && northWest === 'r') {
+      return {x: 8, y: 0}; // NW corner with diagonal
+    }
+    if (north === 'r' && east === 'r' && northEast === 'r') {
+      return {x: 9, y: 0}; // NE corner with diagonal
+    }
+
+    // Corners without diagonals (Orona lines 311-314)
+    if (south === 'r' && east === 'r') {
+      return {x: 2, y: 0}; // SE corner
+    }
+    if (south === 'r' && west === 'r') {
+      return {x: 3, y: 0}; // SW corner
+    }
+    if (north === 'r' && west === 'r') {
+      return {x: 4, y: 0}; // NW corner
+    }
+    if (north === 'r' && east === 'r') {
+      return {x: 5, y: 0}; // NE corner
+    }
+
+    // Straights (Orona lines 316-317)
+    if (east === 'r' || west === 'r') {
+      return {x: 0, y: 1}; // Horizontal
+    }
+    if (north === 'r' || south === 'r') {
+      return {x: 1, y: 1}; // Vertical
+    }
+
+    // Isolated road (Orona line 319)
+    return {x: 10, y: 0};
   }
 
   /**

@@ -18,13 +18,13 @@ const TERRAIN_TILES: Record<TerrainType, {x: number; y: number}> = {
   [TerrainType.GRASS]: {x: 2, y: 1},         // '.' - green grass
   [TerrainType.FOREST]: {x: 3, y: 1},        // '#' - dense forest tile (default before auto-tiling)
   [TerrainType.SWAMP]: {x: 7, y: 1},         // '~' - swamp
-  [TerrainType.RIVER]: {x: 30, y: 2},        // ' ' - water (enclosed)
-  [TerrainType.ROAD]: {x: 0, y: 0},          // '=' - horizontal road tile (default before auto-tiling)
+  [TerrainType.RIVER]: {x: 1, y: 0},         // ' ' - water (default from Orona line 261)
+  [TerrainType.ROAD]: {x: 0, y: 1},          // '=' - horizontal road tile (default before auto-tiling)
   [TerrainType.CRATER]: {x: 5, y: 1},        // '%' - crater
   [TerrainType.BUILDING]: {x: 6, y: 1},      // '|' - isolated building
   [TerrainType.RUBBLE]: {x: 4, y: 1},        // ':' - rubble
   [TerrainType.SHOT_BUILDING]: {x: 8, y: 1}, // '}' - damaged building
-  [TerrainType.BOAT]: {x: 10, y: 6},         // 'b' - boat (row 6, col 10 = surrounded by water)
+  [TerrainType.BOAT]: {x: 11, y: 6},         // 'b' - boat surrounded by water (Orona line 360)
   [TerrainType.DEEP_SEA]: {x: 0, y: 0},      // '^' - deep sea base tile
 };
 
