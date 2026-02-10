@@ -25,6 +25,9 @@ async function main(): Promise<void> {
     console.log('Starting in MULTIPLAYER mode');
     const game = new MultiplayerGame(canvas, ctx);
 
+    // Expose game to window for debugging
+    (window as any).game = game;
+
     try {
       await game.init(SERVER_URL);
       console.log('Connected to server');

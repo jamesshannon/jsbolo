@@ -27,8 +27,8 @@ export class Game {
   private lastFpsUpdate = 0;
 
   constructor(
-    private readonly canvas: HTMLCanvasElement,
-    private readonly ctx: CanvasRenderingContext2D
+    canvas: HTMLCanvasElement,
+    ctx: CanvasRenderingContext2D
   ) {
     this.input = new KeyboardInput();
     this.camera = new Camera(canvas.width, canvas.height);

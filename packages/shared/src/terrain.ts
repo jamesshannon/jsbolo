@@ -57,7 +57,7 @@ export const TERRAIN_DESCRIPTIONS: Record<TerrainType, string> = {
  */
 export const TERRAIN_TANK_SPEED: Record<TerrainType, number> = {
   [TerrainType.BUILDING]: 0.0,
-  [TerrainType.RIVER]: 0.0, // unless on boat
+  [TerrainType.RIVER]: 0.2, // TEMPORARY: Allow slow river crossing for testing (should be 0.0 without boat)
   [TerrainType.SWAMP]: 0.25,
   [TerrainType.CRATER]: 0.5,
   [TerrainType.ROAD]: 1.0,
@@ -66,7 +66,7 @@ export const TERRAIN_TANK_SPEED: Record<TerrainType, number> = {
   [TerrainType.GRASS]: 0.75,
   [TerrainType.SHOT_BUILDING]: 0.0,
   [TerrainType.BOAT]: 1.0,
-  [TerrainType.DEEP_SEA]: 0.0,
+  [TerrainType.DEEP_SEA]: 0.0,  // Impassable without boat
 };
 
 /**
@@ -101,4 +101,58 @@ export function isTerrainShootable(terrain: TerrainType): boolean {
  */
 export function isTerrainConcealing(terrain: TerrainType): boolean {
   return terrain === TerrainType.FOREST;
+}
+
+/**
+ * Is terrain solid (blocks shell movement)?
+ */
+export function isTerrainSolid(terrain: TerrainType): boolean {
+  return (
+    terrain === TerrainType.BUILDING ||
+    terrain === TerrainType.SHOT_BUILDING ||
+    terrain === TerrainType.RUBBLE ||
+    terrain === TerrainType.FOREST ||
+    terrain === TerrainType.BOAT
+  );
+}
+
+/**
+ * Get initial health/life points for terrain
+ * Values tuned to match classic Bolo behavior
+ */
+export function getTerrainInitialLife(terrain: TerrainType): number {
+  switch (terrain) {
+    case TerrainType.BUILDING:
+      return 1; // 1 hit to damage (becomes SHOT_BUILDING)
+    case TerrainType.SHOT_BUILDING:
+      return 2; // 2 hits to destroy (becomes RUBBLE)
+    case TerrainType.FOREST:
+      return 1; // 1 hit to clear
+    case TerrainType.BOAT:
+      return 1; // 1 hit to destroy
+    case TerrainType.RUBBLE:
+      return 2; // 2 hits to crater
+    default:
+      return 0; // Indestructible or pass-through terrain
+  }
+}
+
+/**
+ * Get terrain degradation result after health depletes
+ */
+export function getTerrainDegradation(terrain: TerrainType): TerrainType {
+  switch (terrain) {
+    case TerrainType.BUILDING:
+      return TerrainType.SHOT_BUILDING;
+    case TerrainType.SHOT_BUILDING:
+      return TerrainType.RUBBLE;
+    case TerrainType.FOREST:
+      return TerrainType.GRASS;
+    case TerrainType.BOAT:
+      return TerrainType.RIVER;
+    case TerrainType.RUBBLE:
+      return TerrainType.CRATER;
+    default:
+      return terrain; // No degradation
+  }
 }

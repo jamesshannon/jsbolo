@@ -24,19 +24,25 @@ export class KeyboardInput {
   };
 
   private readonly keyMap = {
-    // Acceleration/Braking (Bolo classic: Q/A)
+    // Forward/Back (classic Bolo: Q/A, modern: W/S, arrows: up/down)
     KeyQ: 'accelerating',
-    KeyA: 'braking',
+    KeyW: 'accelerating',
+    ArrowUp: 'accelerating',
 
-    // Turning (Bolo classic: numpad / and *)
+    KeyZ: 'braking',  // Classic Bolo uses Z for brake
+    KeyS: 'braking',
+    ArrowDown: 'braking',
+
+    // Turning (classic: numpad / and *, modern: A/D, arrows: left/right)
     NumpadDivide: 'turningLeft',
-    NumpadMultiply: 'turningRight',
-
-    // Alternative arrow keys
+    KeyA: 'turningLeft',
     ArrowLeft: 'turningLeft',
+
+    NumpadMultiply: 'turningRight',
+    KeyD: 'turningRight',
     ArrowRight: 'turningRight',
 
-    // Shooting (Bolo classic: numpad 0 or space)
+    // Shooting (classic: numpad 0, modern: space)
     Numpad0: 'shooting',
     Space: 'shooting',
 
@@ -59,6 +65,7 @@ export class KeyboardInput {
     if (action) {
       event.preventDefault();
       this.state[action] = true;
+      console.log(`Key down: ${event.code} -> ${action} = true`);
     }
   }
 

@@ -48,6 +48,7 @@ export class World {
         map[y]![x] = {
           terrain,
           hasMine: false,
+          terrainLife: 0, // Will be synced from server
         };
       }
     }
@@ -91,6 +92,21 @@ export class World {
   getTankSpeedAt(tileX: number, tileY: number): number {
     const terrain = this.getTerrainAt(tileX, tileY);
     return TERRAIN_TANK_SPEED[terrain] ?? 0;
+  }
+
+  /**
+   * Update a cell from server data
+   */
+  updateCell(tileX: number, tileY: number, cell: Partial<MapCell>): void {
+    if (
+      tileX < 0 ||
+      tileX >= MAP_SIZE_TILES ||
+      tileY < 0 ||
+      tileY >= MAP_SIZE_TILES
+    ) {
+      return;
+    }
+    Object.assign(this.map[tileY]![tileX]!, cell);
   }
 
   /**

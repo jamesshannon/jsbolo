@@ -3,7 +3,7 @@
  * TODO: Optimize with Protocol Buffers in Phase 4
  */
 
-import type {PlayerInput, Tank} from './types.js';
+import type {PlayerInput, Tank, Builder, Pillbox, Base} from './types.js';
 
 // Client -> Server Messages
 
@@ -21,17 +21,45 @@ export interface WelcomeMessage {
   playerId: number;
   assignedTeam: number;
   currentTick: number;
+  mapName: string;
   map: {
     width: number;
     height: number;
     terrain: number[]; // Flattened array
+    terrainLife: number[]; // Flattened array of terrain health
   };
+  // Initial state of all entities
+  tanks: Tank[];
+  pillboxes: Pillbox[];
+  bases: Base[];
+}
+
+export interface Shell {
+  id: number;
+  x: number;
+  y: number;
+  direction: number;
+  ownerTankId: number;
+}
+
+export interface TerrainUpdate {
+  x: number;
+  y: number;
+  terrain: number;
+  terrainLife: number;
 }
 
 export interface UpdateMessage {
   type: 'update';
   tick: number;
-  tanks: Tank[];
+  // All entity arrays are optional for delta compression
+  // Only changed entities are included in updates
+  tanks?: Tank[];
+  shells?: Shell[];
+  builders?: Builder[];
+  pillboxes?: Pillbox[];
+  bases?: Base[];
+  terrainUpdates?: TerrainUpdate[];
 }
 
 // Encoding/Decoding helpers

@@ -53,6 +53,90 @@
         font-size: 12px;
       }
 
+      #hud {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: rgba(0, 0, 0, 0.9);
+        padding: 15px;
+        border: 2px solid #0f0;
+        font-size: 14px;
+        min-width: 200px;
+      }
+
+      #hud h3 {
+        margin-bottom: 10px;
+        color: #0ff;
+        border-bottom: 1px solid #0f0;
+        padding-bottom: 5px;
+      }
+
+      #hud .stat {
+        display: flex;
+        justify-content: space-between;
+        margin: 5px 0;
+      }
+
+      #hud .stat-label {
+        color: #0f0;
+      }
+
+      #hud .stat-value {
+        color: #fff;
+        font-weight: bold;
+      }
+
+      #hud .bar {
+        width: 100%;
+        height: 8px;
+        background: #333;
+        border: 1px solid #0f0;
+        margin-top: 3px;
+        position: relative;
+      }
+
+      #hud .bar-fill {
+        height: 100%;
+        background: #0f0;
+        transition: width 0.2s;
+      }
+
+      #hud .bar-fill.armor {
+        background: #0f0;
+      }
+
+      #builder-controls {
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        background: rgba(0, 0, 0, 0.9);
+        padding: 15px;
+        border: 2px solid #ff0;
+        font-size: 12px;
+        min-width: 250px;
+      }
+
+      #builder-controls h3 {
+        margin-bottom: 10px;
+        color: #ff0;
+        border-bottom: 1px solid #ff0;
+        padding-bottom: 5px;
+      }
+
+      #builder-controls .control {
+        margin: 3px 0;
+      }
+
+      #builder-controls .key {
+        display: inline-block;
+        background: #333;
+        border: 1px solid #ff0;
+        padding: 2px 6px;
+        margin-right: 5px;
+        color: #ff0;
+        font-weight: bold;
+      }
+
       .hidden {
         display: none;
       }
@@ -78,7 +162,52 @@
       / (numpad): Turn Left<br />
       * (numpad): Turn Right<br />
       Arrow Keys: Alternative turning<br />
-      Space/0 (numpad): Shoot
+      Space/0 (numpad): Shoot<br />
+      +/-: Adjust Range
+    </div>
+
+    <div id="hud">
+      <h3>TANK STATUS</h3>
+      <div class="stat">
+        <span class="stat-label">Armor:</span>
+        <span class="stat-value" id="hud-armor">40/40</span>
+      </div>
+      <div class="bar">
+        <div class="bar-fill armor" id="hud-armor-bar" style="width: 100%"></div>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Shells:</span>
+        <span class="stat-value" id="hud-shells">40/40</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Mines:</span>
+        <span class="stat-value" id="hud-mines">0/40</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Trees:</span>
+        <span class="stat-value" id="hud-trees">0/40</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Range:</span>
+        <span class="stat-value" id="hud-range">7 tiles</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Builder:</span>
+        <span class="stat-value" id="hud-builder">In Tank</span>
+      </div>
+    </div>
+
+    <div id="builder-controls">
+      <h3>BUILDER CONTROLS</h3>
+      <div class="control"><span class="key">T</span> Harvest Trees (click tile)</div>
+      <div class="control"><span class="key">R</span> Build Road (click tile)</div>
+      <div class="control"><span class="key">W</span> Build Wall (click tile)</div>
+      <div class="control"><span class="key">B</span> Build Boat (click tile)</div>
+      <div class="control"><span class="key">M</span> Lay Mine (click tile)</div>
+      <div class="control"><span class="key">C</span> Recall Builder</div>
+      <div class="control" style="margin-top: 10px; color: #888;">
+        Click on map after pressing key
+      </div>
     </div>
 
     <script type="module" src="/src/main.ts"></script>

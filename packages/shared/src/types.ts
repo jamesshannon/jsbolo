@@ -62,7 +62,7 @@ export enum BuilderOrder {
 }
 
 /** Shell/bullet state */
-export interface Shell {
+export interface ShellState {
   id: number;
   x: number;
   y: number;
@@ -110,6 +110,7 @@ export interface Base {
 export interface MapCell {
   terrain: TerrainType;
   hasMine: boolean;
+  terrainLife: number; // Health points for destructible terrain
 }
 
 /** Player input state */

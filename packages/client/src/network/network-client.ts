@@ -115,10 +115,13 @@ export class NetworkClient {
 
   private handleUpdate(update: UpdateMessage): void {
     this.state.currentTick = update.tick;
-    this.state.tanks.clear();
 
-    for (const tank of update.tanks) {
-      this.state.tanks.set(tank.id, tank);
+    // Delta updates: merge changed entities instead of replacing all state
+    // Only update tanks that are included in the message
+    if (update.tanks) {
+      for (const tank of update.tanks) {
+        this.state.tanks.set(tank.id, tank);
+      }
     }
 
     if (this.onUpdateCallback) {

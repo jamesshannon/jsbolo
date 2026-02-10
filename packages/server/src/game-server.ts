@@ -16,9 +16,9 @@ export class GameServer {
   private readonly session: GameSession; // Single session for Phase 2
   private readonly connections = new Map<WebSocket, PlayerConnection>();
 
-  constructor(port: number) {
+  constructor(port: number, mapPath?: string) {
     this.wss = new WebSocketServer({port});
-    this.session = new GameSession();
+    this.session = new GameSession(mapPath);
 
     this.setupEventHandlers();
     console.log(`WebSocket server listening on port ${port}`);
@@ -61,6 +61,9 @@ export class GameServer {
       const message: ClientMessage = decodeClientMessage(data.toString());
 
       if (message.type === 'input' && message.input) {
+        if (message.input.accelerating || message.input.braking) {
+          console.log(`Player ${conn.playerId} input:`, message.input);
+        }
         conn.session.handlePlayerInput(conn.playerId, message.input);
       }
     } catch (error) {

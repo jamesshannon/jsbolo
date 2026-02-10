@@ -23,7 +23,23 @@
       "Bash(pnpm run proto:*)",
       "Bash(pnpm add:*)",
       "Bash(cat:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(git commit:*)",
+      "Bash(lsof:*)",
+      "Bash(pnpm run build:*)",
+      "WebFetch(domain:www.mikeash.com)",
+      "WebFetch(domain:www.winbolo.org)",
+      "Bash(npm run build:*)",
+      "Bash(npm start)",
+      "Bash(xxd:*)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(pkill:*)",
+      "Bash(xargs:*)",
+      "Bash(pnpm test:*)",
+      "Bash(/Users/jshannon/Projects/jsbolo/packages/server/TESTING.md << 'EOF'\n# Testing Framework\n\n## Overview\n\nComprehensive unit testing infrastructure using Vitest to prevent regressions and catch bugs before manual testing.\n\n## Test Coverage\n\n### Tank Movement \\(`src/simulation/__tests__/tank.test.ts`\\)\n- ✅ Forward/backward movement\n- ✅ Turning left/right\n- ✅ Terrain speed effects \\(grass, swamp, deep sea\\)\n- ✅ Collision detection \\(getting stuck on buildings\\)\n- ✅ Boat mechanics \\(onBoat flag, full speed on water\\)\n- ✅ Shooting and reload mechanics\n- ✅ Range adjustment\n\n### Shell Behavior \\(`src/simulation/__tests__/shell.test.ts`\\)\n- ✅ Shell movement and direction\n- ✅ Distance tracking\n- ✅ Dying at end of range\n- ✅ Out of bounds detection\n- ✅ Collision killing \\(shells disappear properly\\)\n- ✅ Tile position updates\n- ✅ Unique IDs and owner tracking\n\n### World Terrain \\(`src/simulation/__tests__/world.test.ts`\\)\n- ✅ Building health \\(1 hit to damage, 3 total to destroy\\)\n- ✅ Terrain degradation \\(building → shot building → rubble → crater\\)\n- ✅ Explosion damage \\(grass/road → crater, building → rubble\\)\n- ✅ Terrain passability \\(buildings block, roads allow\\)\n- ✅ Shell-terrain collision detection\n- ✅ Multi-point terrain sampling \\(5-point for tanks\\)\n- ✅ Mine explosions with radius damage\n- ✅ Boat terrain mechanics\n\n### Game Session \\(`src/__tests__/game-session.test.ts`\\)\n- ✅ Shell removal from game when dead\n- ✅ Always sending shells array \\(even if empty\\) to fix disappearing bug\n- ✅ Boat placement when spawning in water\n- ✅ Tank full speed when onBoat \\(prevents getting stuck\\)\n- ✅ Boat movement through water tiles\n- ✅ Boat stopping on land\n- ✅ Network state synchronization\n- ✅ Tank collision with buildings\n\n## Running Tests\n\n```bash\n# Run all tests\npnpm test\n\n# Run in watch mode \\(auto-rerun on file changes\\)\npnpm test:watch\n\n# Run with UI\npnpm test:ui\n\n# Run with coverage report\npnpm test:coverage\n```\n\n## Test-Driven Development Workflow\n\n### For New Features:\n1. Write tests FIRST describing expected behavior\n2. Run tests \\(they should fail\\)\n3. Implement feature\n4. Run tests until they pass\n5. Refactor with confidence\n\n### For Bug Fixes:\n1. Write a test that reproduces the bug \\(it should fail\\)\n2. Fix the bug\n3. Verify test now passes\n4. Test prevents regression\n\n## Major Bugs Prevented by Tests\n\n### Shells Not Disappearing\n- **Bug**: Shells stayed visible after hitting buildings\n- **Root Cause**: Server only sent shells array when non-empty\n- **Test**: `should always send shells array in updates \\(even if empty\\)`\n- **Prevention**: Test verifies shells array is ALWAYS present in updates\n\n### Tank Getting Stuck on Boat\n- **Bug**: Multi-point sampling detected DEEP_SEA ahead \\(speed 0\\), tank froze\n- **Root Cause**: Terrain sampling looked ahead before boat terrain was placed\n- **Test**: `should give tank full speed when onBoat`\n- **Prevention**: Test verifies tank has full speed when onBoat flag is true\n\n### Building Health Too High\n- **Bug**: Buildings took 14 hits to destroy instead of 3\n- **Root Cause**: Initial health values were too high\n- **Test**: `should damage building with direct hit \\(1 hit to degrade\\)`\n- **Prevention**: Test verifies exact health and degradation sequence\n\n### Boat Not Moving Through Water\n- **Bug**: Boat stopped in deep sea when tank moved to river\n- **Root Cause**: Boat movement logic only checked final tile, not all water\n- **Test**: `should move boat with tank through water tiles`\n- **Prevention**: Test verifies boat follows tank through deep sea → river → land\n\n## Test Maintenance\n\n- Add tests for EVERY new feature\n- Add tests for EVERY bug discovered\n- Run tests before requesting user testing\n- Keep tests simple and focused \\(one assertion per test when possible\\)\n- Use descriptive test names that explain the behavior being tested\n\n## CI/CD Integration \\(Future\\)\n\nTests should be run automatically on:\n- Every commit\n- Every pull request\n- Before deployment\n\nFail the build if tests don't pass.\nEOF)",
+      "Bash(npm test:*)",
+      "Bash(identify:*)",
+      "Bash(python3:*)"
     ]
   }
 }
