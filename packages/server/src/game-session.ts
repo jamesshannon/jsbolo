@@ -335,6 +335,16 @@ export class GameSession {
             console.log(`Tank ${tank.id} left boat at (${prevTile.x}, ${prevTile.y}), now on land at (${newTile.x}, ${newTile.y})`);
           }
         }
+      } else {
+        // Tank is NOT on boat - check if it should board an existing boat
+        const currentTile = tank.getTilePosition();
+        const currentTerrain = this.world.getTerrainAt(currentTile.x, currentTile.y);
+
+        // If tank is on a BOAT tile, board it
+        if (currentTerrain === 9) { // BOAT
+          tank.onBoat = true;
+          console.log(`Tank ${tank.id} boarded boat at (${currentTile.x}, ${currentTile.y})`);
+        }
       }
 
       // Handle shooting
