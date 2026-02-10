@@ -294,7 +294,6 @@ export class GameSession {
 
       // Track previous tank position for boat movement
       const prevTile = tank.getTilePosition();
-      const prevTerrain = this.world.getTerrainAt(prevTile.x, prevTile.y);
 
       tank.update(player.lastInput, terrainSpeed, checkCollision);
 
@@ -983,6 +982,7 @@ export class GameSession {
         y,
         terrain: cell.terrain,
         terrainLife: cell.terrainLife,
+        ...(cell.direction !== undefined && { direction: cell.direction }),
       });
     }
     this.terrainChanges.clear(); // Clear for next update

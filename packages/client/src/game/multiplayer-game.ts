@@ -197,6 +197,7 @@ export class MultiplayerGame {
           this.world.updateCell(terrainUpdate.x, terrainUpdate.y, {
             terrain: terrainUpdate.terrain,
             terrainLife: terrainUpdate.terrainLife,
+            ...(terrainUpdate.direction !== undefined && { direction: terrainUpdate.direction }),
           });
         }
       }

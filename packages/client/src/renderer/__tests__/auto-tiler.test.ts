@@ -359,3 +359,172 @@ describe('AutoTiler - Building Tiling', () => {
     expect(tile).toEqual({x: 6, y: 1});
   });
 });
+
+describe('AutoTiler - Boat Direction', () => {
+  describe('getBoatTile - Cardinal Directions', () => {
+    it('should return sprite (12, 6) for boat facing north (direction 0)', () => {
+      const tile = AutoTiler.getBoatTile(0);
+      expect(tile).toEqual({x: 12, y: 6});
+    });
+
+    it('should return sprite (10, 6) for boat facing east (direction 64)', () => {
+      const tile = AutoTiler.getBoatTile(64);
+      expect(tile).toEqual({x: 10, y: 6});
+    });
+
+    it('should return sprite (13, 6) for boat facing south (direction 128)', () => {
+      const tile = AutoTiler.getBoatTile(128);
+      expect(tile).toEqual({x: 13, y: 6});
+    });
+
+    it('should return sprite (11, 6) for boat facing west (direction 192)', () => {
+      const tile = AutoTiler.getBoatTile(192);
+      expect(tile).toEqual({x: 11, y: 6});
+    });
+  });
+
+  describe('getBoatTile - Boundary Cases', () => {
+    it('should return sprite (12, 6) for boat facing north (direction 16)', () => {
+      const tile = AutoTiler.getBoatTile(16);
+      expect(tile).toEqual({x: 12, y: 6});
+    });
+
+    it('should return sprite (12, 6) for boat facing north (direction 31 - just before east)', () => {
+      const tile = AutoTiler.getBoatTile(31);
+      expect(tile).toEqual({x: 12, y: 6});
+    });
+
+    it('should return sprite (10, 6) for boat facing east (direction 32 - start of east range)', () => {
+      const tile = AutoTiler.getBoatTile(32);
+      expect(tile).toEqual({x: 10, y: 6});
+    });
+
+    it('should return sprite (10, 6) for boat facing east (direction 95 - end of east range)', () => {
+      const tile = AutoTiler.getBoatTile(95);
+      expect(tile).toEqual({x: 10, y: 6});
+    });
+
+    it('should return sprite (13, 6) for boat facing south (direction 96 - start of south range)', () => {
+      const tile = AutoTiler.getBoatTile(96);
+      expect(tile).toEqual({x: 13, y: 6});
+    });
+
+    it('should return sprite (13, 6) for boat facing south (direction 159 - end of south range)', () => {
+      const tile = AutoTiler.getBoatTile(159);
+      expect(tile).toEqual({x: 13, y: 6});
+    });
+
+    it('should return sprite (11, 6) for boat facing west (direction 160 - start of west range)', () => {
+      const tile = AutoTiler.getBoatTile(160);
+      expect(tile).toEqual({x: 11, y: 6});
+    });
+
+    it('should return sprite (11, 6) for boat facing west (direction 223 - end of west range)', () => {
+      const tile = AutoTiler.getBoatTile(223);
+      expect(tile).toEqual({x: 11, y: 6});
+    });
+
+    it('should return sprite (12, 6) for boat facing north (direction 224 - wraps to north)', () => {
+      const tile = AutoTiler.getBoatTile(224);
+      expect(tile).toEqual({x: 12, y: 6});
+    });
+
+    it('should return sprite (12, 6) for boat facing north (direction 240)', () => {
+      const tile = AutoTiler.getBoatTile(240);
+      expect(tile).toEqual({x: 12, y: 6});
+    });
+
+    it('should return sprite (12, 6) for boat facing north (direction 255 - max value)', () => {
+      const tile = AutoTiler.getBoatTile(255);
+      expect(tile).toEqual({x: 12, y: 6});
+    });
+  });
+
+  describe('getBoatTile - Integration with Tank Disembark', () => {
+    it('should handle tank disembarking south (tank dir 128 → boat dir 0 → boat faces north)', () => {
+      // Tank moving south (128) hits land, boat faces opposite (north, 0)
+      const boatDirection = (128 + 128) % 256; // = 0
+      const tile = AutoTiler.getBoatTile(boatDirection);
+      expect(tile).toEqual({x: 12, y: 6}); // North-facing boat
+    });
+
+    it('should handle tank disembarking west (tank dir 192 → boat dir 64 → boat faces east)', () => {
+      // Tank moving west (192) hits land, boat faces opposite (east, 64)
+      const boatDirection = (192 + 128) % 256; // = 64
+      const tile = AutoTiler.getBoatTile(boatDirection);
+      expect(tile).toEqual({x: 10, y: 6}); // East-facing boat
+    });
+
+    it('should handle tank disembarking north (tank dir 0 → boat dir 128 → boat faces south)', () => {
+      // Tank moving north (0) hits land, boat faces opposite (south, 128)
+      const boatDirection = (0 + 128) % 256; // = 128
+      const tile = AutoTiler.getBoatTile(boatDirection);
+      expect(tile).toEqual({x: 13, y: 6}); // South-facing boat
+    });
+
+    it('should handle tank disembarking east (tank dir 64 → boat dir 192 → boat faces west)', () => {
+      // Tank moving east (64) hits land, boat faces opposite (west, 192)
+      const boatDirection = (64 + 128) % 256; // = 192
+      const tile = AutoTiler.getBoatTile(boatDirection);
+      expect(tile).toEqual({x: 11, y: 6}); // West-facing boat
+    });
+
+    it('should handle tank disembarking northeast (tank dir 32 → boat dir 160 → boat faces west)', () => {
+      // Tank moving northeast (32) hits land, boat faces southwest (160)
+      const boatDirection = (32 + 128) % 256; // = 160
+      const tile = AutoTiler.getBoatTile(boatDirection);
+      expect(tile).toEqual({x: 11, y: 6}); // West-facing boat (160 is in west range)
+    });
+
+    it('should handle tank disembarking southeast (tank dir 96 → boat dir 224 → boat faces north)', () => {
+      // Tank moving southeast (96) hits land, boat faces northwest (224)
+      const boatDirection = (96 + 128) % 256; // = 224
+      const tile = AutoTiler.getBoatTile(boatDirection);
+      expect(tile).toEqual({x: 12, y: 6}); // North-facing boat (224 wraps to north)
+    });
+
+    it('should handle tank disembarking southwest (tank dir 160 → boat dir 32 → boat faces east)', () => {
+      // Tank moving southwest (160) hits land, boat faces northeast (32)
+      const boatDirection = (160 + 128) % 256; // = 32
+      const tile = AutoTiler.getBoatTile(boatDirection);
+      expect(tile).toEqual({x: 10, y: 6}); // East-facing boat (32 is start of east range)
+    });
+
+    it('should handle tank disembarking northwest (tank dir 224 → boat dir 96 → boat faces south)', () => {
+      // Tank moving northwest (224) hits land, boat faces southeast (96)
+      const boatDirection = (224 + 128) % 256; // = 96
+      const tile = AutoTiler.getBoatTile(boatDirection);
+      expect(tile).toEqual({x: 13, y: 6}); // South-facing boat (96 is start of south range)
+    });
+  });
+
+  describe('getBoatTile - Direction Range Transitions', () => {
+    it('should transition from north to east correctly', () => {
+      const tile31 = AutoTiler.getBoatTile(31);
+      const tile32 = AutoTiler.getBoatTile(32);
+      expect(tile31).toEqual({x: 12, y: 6}); // North
+      expect(tile32).toEqual({x: 10, y: 6}); // East
+    });
+
+    it('should transition from east to south correctly', () => {
+      const tile95 = AutoTiler.getBoatTile(95);
+      const tile96 = AutoTiler.getBoatTile(96);
+      expect(tile95).toEqual({x: 10, y: 6}); // East
+      expect(tile96).toEqual({x: 13, y: 6}); // South
+    });
+
+    it('should transition from south to west correctly', () => {
+      const tile159 = AutoTiler.getBoatTile(159);
+      const tile160 = AutoTiler.getBoatTile(160);
+      expect(tile159).toEqual({x: 13, y: 6}); // South
+      expect(tile160).toEqual({x: 11, y: 6}); // West
+    });
+
+    it('should transition from west to north correctly', () => {
+      const tile223 = AutoTiler.getBoatTile(223);
+      const tile224 = AutoTiler.getBoatTile(224);
+      expect(tile223).toEqual({x: 11, y: 6}); // West
+      expect(tile224).toEqual({x: 12, y: 6}); // North
+    });
+  });
+});

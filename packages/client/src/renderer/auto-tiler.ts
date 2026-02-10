@@ -227,4 +227,35 @@ export class AutoTiler {
     // TODO: Implement full building auto-tiling (Orona lines 155-228)
     return {x: 6, y: 1}; // Isolated building
   }
+
+  /**
+   * Get sprite coordinates for a directional boat tile.
+   * Boats face the opposite direction from which the tank disembarked,
+   * so the stern (back) is against the land for easy re-boarding.
+   *
+   * Direction ranges: 0=north, 64=east, 128=south, 192=west (0-255)
+   * Sprite mappings (Orona base.png row 6, 0-indexed):
+   * - (12, 6): boat facing north
+   * - (10, 6): boat facing east
+   * - (13, 6): boat facing south
+   * - (11, 6): boat facing west
+   *
+   * @param direction The direction the boat is facing (0-255)
+   * @returns Sprite coordinates for the directional boat
+   */
+  static getBoatTile(direction: number): TileCoord {
+    if (direction >= 32 && direction < 96) {
+      // Boat faces EAST (64 ± 32)
+      return {x: 10, y: 6};
+    } else if (direction >= 96 && direction < 160) {
+      // Boat faces SOUTH (128 ± 32)
+      return {x: 13, y: 6};
+    } else if (direction >= 160 && direction < 224) {
+      // Boat faces WEST (192 ± 32)
+      return {x: 11, y: 6};
+    } else {
+      // Boat faces NORTH (0 ± 32 or 224-256)
+      return {x: 12, y: 6};
+    }
+  }
 }
