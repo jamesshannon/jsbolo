@@ -120,7 +120,8 @@ describe('GameSession Integration', () => {
   });
 
   describe('Boat Movement Mechanics', () => {
-    it('should place boat when tank spawns in water', () => {
+    it('should set onBoat=true when tank spawns in water (no BOAT tile)', () => {
+      // ASSUMPTION: Boat is "carried" by tank - no BOAT tile created at spawn
       const world = (session as any).world;
       const ws = createMockWebSocket();
       const playerId = session.addPlayer(ws);
@@ -128,20 +129,19 @@ describe('GameSession Integration', () => {
       const players = (session as any).players;
       const player = players.get(playerId);
 
-      // Manually place tank in deep sea and set up boat
+      // Manually place tank in deep sea
       world.setTerrainAt(50, 50, TerrainType.DEEP_SEA);
       player.tank.x = 50 * 256;
       player.tank.y = 50 * 256;
       player.tank.onBoat = true;
-      world.setTerrainAt(50, 50, TerrainType.BOAT);
 
       // Verify tank has onBoat flag
       expect(player.tank.onBoat).toBe(true);
 
-      // Verify terrain is BOAT
+      // Verify terrain is still DEEP_SEA (no BOAT tile created)
       const tankTile = player.tank.getTilePosition();
       const terrain = world.getTerrainAt(tankTile.x, tankTile.y);
-      expect(terrain).toBe(TerrainType.BOAT);
+      expect(terrain).toBe(TerrainType.DEEP_SEA);
     });
 
     it('should give tank full speed when onBoat (prevents getting stuck)', () => {
@@ -152,12 +152,11 @@ describe('GameSession Integration', () => {
       const players = (session as any).players;
       const player = players.get(playerId);
 
-      // Manually place tank in deep sea on a boat
+      // Manually place tank in deep sea on a boat (no BOAT tile, boat is carried)
       world.setTerrainAt(50, 50, TerrainType.DEEP_SEA);
       player.tank.x = 50 * 256;
       player.tank.y = 50 * 256;
       player.tank.onBoat = true;
-      world.setTerrainAt(50, 50, TerrainType.BOAT);
 
       // Verify tank has onBoat flag
       expect(player.tank.onBoat).toBe(true);
@@ -187,7 +186,8 @@ describe('GameSession Integration', () => {
       expect(player.tank.speed).toBeGreaterThan(initialSpeed);
     });
 
-    it('should move boat with tank through water tiles', () => {
+    it('should carry boat smoothly through water (no tile jumping)', () => {
+      // ASSUMPTION: Boat is "carried" by tank - no BOAT tiles created while moving
       const world = (session as any).world;
 
       // Set up water path: deep sea -> river -> deep sea
@@ -201,11 +201,11 @@ describe('GameSession Integration', () => {
       const players = (session as any).players;
       const player = players.get(playerId);
 
-      // Force tank to spawn at tile (10, 10)
-      player.tank.x = 10 * 256;
-      player.tank.y = 10 * 256;
+      // Force tank to spawn at center of tile (10, 10) with boat
+      player.tank.x = 10.5 * 256;
+      player.tank.y = 10.5 * 256;
       player.tank.onBoat = true;
-      world.setTerrainAt(10, 10, TerrainType.BOAT);
+      player.tank.speed = 12; // Give it initial speed
 
       // Move tank south (towards tile 11)
       player.tank.direction = 128; // South
@@ -222,7 +222,7 @@ describe('GameSession Integration', () => {
       player.lastInput = input;
 
       // Run updates until tank crosses to tile (10, 11)
-      for (let i = 0; i < 20; i++) {
+      for (let i = 0; i < 40; i++) {
         (session as any).update();
 
         const tankTile = player.tank.getTilePosition();
@@ -235,19 +235,20 @@ describe('GameSession Integration', () => {
       const tankTile = player.tank.getTilePosition();
       expect(tankTile.y).toBe(11);
 
-      // Boat should have moved to tile (10, 11)
-      expect(world.getTerrainAt(10, 11)).toBe(TerrainType.BOAT);
+      // Tank should still be on boat
+      expect(player.tank.onBoat).toBe(true);
 
-      // Previous tile (10, 10) should be restored to water
-      const prevTerrain = world.getTerrainAt(10, 10);
-      expect(prevTerrain === TerrainType.DEEP_SEA || prevTerrain === TerrainType.RIVER).toBe(true);
+      // No BOAT tiles should exist - boat is carried by tank
+      expect(world.getTerrainAt(10, 10)).toBe(TerrainType.DEEP_SEA);
+      expect(world.getTerrainAt(10, 11)).toBe(TerrainType.RIVER);
     });
 
-    it('should stop boat when tank reaches land', () => {
+    it('should leave BOAT tile when tank disembarks onto land', () => {
+      // ASSUMPTION: BOAT tiles only created when disembarking, always restored to RIVER
       const world = (session as any).world;
 
-      // Set up path: deep sea -> grass (land)
-      world.setTerrainAt(10, 10, TerrainType.DEEP_SEA);
+      // Set up path: river -> grass (coastline to land)
+      world.setTerrainAt(10, 10, TerrainType.RIVER);
       world.setTerrainAt(10, 11, TerrainType.GRASS);
 
       const ws = createMockWebSocket();
@@ -256,11 +257,11 @@ describe('GameSession Integration', () => {
       const players = (session as any).players;
       const player = players.get(playerId);
 
-      // Force tank to spawn at tile (10, 10) on boat
-      player.tank.x = 10 * 256;
-      player.tank.y = 10 * 256;
+      // Force tank to spawn at center of tile (10, 10) with boat
+      player.tank.x = 10.5 * 256;
+      player.tank.y = 10.5 * 256;
       player.tank.onBoat = true;
-      world.setTerrainAt(10, 10, TerrainType.BOAT);
+      player.tank.speed = 12; // Give it initial speed
 
       // Move tank south towards land
       player.tank.direction = 128; // South
@@ -277,7 +278,7 @@ describe('GameSession Integration', () => {
       player.lastInput = input;
 
       // Run updates until tank crosses to land
-      for (let i = 0; i < 30; i++) {
+      for (let i = 0; i < 40; i++) {
         (session as any).update();
 
         const tankTile = player.tank.getTilePosition();
@@ -293,7 +294,7 @@ describe('GameSession Integration', () => {
       // Tank should no longer be on boat
       expect(player.tank.onBoat).toBe(false);
 
-      // Boat should remain at previous water position (10, 10)
+      // Boat should be left at previous water position (10, 10)
       expect(world.getTerrainAt(10, 10)).toBe(TerrainType.BOAT);
 
       // Land tile should still be grass (no boat)

@@ -212,12 +212,11 @@ export class GameSession {
     const tank = new ServerTank(playerId, team, spawnX, spawnY);
 
     // Auto-place tank on boat if spawning in water (deep sea or river)
+    // ASSUMPTION: Boat is "carried" by tank - no BOAT tile created at spawn
+    // BOAT tiles only exist when tank disembarks onto land from water
     if (terrain === 10 || terrain === 1) {  // DEEP_SEA = 10, RIVER = 1
       tank.onBoat = true;
-      // Place boat terrain tile in the water so it persists when tank leaves
-      this.world.setTerrainAt(spawnX, spawnY, 9); // BOAT = 9
-      this.terrainChanges.add(`${spawnX},${spawnY}`);
-      console.log(`  -> Placed tank on boat (spawned in water), boat tile at (${spawnX}, ${spawnY})`);
+      console.log(`  -> Tank spawned on boat in water at (${spawnX}, ${spawnY}), no BOAT tile created`);
     }
 
     const player: Player = {
@@ -299,7 +298,10 @@ export class GameSession {
 
       tank.update(player.lastInput, terrainSpeed, checkCollision);
 
-      // Handle boat movement: boat follows tank through water, stops on land
+      // Handle boat movement: boat "carried" by tank, only exists as tile when disembarked
+      // ASSUMPTION: Boats can only be disembarked from RIVER terrain (coastlines).
+      // Deep sea is too far from shore to disembark onto land.
+      // Therefore, all BOAT tiles are always restored to RIVER when re-boarded.
       if (tank.onBoat) {
         const newTile = tank.getTilePosition();
         const newTerrain = this.world.getTerrainAt(newTile.x, newTile.y);
@@ -309,30 +311,16 @@ export class GameSession {
           const isWaterTerrain = (t: number) => t === 10 || t === 1 || t === 9; // DEEP_SEA, RIVER, BOAT
 
           if (isWaterTerrain(newTerrain)) {
-            // Tank still in water - move boat to new position
-            // First, restore previous tile to its original water type
-            if (prevTerrain === 9) { // Was BOAT
-              // Determine what water type to restore (deep sea or river)
-              // Check neighbors to guess original water type
-              const neighbors = [
-                this.world.getTerrainAt(prevTile.x - 1, prevTile.y),
-                this.world.getTerrainAt(prevTile.x + 1, prevTile.y),
-                this.world.getTerrainAt(prevTile.x, prevTile.y - 1),
-                this.world.getTerrainAt(prevTile.x, prevTile.y + 1),
-              ];
-              const hasRiver = neighbors.some(t => t === 1);
-              this.world.setTerrainAt(prevTile.x, prevTile.y, hasRiver ? 1 : 10); // RIVER or DEEP_SEA
-              this.terrainChanges.add(`${prevTile.x},${prevTile.y}`);
-            }
-
-            // Place boat at new position
-            this.world.setTerrainAt(newTile.x, newTile.y, 9); // BOAT
-            this.terrainChanges.add(`${newTile.x},${newTile.y}`);
+            // Tank still in water - boat is "carried" by the tank
+            // NO terrain changes - boat moves smoothly with tank, no tile jumping
           } else {
-            // Tank moved onto land - leave boat behind
+            // Tank moved onto land - disembark and leave boat behind
             tank.onBoat = false;
-            // Boat terrain tile stays at previous water position
-            console.log(`Tank ${tank.id} left boat at (${prevTile.x}, ${prevTile.y}), now on land at (${newTile.x}, ${newTile.y})`);
+            // Place BOAT tile at the water position tank just left
+            // (Assumption: this is always RIVER since you can't disembark from deep sea)
+            this.world.setTerrainAt(prevTile.x, prevTile.y, 9); // BOAT
+            this.terrainChanges.add(`${prevTile.x},${prevTile.y}`);
+            console.log(`Tank ${tank.id} disembarked at (${newTile.x}, ${newTile.y}), left boat at (${prevTile.x}, ${prevTile.y})`);
           }
         }
       } else {
@@ -340,10 +328,13 @@ export class GameSession {
         const currentTile = tank.getTilePosition();
         const currentTerrain = this.world.getTerrainAt(currentTile.x, currentTile.y);
 
-        // If tank is on a BOAT tile, board it
+        // If tank is on a BOAT tile, board it and restore terrain
         if (currentTerrain === 9) { // BOAT
           tank.onBoat = true;
-          console.log(`Tank ${tank.id} boarded boat at (${currentTile.x}, ${currentTile.y})`);
+          // Remove BOAT tile and restore to RIVER (see assumption above)
+          this.world.setTerrainAt(currentTile.x, currentTile.y, 1); // RIVER
+          this.terrainChanges.add(`${currentTile.x},${currentTile.y}`);
+          console.log(`Tank ${tank.id} boarded boat at (${currentTile.x}, ${currentTile.y}), restored RIVER terrain`);
         }
       }
 

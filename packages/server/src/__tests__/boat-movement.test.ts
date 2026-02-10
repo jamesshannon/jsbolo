@@ -30,8 +30,8 @@ describe('Boat Movement', () => {
   });
 
   describe('Boat Boarding', () => {
-    it('should set onBoat=true when tank spawns on deep sea', () => {
-      // Manually place deep sea and spawn tank there
+    it('should set onBoat=true when tank spawns on water (no BOAT tile created)', () => {
+      // ASSUMPTION: Boat is "carried" by tank - no BOAT tile at spawn
       session['world'].setTerrainAt(128, 128, TerrainType.DEEP_SEA);
 
       const playerId = session.addPlayer(mockWs, 0);
@@ -42,18 +42,20 @@ describe('Boat Movement', () => {
       player.tank.y = 128.5 * 256;
       session['world'].setTerrainAt(128, 128, TerrainType.DEEP_SEA);
 
-      // Simulate respawn logic
+      // Simulate respawn logic (no BOAT tile created)
       const terrain = session['world'].getTerrainAt(128, 128);
       if (terrain === TerrainType.DEEP_SEA || terrain === TerrainType.RIVER) {
         player.tank.onBoat = true;
-        session['world'].setTerrainAt(128, 128, TerrainType.BOAT);
       }
 
       expect(player.tank.onBoat).toBe(true);
-      expect(session['world'].getTerrainAt(128, 128)).toBe(TerrainType.BOAT);
+      // No BOAT tile should exist - boat is carried by tank
+      expect(session['world'].getTerrainAt(128, 128)).toBe(TerrainType.DEEP_SEA);
     });
 
-    it('should set onBoat=true when tank moves onto an existing BOAT tile', () => {
+    it('should board existing BOAT tile and restore to RIVER', () => {
+      // ASSUMPTION: All BOAT tiles are restored to RIVER when boarded
+      // (boats can only be disembarked from coastlines, not deep sea)
       const playerId = session.addPlayer(mockWs, 0);
       const player = session['players'].get(playerId)!;
 
@@ -63,22 +65,20 @@ describe('Boat Movement', () => {
       player.tank.onBoat = false;
       session['world'].setTerrainAt(100, 100, TerrainType.GRASS);
 
-      // Place boat tile nearby
+      // Place boat tile nearby (left behind from previous disembark)
       session['world'].setTerrainAt(101, 100, TerrainType.BOAT);
 
       // Move tank onto boat tile
       player.tank.x = 101.5 * 256;
       player.tank.y = 100.5 * 256;
 
-      // THIS IS THE BUG: onBoat should be set to true when entering BOAT tile
-      // Currently it stays false
-      const currentTile = player.tank.getTilePosition();
-      const terrain = session['world'].getTerrainAt(currentTile.x, currentTile.y);
+      // Trigger boarding logic
+      session['update']();
 
-      // Expected: tank should detect it's on a BOAT tile and set onBoat=true
-      expect(terrain).toBe(TerrainType.BOAT);
-      // This will fail with current implementation:
-      // expect(player.tank.onBoat).toBe(true);
+      // Tank should have boarded
+      expect(player.tank.onBoat).toBe(true);
+      // BOAT tile should be removed and restored to RIVER
+      expect(session['world'].getTerrainAt(101, 100)).toBe(TerrainType.RIVER);
     });
   });
 
@@ -166,17 +166,19 @@ describe('Boat Movement', () => {
   });
 
   describe('Boat Following Tank', () => {
-    it('should move boat with tank when tank moves to adjacent water tile', () => {
+    it('should carry boat smoothly through water (no tile jumping)', () => {
+      // ASSUMPTION: Boat is "carried" by tank - no BOAT tiles created while moving through water
       const playerId = session.addPlayer(mockWs, 0);
       const player = session['players'].get(playerId)!;
 
-      // Place tank on boat
+      // Tank starts on water with boat
       player.tank.x = 128.5 * 256;
       player.tank.y = 128.5 * 256;
-      player.tank.onBoat = true;
+      player.tank.onBoat = false; // Start not on boat
       player.tank.direction = 0; // Facing east
       player.tank.speed = 12; // Give it speed
 
+      // Place a BOAT tile (left from previous disembark)
       session['world'].setTerrainAt(128, 128, TerrainType.BOAT);
       session['world'].setTerrainAt(129, 128, TerrainType.DEEP_SEA);
 
@@ -203,20 +205,23 @@ describe('Boat Movement', () => {
 
       expect(moved).toBe(true); // Verify tank actually moved
 
-      // Boat should have moved
-      expect(session['world'].getTerrainAt(129, 128)).toBe(TerrainType.BOAT);
-      expect(session['world'].getTerrainAt(128, 128)).toBe(TerrainType.DEEP_SEA); // Original restored
+      // Tank should be on boat (boarded the BOAT tile at start)
       expect(player.tank.onBoat).toBe(true);
+      // BOAT tile at origin should be restored to RIVER
+      expect(session['world'].getTerrainAt(128, 128)).toBe(TerrainType.RIVER);
+      // No BOAT tile at destination - boat is carried by tank
+      expect(session['world'].getTerrainAt(129, 128)).toBe(TerrainType.DEEP_SEA);
     });
 
-    it('should restore original water type when boat moves', () => {
+    it('should restore BOAT tile to RIVER when boarding', () => {
+      // ASSUMPTION: All BOAT tiles restore to RIVER (boats only disembarked from coastlines)
       const playerId = session.addPlayer(mockWs, 0);
       const player = session['players'].get(playerId)!;
 
-      // Place boat on river (not deep sea)
+      // Tank starts on BOAT tile, not yet boarded
       player.tank.x = 128.5 * 256;
       player.tank.y = 128.5 * 256;
-      player.tank.onBoat = true;
+      player.tank.onBoat = false; // Will board when update() is called
       player.tank.direction = 0; // Facing east
       player.tank.speed = 12;
 
@@ -248,24 +253,25 @@ describe('Boat Movement', () => {
 
       expect(moved).toBe(true);
 
-      // Original tile should restore to RIVER (not DEEP_SEA)
+      // BOAT tile should be restored to RIVER when boarded
       expect(session['world'].getTerrainAt(128, 128)).toBe(TerrainType.RIVER);
     });
   });
 
   describe('Disembarking', () => {
-    it('should set onBoat=false when tank moves onto land', () => {
+    it('should place BOAT tile when tank disembarks onto land', () => {
+      // ASSUMPTION: Disembarking only happens from RIVER (coastlines), creates BOAT tile
       const playerId = session.addPlayer(mockWs, 0);
       const player = session['players'].get(playerId)!;
 
-      // Place tank on boat next to grass
+      // Tank on boat in river next to grass (coastline)
       player.tank.x = 128.5 * 256;
       player.tank.y = 128.5 * 256;
-      player.tank.onBoat = true;
+      player.tank.onBoat = true; // Carrying boat
       player.tank.direction = 0; // Facing east
       player.tank.speed = 12; // Give it speed
 
-      session['world'].setTerrainAt(128, 128, TerrainType.BOAT);
+      session['world'].setTerrainAt(128, 128, TerrainType.RIVER);
       session['world'].setTerrainAt(129, 128, TerrainType.GRASS);
 
       // Actually move tank east onto grass
@@ -301,11 +307,12 @@ describe('Boat Movement', () => {
   });
 
   describe('Re-boarding', () => {
-    it('should allow tank to re-board boat after disembarking', () => {
+    it('should board BOAT tile and restore to RIVER', () => {
+      // ASSUMPTION: Re-boarding removes BOAT tile and restores to RIVER
       const playerId = session.addPlayer(mockWs, 0);
       const player = session['players'].get(playerId)!;
 
-      // Setup: boat at (128, 128), grass at (129, 128)
+      // Setup: boat at (128, 128) left from previous disembark, grass at (129, 128)
       session['world'].setTerrainAt(128, 128, TerrainType.BOAT);
       session['world'].setTerrainAt(129, 128, TerrainType.GRASS);
 
@@ -317,40 +324,35 @@ describe('Boat Movement', () => {
       // Move tank back onto boat
       player.tank.x = 128.5 * 256;
 
-      // Need to manually trigger the boarding logic (this is the fix we'll add)
-      const currentTile = player.tank.getTilePosition();
-      const terrain = session['world'].getTerrainAt(currentTile.x, currentTile.y);
-      if (terrain === TerrainType.BOAT && !player.tank.onBoat) {
-        player.tank.onBoat = true;
-      }
-
+      // Trigger boarding logic
       session['update']();
 
-      // Tank should be back on boat
+      // Tank should be on boat
       expect(player.tank.onBoat).toBe(true);
-      expect(session['world'].getTerrainAt(128, 128)).toBe(TerrainType.BOAT);
+      // BOAT tile should be removed and restored to RIVER
+      expect(session['world'].getTerrainAt(128, 128)).toBe(TerrainType.RIVER);
     });
   });
 
   describe('Edge Cases', () => {
-    it('should correctly restore deep sea when boat moves across deep sea tiles', () => {
+    it('should move smoothly through deep sea without creating tiles', () => {
+      // ASSUMPTION: Boat carried by tank through deep sea - no tiles created
       const playerId = session.addPlayer(mockWs, 0);
       const player = session['players'].get(playerId)!;
 
-      // Boat on deep sea - surround with deep sea so heuristic works correctly
+      // Tank on boat in deep sea
       player.tank.x = 128.5 * 256;
       player.tank.y = 128.5 * 256;
-      player.tank.onBoat = true;
+      player.tank.onBoat = true; // Carrying boat
       player.tank.direction = 0; // Facing east
       player.tank.speed = 12; // Give it speed
 
-      // Set up deep sea area, then place boat
+      // Deep sea area
       session['world'].setTerrainAt(127, 128, TerrainType.DEEP_SEA);
-      session['world'].setTerrainAt(128, 128, TerrainType.BOAT);
-      session['world'].setTerrainAt(129, 128, TerrainType.DEEP_SEA); // Deep sea, not river
-      session['world'].setTerrainAt(130, 128, TerrainType.RIVER); // River further away
+      session['world'].setTerrainAt(128, 128, TerrainType.DEEP_SEA);
+      session['world'].setTerrainAt(129, 128, TerrainType.DEEP_SEA);
 
-      // Actually move tank east onto river
+      // Actually move tank east through deep sea
       player.lastInput = {
         sequence: 1,
         tick: 1,
@@ -373,11 +375,11 @@ describe('Boat Movement', () => {
 
       expect(moved).toBe(true); // Verify tank actually moved
 
-      // Tank moved to new deep sea tile, boat should have followed
-      expect(session['world'].getTerrainAt(128, 128)).toBe(TerrainType.DEEP_SEA); // Restored to deep sea
-      // Boat should be at new position
-      expect(session['world'].getTerrainAt(129, 128)).toBe(TerrainType.BOAT);
+      // Tank still on boat
       expect(player.tank.onBoat).toBe(true);
+      // No BOAT tiles created - boat is carried by tank
+      expect(session['world'].getTerrainAt(128, 128)).toBe(TerrainType.DEEP_SEA);
+      expect(session['world'].getTerrainAt(129, 128)).toBe(TerrainType.DEEP_SEA);
     });
 
     it('should allow tank to move off boat onto river without getting stuck', () => {
