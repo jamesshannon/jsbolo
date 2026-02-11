@@ -17,7 +17,7 @@ import {
   SOUND_TANK_SINKING,
   TILE_SIZE_WORLD,
   type SoundEvent,
-} from '@shared';
+} from '@jsbolo/shared';
 
 // Distance thresholds (in world units)
 const NEAR_DISTANCE = TILE_SIZE_WORLD * 15; // 15 tiles
