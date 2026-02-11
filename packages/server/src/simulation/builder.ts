@@ -100,6 +100,7 @@ export class ServerBuilder {
   ): void {
     // Cannot dispatch builder during respawn delay
     if (this.isDead()) {
+      console.log(`[BUILDER] Cannot send builder ${this.id} - respawning (${this.respawnCounter} ticks remaining)`);
       return;
     }
 

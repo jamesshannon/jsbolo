@@ -87,6 +87,7 @@ export class ServerTank {
 
     // Handle builder orders
     if (input.buildOrder) {
+      console.log(`[BUILD ORDER] Tank ${this.id} sending builder to (${input.buildOrder.targetX}, ${input.buildOrder.targetY}) with action ${input.buildOrder.action}`);
       this.builder.sendToLocation(
         input.buildOrder.targetX,
         input.buildOrder.targetY,

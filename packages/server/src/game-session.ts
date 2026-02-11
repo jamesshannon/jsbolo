@@ -838,6 +838,7 @@ export class GameSession {
             }
           } else {
             // Done harvesting or invalid terrain
+            console.log(`[BUILDER] Cannot harvest at (${builderTile.x}, ${builderTile.y}): terrain=${terrain} (need 5), trees=${builder.trees} (max 40)`);
             builder.recallToTank(tank.x, tank.y);
           }
           break;
