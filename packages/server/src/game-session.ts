@@ -402,6 +402,9 @@ export class GameSession {
 
       // Handle builder tasks (only if alive)
       if (!tank.builder.isDead()) {
+        // Update builder movement and state
+        tank.builder.update(tank.x, tank.y);
+        // Handle builder work tasks
         this.updateBuilder(tank);
       }
 
@@ -666,6 +669,12 @@ export class GameSession {
       this.terrainChanges.add(`${tilePos.x},${tilePos.y}`);
       shell.killByCollision(); // Collision kills don't explode
       console.log(`Shell ${shell.id} hit terrain at (${tilePos.x}, ${tilePos.y}), terrain destroyed: ${destroyed}`);
+
+      // Start regrowth timer if a forest was destroyed
+      if (terrainBeforeCheck === TerrainType.FOREST) {
+        const tileKey = `${tilePos.x},${tilePos.y}`;
+        this.forestRegrowthTimers.set(tileKey, FOREST_REGROWTH_TICKS);
+      }
     }
   }
 
@@ -808,6 +817,7 @@ export class GameSession {
     if (builder.isWorking()) {
       const builderTile = builder.getTilePosition();
       const terrain = this.world.getTerrainAt(builderTile.x, builderTile.y);
+      console.log(`[BUILDER] Builder ${builder.id} working at (${builderTile.x}, ${builderTile.y}), order=${builder.order}, terrain=${terrain}`);
 
       // Handle different builder orders
       switch (builder.order) {
@@ -822,6 +832,7 @@ export class GameSession {
               // Start regrowth timer for this tile
               const tileKey = `${builderTile.x},${builderTile.y}`;
               this.forestRegrowthTimers.set(tileKey, FOREST_REGROWTH_TICKS);
+              console.log(`[REGROWTH] Started regrowth timer for (${builderTile.x}, ${builderTile.y}) with ${FOREST_REGROWTH_TICKS} ticks`);
             }
           } else {
             // Done harvesting or invalid terrain
@@ -908,10 +919,14 @@ export class GameSession {
 
       if (newRemainingTicks <= 0) {
         // Timer expired - regrow forest
+        console.log(`[REGROWTH] Timer expired for ${tileKey}, will regrow`);
         tilesToRegrow.push(tileKey);
       } else {
         // Update timer
         this.forestRegrowthTimers.set(tileKey, newRemainingTicks);
+        if (newRemainingTicks % 100 === 0) {
+          console.log(`[REGROWTH] Timer for ${tileKey}: ${newRemainingTicks} ticks remaining`);
+        }
       }
     }
 
@@ -920,10 +935,13 @@ export class GameSession {
       const [x, y] = tileKey.split(',').map(Number);
       const terrain = this.world.getTerrainAt(x, y);
 
+      console.log(`[REGROWTH] Attempting to regrow ${tileKey}, current terrain=${terrain}`);
+
       // Regrow forest if tile is still grass or crater (might have been built on)
       if (terrain === TerrainType.GRASS || terrain === TerrainType.CRATER) {
         this.world.setTerrainAt(x, y, TerrainType.FOREST);
         this.terrainChanges.add(tileKey);
+        console.log(`[REGROWTH] Regrew forest at ${tileKey}`);
       }
 
       // Remove timer regardless of whether we regrowed (tile might have changed)
