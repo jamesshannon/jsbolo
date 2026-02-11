@@ -47,7 +47,8 @@
       "Bash(grep:*)",
       "Bash(npx vitest run:*)",
       "Bash(ls:*)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(cut:*)"
     ]
   }
 }

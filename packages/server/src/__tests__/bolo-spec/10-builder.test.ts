@@ -509,12 +509,111 @@ describe('Bolo Manual Spec: 10. Builder / Man', () => {
 
   describe('10h. Forest Regrowth', () => {
     // "Forests grow all the time, so trees you farm will be replenished slowly"
-    it.skip('should slowly regrow harvested forest tiles over time', () => {
-      // Forest regrowth not yet implemented
+    it('should slowly regrow harvested forest tiles over time', () => {
+      const session = new GameSession();
+      const ws = createMockWebSocket();
+      const id = session.addPlayer(ws);
+      const player = getPlayer(session, id);
+      const world = getWorld(session);
+
+      // Place forest tile
+      world.setTerrainAt(50, 50, TerrainType.FOREST);
+      placeTankAtTile(player.tank, 50, 50);
+
+      // Setup builder at the forest tile, ready to harvest
+      player.tank.builder.x = (50 + 0.5) * TILE_SIZE_WORLD;
+      player.tank.builder.y = (50 + 0.5) * TILE_SIZE_WORLD;
+      player.tank.builder.targetX = player.tank.builder.x;
+      player.tank.builder.targetY = player.tank.builder.y;
+      player.tank.builder.order = BuilderOrder.HARVESTING;
+      player.tank.builder.trees = 0;
+      player.tank.trees = 0;
+
+      // Run until forest is harvested (every 10 ticks)
+      for (let i = 0; i < 20; i++) {
+        tickSession(session, 1);
+        if (world.getTerrainAt(50, 50) === TerrainType.GRASS) break;
+      }
+
+      // Verify forest was harvested to grass
+      expect(world.getTerrainAt(50, 50)).toBe(TerrainType.GRASS);
+      expect(player.tank.trees).toBeGreaterThan(0);
+
+      // Run for regrowth timer (500 ticks)
+      for (let i = 0; i < 500; i++) {
+        tickSession(session, 1);
+      }
+
+      // Verify forest has regrown
+      expect(world.getTerrainAt(50, 50)).toBe(TerrainType.FOREST);
     });
 
-    it.skip('should convert GRASS back to FOREST after regrowth timer', () => {
-      // Forest regrowth not yet implemented
+    it('should convert GRASS back to FOREST after regrowth timer', () => {
+      const session = new GameSession();
+      const ws = createMockWebSocket();
+      const id = session.addPlayer(ws);
+      const player = getPlayer(session, id);
+      const world = getWorld(session);
+
+      // Place multiple forest tiles
+      world.setTerrainAt(50, 50, TerrainType.FOREST);
+      world.setTerrainAt(51, 50, TerrainType.FOREST);
+      world.setTerrainAt(52, 50, TerrainType.FOREST);
+      placeTankAtTile(player.tank, 50, 50);
+
+      player.tank.trees = 0;
+      player.tank.builder.trees = 0;
+
+      // Harvest first forest
+      player.tank.builder.x = (50 + 0.5) * TILE_SIZE_WORLD;
+      player.tank.builder.y = (50 + 0.5) * TILE_SIZE_WORLD;
+      player.tank.builder.targetX = player.tank.builder.x;
+      player.tank.builder.targetY = player.tank.builder.y;
+      player.tank.builder.order = BuilderOrder.HARVESTING;
+      for (let i = 0; i < 20; i++) {
+        tickSession(session, 1);
+        if (world.getTerrainAt(50, 50) === TerrainType.GRASS) break;
+      }
+      expect(world.getTerrainAt(50, 50)).toBe(TerrainType.GRASS);
+
+      // Harvest second forest
+      player.tank.builder.x = (51 + 0.5) * TILE_SIZE_WORLD;
+      player.tank.builder.y = (50 + 0.5) * TILE_SIZE_WORLD;
+      player.tank.builder.targetX = player.tank.builder.x;
+      player.tank.builder.targetY = player.tank.builder.y;
+      player.tank.builder.order = BuilderOrder.HARVESTING;
+      for (let i = 0; i < 20; i++) {
+        tickSession(session, 1);
+        if (world.getTerrainAt(51, 50) === TerrainType.GRASS) break;
+      }
+      expect(world.getTerrainAt(51, 50)).toBe(TerrainType.GRASS);
+
+      // Harvest third forest
+      player.tank.builder.x = (52 + 0.5) * TILE_SIZE_WORLD;
+      player.tank.builder.y = (50 + 0.5) * TILE_SIZE_WORLD;
+      player.tank.builder.targetX = player.tank.builder.x;
+      player.tank.builder.targetY = player.tank.builder.y;
+      player.tank.builder.order = BuilderOrder.HARVESTING;
+      for (let i = 0; i < 20; i++) {
+        tickSession(session, 1);
+        if (world.getTerrainAt(52, 50) === TerrainType.GRASS) break;
+      }
+      expect(world.getTerrainAt(52, 50)).toBe(TerrainType.GRASS);
+
+      // All three should be grass now
+      expect(world.getTerrainAt(50, 50)).toBe(TerrainType.GRASS);
+      expect(world.getTerrainAt(51, 50)).toBe(TerrainType.GRASS);
+      expect(world.getTerrainAt(52, 50)).toBe(TerrainType.GRASS);
+
+      // Run for regrowth timer (500 ticks + buffer for already elapsed time)
+      for (let i = 0; i < 550; i++) {
+        tickSession(session, 1);
+      }
+
+      // All three should have regrown to forest
+      expect(world.getTerrainAt(50, 50)).toBe(TerrainType.FOREST);
+      expect(world.getTerrainAt(51, 50)).toBe(TerrainType.FOREST);
+      expect(world.getTerrainAt(52, 50)).toBe(TerrainType.FOREST);
     });
   });
 });

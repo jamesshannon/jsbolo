@@ -53,6 +53,9 @@ export const BUILDER_BOAT_COST = 5; // trees per boat
 export const BUILDER_PILLBOX_COST = 1; // trees per pillbox
 export const BUILDER_WAIT_TICKS = 20; // pause after building
 
+/** Forest regrowth */
+export const FOREST_REGROWTH_TICKS = 500; // ticks for grass to regrow to forest (10 seconds)
+
 /** Pillbox constants */
 export const PILLBOX_MAX_ARMOR = 15;
 export const PILLBOX_STARTING_ARMOR = 15;

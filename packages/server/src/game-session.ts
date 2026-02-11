@@ -15,6 +15,7 @@ import {
   WATER_MINES_DRAINED,
   BUILDER_WALL_COST,
   BUILDER_BOAT_COST,
+  FOREST_REGROWTH_TICKS,
   SOUND_SHOOTING,
   SOUND_SHOT_BUILDING,
   SOUND_SHOT_TREE,
@@ -57,6 +58,7 @@ export class GameSession {
   private readonly bases = new Map<number, ServerBase>();
   private readonly terrainChanges = new Set<string>(); // Track terrain changes as "x,y"
   private readonly soundEvents: SoundEvent[] = [];
+  private readonly forestRegrowthTimers = new Map<string, number>(); // Track forest regrowth as "x,y" -> remaining ticks
   private nextPlayerId = 1;
   private tick = 0;
   private running = false;
@@ -580,6 +582,9 @@ export class GameSession {
       }
     }
 
+    // Update forest regrowth
+    this.updateForestRegrowth();
+
     // Broadcast state to all players (throttled to reduce CPU usage)
     if (this.tick % this.BROADCAST_INTERVAL === 0) {
       this.broadcastState();
@@ -766,6 +771,9 @@ export class GameSession {
               this.world.setTerrainAt(builderTile.x, builderTile.y, 7); // GRASS (7, not 0!)
               tank.trees = builder.trees; // Sync with tank
               this.emitSound(SOUND_FARMING_TREE, builder.x, builder.y);
+              // Start regrowth timer for this tile
+              const tileKey = `${builderTile.x},${builderTile.y}`;
+              this.forestRegrowthTimers.set(tileKey, FOREST_REGROWTH_TICKS);
             }
           } else {
             // Done harvesting or invalid terrain
@@ -837,6 +845,41 @@ export class GameSession {
           // Other orders not yet implemented
           break;
       }
+    }
+  }
+
+  /**
+   * Update forest regrowth timers and convert grass back to forest
+   */
+  private updateForestRegrowth(): void {
+    const tilesToRegrow: string[] = [];
+
+    // Decrement all regrowth timers
+    for (const [tileKey, remainingTicks] of this.forestRegrowthTimers) {
+      const newRemainingTicks = remainingTicks - 1;
+
+      if (newRemainingTicks <= 0) {
+        // Timer expired - regrow forest
+        tilesToRegrow.push(tileKey);
+      } else {
+        // Update timer
+        this.forestRegrowthTimers.set(tileKey, newRemainingTicks);
+      }
+    }
+
+    // Regrow forests
+    for (const tileKey of tilesToRegrow) {
+      const [x, y] = tileKey.split(',').map(Number);
+      const terrain = this.world.getTerrainAt(x, y);
+
+      // Only regrow if tile is still grass (might have been built on)
+      if (terrain === TerrainType.GRASS) {
+        this.world.setTerrainAt(x, y, TerrainType.FOREST);
+        this.terrainChanges.add(tileKey);
+      }
+
+      // Remove timer regardless of whether we regrowed (tile might have changed)
+      this.forestRegrowthTimers.delete(tileKey);
     }
   }
 
