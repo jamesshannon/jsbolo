@@ -2,19 +2,22 @@
  * Builder input handling
  */
 
-import {BuildAction} from '@shared';
+import {BuildAction, TILE_SIZE_PIXELS} from '@shared';
+import type {Camera} from '../renderer/camera.js';
 
 export class BuilderInput {
   private pendingAction: BuildAction = BuildAction.NONE;
   private canvas: HTMLCanvasElement;
+  private camera: Camera;
   private onBuildCommand?: (
     action: BuildAction,
     tileX: number,
     tileY: number
   ) => void;
 
-  constructor(canvas: HTMLCanvasElement) {
+  constructor(canvas: HTMLCanvasElement, camera: Camera) {
     this.canvas = canvas;
+    this.camera = camera;
     this.setupEventListeners();
   }
 
@@ -67,13 +70,15 @@ export class BuilderInput {
     const canvasX = event.clientX - rect.left;
     const canvasY = event.clientY - rect.top;
 
-    // Convert canvas coordinates to tile coordinates
-    // This is a simplified version - we need camera position for accurate conversion
-    const tileX = Math.floor(canvasX / 32); // TILE_SIZE_PIXELS
-    const tileY = Math.floor(canvasY / 32);
+    // Convert canvas coordinates to world pixel coordinates using camera
+    const worldPos = this.camera.screenToWorld(canvasX, canvasY);
+
+    // Convert world pixel coordinates to world tile coordinates
+    const tileX = Math.floor(worldPos.x / TILE_SIZE_PIXELS);
+    const tileY = Math.floor(worldPos.y / TILE_SIZE_PIXELS);
 
     console.log(
-      `Builder command: ${this.pendingAction} at tile (${tileX}, ${tileY})`
+      `Builder command: ${this.pendingAction} at canvas (${Math.floor(canvasX)}, ${Math.floor(canvasY)}) -> world tile (${tileX}, ${tileY})`
     );
 
     if (this.onBuildCommand) {

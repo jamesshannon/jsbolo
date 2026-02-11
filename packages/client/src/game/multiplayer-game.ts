@@ -52,8 +52,8 @@ export class MultiplayerGame {
     ctx: CanvasRenderingContext2D
   ) {
     this.input = new KeyboardInput();
-    this.builderInput = new BuilderInput(canvas);
     this.camera = new Camera(canvas.width, canvas.height);
+    this.builderInput = new BuilderInput(canvas, this.camera);
     this.renderer = new Renderer(ctx, this.camera);
     this.world = new World();
     this.network = new NetworkClient();
@@ -61,12 +61,7 @@ export class MultiplayerGame {
     this.soundManager = new SoundManager();
 
     // Setup builder command handler
-    this.builderInput.setBuildCommandHandler((action, canvasTileX, canvasTileY) => {
-      // Convert canvas tile coordinates to world tile coordinates using camera
-      const camPos = this.camera.getPosition();
-      const worldTileX = Math.floor((canvasTileX * TILE_SIZE_PIXELS + camPos.x) / TILE_SIZE_PIXELS);
-      const worldTileY = Math.floor((canvasTileY * TILE_SIZE_PIXELS + camPos.y) / TILE_SIZE_PIXELS);
-
+    this.builderInput.setBuildCommandHandler((action, worldTileX, worldTileY) => {
       console.log(`Sending builder to world tile (${worldTileX}, ${worldTileY}) with action ${action}`);
 
       // Send build order to server
