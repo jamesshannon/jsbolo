@@ -47,6 +47,7 @@ export interface TerrainUpdate {
   y: number;
   terrain: number;
   terrainLife: number;
+  direction?: number;
 }
 
 export interface SoundEvent {

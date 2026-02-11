@@ -16,6 +16,7 @@ import {Renderer} from '../renderer/renderer.js';
 import {World} from '../world/world.js';
 import {NetworkClient} from '../network/network-client.js';
 import {DebugOverlay} from '../debug/debug-overlay.js';
+import {SoundManager} from '../audio/sound-manager.js';
 
 export class MultiplayerGame {
   private readonly input: KeyboardInput;
@@ -25,6 +26,7 @@ export class MultiplayerGame {
   private readonly world: World;
   private readonly network: NetworkClient;
   private readonly debugOverlay: DebugOverlay;
+  private readonly soundManager: SoundManager;
 
   private running = false;
   private tick = 0;
@@ -56,6 +58,7 @@ export class MultiplayerGame {
     this.world = new World();
     this.network = new NetworkClient();
     this.debugOverlay = new DebugOverlay();
+    this.soundManager = new SoundManager();
 
     // Setup builder command handler
     this.builderInput.setBuildCommandHandler((action, canvasTileX, canvasTileY) => {
@@ -201,11 +204,30 @@ export class MultiplayerGame {
           });
         }
       }
+
+      // Handle sound events
+      if (update.soundEvents && this.playerId !== null) {
+        const myTank = this.tanks.get(this.playerId);
+        if (myTank && myTank.x !== undefined && myTank.y !== undefined) {
+          for (const soundEvent of update.soundEvents) {
+            // Check if this sound is from the player's own tank (within 128 world units)
+            const dx = soundEvent.x - myTank.x;
+            const dy = soundEvent.y - myTank.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const isOwnTank = distance < 128; // Half a tile
+
+            this.soundManager.playSound(soundEvent, myTank.x, myTank.y, isOwnTank);
+          }
+        }
+      }
     });
   }
 
   async init(serverUrl: string): Promise<void> {
-    await this.renderer.loadAssets();
+    await Promise.all([
+      this.renderer.loadAssets(),
+      this.soundManager.preloadSounds(),
+    ]);
     await this.network.connect(serverUrl);
     this.updateDebugInfo();
   }
