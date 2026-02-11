@@ -35,9 +35,13 @@ export class BuilderInput {
         this.pendingAction = BuildAction.FOREST; // Harvest trees
         console.log('Builder: Select tile to harvest trees');
         break;
-      case 'r':
+      case 'd':
         this.pendingAction = BuildAction.ROAD; // Build road
         console.log('Builder: Select tile to build road');
+        break;
+      case 'r':
+        this.pendingAction = BuildAction.REPAIR; // Repair pillbox
+        console.log('Builder: Select pillbox to repair');
         break;
       case 'w':
         this.pendingAction = BuildAction.BUILDING; // Build wall
@@ -46,6 +50,10 @@ export class BuilderInput {
       case 'b':
         this.pendingAction = BuildAction.BOAT; // Build boat
         console.log('Builder: Select tile to build boat');
+        break;
+      case 'p':
+        this.pendingAction = BuildAction.PILLBOX; // Place pillbox
+        console.log('Builder: Select tile to place pillbox');
         break;
       case 'm':
         this.pendingAction = BuildAction.MINE; // Lay mine
