@@ -706,5 +706,38 @@ describe('Bolo Manual Spec: 10. Builder / Man', () => {
       expect(world.getTerrainAt(51, 50)).toBe(TerrainType.FOREST);
       expect(world.getTerrainAt(52, 50)).toBe(TerrainType.FOREST);
     });
+
+    it('should regrow forests destroyed by shell fire (CRATER -> FOREST)', () => {
+      const session = new GameSession();
+      const ws = createMockWebSocket();
+      const id = session.addPlayer(ws);
+      const player = getPlayer(session, id);
+      const world = getWorld(session);
+
+      // Place forest tile inland (away from water to avoid crater flooding)
+      world.setTerrainAt(135, 135, TerrainType.FOREST);
+      placeTankAtTile(player.tank, 135, 135);
+
+      // Verify forest exists
+      expect(world.getTerrainAt(135, 135)).toBe(TerrainType.FOREST);
+
+      // Manually damage the forest with explosion (simulating shell explosion)
+      world.damageTerrainFromExplosion(135, 135);
+
+      // Manually add to regrowth timer (as GameSession would)
+      const tileKey = `135,135`;
+      (session as any).forestRegrowthTimers.set(tileKey, 500);
+
+      // Verify forest became crater
+      expect(world.getTerrainAt(135, 135)).toBe(TerrainType.CRATER);
+
+      // Run for regrowth timer (500 ticks)
+      for (let i = 0; i < 500; i++) {
+        tickSession(session, 1);
+      }
+
+      // Verify forest has regrown from crater
+      expect(world.getTerrainAt(135, 135)).toBe(TerrainType.FOREST);
+    });
   });
 });

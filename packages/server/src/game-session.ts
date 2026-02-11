@@ -415,9 +415,15 @@ export class GameSession {
           MINE_EXPLOSION_RADIUS_TILES
         );
 
-        // Track terrain changes
+        // Track terrain changes and forest regrowth
         for (const tile of affectedTiles) {
           this.terrainChanges.add(`${tile.x},${tile.y}`);
+
+          // Start regrowth timer if a forest was destroyed
+          if (tile.originalTerrain === TerrainType.FOREST) {
+            const tileKey = `${tile.x},${tile.y}`;
+            this.forestRegrowthTimers.set(tileKey, FOREST_REGROWTH_TICKS);
+          }
         }
 
         // Emit sound at each exploded mine
@@ -497,8 +503,14 @@ export class GameSession {
         // If shell should explode (end-of-range), damage terrain beneath it
         if (shell.shouldExplode) {
           console.log(`[DEBUG] Shell ${shell.id} exploded at (${tilePos.x}, ${tilePos.y}), terrain=${terrain}, distance=${shell.distanceTraveled}/${shell.range}`);
-          this.world.damageTerrainFromExplosion(tilePos.x, tilePos.y);
+          const originalTerrain = this.world.damageTerrainFromExplosion(tilePos.x, tilePos.y);
           this.terrainChanges.add(`${tilePos.x},${tilePos.y}`);
+
+          // Start regrowth timer if a forest was destroyed
+          if (originalTerrain === TerrainType.FOREST) {
+            const tileKey = `${tilePos.x},${tilePos.y}`;
+            this.forestRegrowthTimers.set(tileKey, FOREST_REGROWTH_TICKS);
+          }
         } else {
           console.log(`[DEBUG] Shell ${shell.id} removed by collision at (${tilePos.x}, ${tilePos.y}), terrain=${terrain}`);
         }
@@ -908,8 +920,8 @@ export class GameSession {
       const [x, y] = tileKey.split(',').map(Number);
       const terrain = this.world.getTerrainAt(x, y);
 
-      // Only regrow if tile is still grass (might have been built on)
-      if (terrain === TerrainType.GRASS) {
+      // Regrow forest if tile is still grass or crater (might have been built on)
+      if (terrain === TerrainType.GRASS || terrain === TerrainType.CRATER) {
         this.world.setTerrainAt(x, y, TerrainType.FOREST);
         this.terrainChanges.add(tileKey);
       }

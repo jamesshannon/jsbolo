@@ -377,15 +377,16 @@ export class ServerWorld {
   /**
    * Damage terrain from explosion (end-of-range shell or mine)
    * Based on Orona's takeExplosionHit() logic
+   * Returns the original terrain type before damage
    */
-  damageTerrainFromExplosion(tileX: number, tileY: number): void {
+  damageTerrainFromExplosion(tileX: number, tileY: number): TerrainType {
     if (
       tileX < 0 ||
       tileX >= MAP_SIZE_TILES ||
       tileY < 0 ||
       tileY >= MAP_SIZE_TILES
     ) {
-      return;
+      return TerrainType.GRASS; // Return neutral terrain for out-of-bounds
     }
 
     const cell = this.map[tileY]![tileX]!;
@@ -441,14 +442,16 @@ export class ServerWorld {
     } else if (originalTerrain === TerrainType.ROAD) {
       console.log(`[DEBUG] ROAD at (${tileX}, ${tileY}) correctly NOT damaged (stayed as ROAD)`);
     }
+
+    return originalTerrain;
   }
 
   /**
    * Create mine explosion affecting tiles in radius
-   * Returns array of affected tile positions
+   * Returns array of affected tile positions with original terrain types
    */
-  createMineExplosion(tileX: number, tileY: number, radius: number): Array<{x: number; y: number}> {
-    const affectedTiles: Array<{x: number; y: number}> = [];
+  createMineExplosion(tileX: number, tileY: number, radius: number): Array<{x: number; y: number; originalTerrain: TerrainType}> {
+    const affectedTiles: Array<{x: number; y: number; originalTerrain: TerrainType}> = [];
 
     // Damage all tiles in radius
     for (let dy = -radius; dy <= radius; dy++) {
@@ -465,9 +468,9 @@ export class ServerWorld {
           continue;
         }
 
-        // Apply explosion damage
-        this.damageTerrainFromExplosion(targetX, targetY);
-        affectedTiles.push({x: targetX, y: targetY});
+        // Apply explosion damage and track original terrain
+        const originalTerrain = this.damageTerrainFromExplosion(targetX, targetY);
+        affectedTiles.push({x: targetX, y: targetY, originalTerrain});
       }
     }
 
@@ -476,15 +479,15 @@ export class ServerWorld {
 
   /**
    * Trigger mine explosion with chain reactions.
-   * Returns exploded mine positions and affected terrain tiles.
+   * Returns exploded mine positions and affected terrain tiles with original terrain types.
    * Uses BFS to find adjacent mines within explosion radius.
    */
   triggerMineExplosion(tileX: number, tileY: number, radius: number): {
     explodedMines: Array<{x: number; y: number}>;
-    affectedTiles: Array<{x: number; y: number}>;
+    affectedTiles: Array<{x: number; y: number; originalTerrain: TerrainType}>;
   } {
     const explodedMines: Array<{x: number; y: number}> = [];
-    const affectedTiles: Array<{x: number; y: number}> = [];
+    const affectedTiles: Array<{x: number; y: number; originalTerrain: TerrainType}> = [];
     const visited = new Set<string>();
     const queue: Array<{x: number; y: number}> = [];
 
