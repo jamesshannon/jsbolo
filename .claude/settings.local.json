@@ -40,7 +40,14 @@
       "Bash(npm test:*)",
       "Bash(identify:*)",
       "Bash(python3:*)",
-      "Bash(pnpm type-check:*)"
+      "Bash(pnpm type-check:*)",
+      "Bash(npm run dev:*)",
+      "Bash(git checkout:*)",
+      "Bash(npx tsc:*)",
+      "Bash(grep:*)",
+      "Bash(npx vitest run:*)",
+      "Bash(ls:*)",
+      "Bash(npm run:*)"
     ]
   }
 }
