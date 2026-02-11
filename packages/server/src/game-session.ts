@@ -408,6 +408,25 @@ export class GameSession {
         this.updateBuilder(tank);
       }
 
+      // Check for pillbox pickup (tank drives over disabled pillbox)
+      if (tank.canPickupPillbox()) {
+        for (const pillbox of this.pillboxes.values()) {
+          // Skip if pillbox not disabled, in tank, or not on same tile
+          if (pillbox.armor > 0 || pillbox.inTank) {
+            continue;
+          }
+
+          const tankTilePos = tank.getTilePosition();
+          if (pillbox.tileX === tankTilePos.x && pillbox.tileY === tankTilePos.y) {
+            tank.pickupPillbox(pillbox);
+            console.log(
+              `[PILLBOX] Tank ${tank.id} picked up pillbox ${pillbox.id}, repaired and captured for team ${tank.team}`
+            );
+            break; // Only pick up one per tick
+          }
+        }
+      }
+
       // Check for mines under the tank
       const tankTile = tank.getTilePosition();
       if (this.world.hasMineAt(tankTile.x, tankTile.y)) {
@@ -541,7 +560,11 @@ export class GameSession {
           armor: p.tank.armor,
         }));
 
-        const target = pillbox.findTarget(tanks, PILLBOX_RANGE);
+        const target = pillbox.findTarget(
+          tanks,
+          PILLBOX_RANGE,
+          (tileX, tileY) => this.world.isTankConcealedInForest(tileX, tileY)
+        );
         if (target) {
           // Shoot returns true if it actually fires (handles acquisition delay)
           if (pillbox.shoot()) {
@@ -906,6 +929,106 @@ export class GameSession {
           }
           break;
 
+        case BuilderOrder.PLACING_PILLBOX: {
+          // Check if terrain is valid for pillbox placement
+          const canPlacePillbox = (t: number): boolean => {
+            // Cannot place on deep sea, boats, or forest
+            return (
+              t !== TerrainType.DEEP_SEA &&
+              t !== TerrainType.BOAT &&
+              t !== TerrainType.FOREST
+            );
+          };
+
+          if (builder.hasPillbox && canPlacePillbox(terrain)) {
+            // Placing picked-up pillbox is FREE (no tree cost)
+            if (this.tick % 10 === 0) {
+              const pillbox = tank.dropPillbox();
+              if (pillbox) {
+                // Place pillbox at builder location
+                pillbox.tileX = builderTile.x;
+                pillbox.tileY = builderTile.y;
+                builder.hasPillbox = false;
+                builder.recallToTank(tank.x, tank.y);
+                this.emitSound(SOUND_MAN_BUILDING, builder.x, builder.y);
+                console.log(
+                  `[PILLBOX] Placed pillbox ${pillbox.id} at (${builderTile.x}, ${builderTile.y})`
+                );
+              }
+            }
+          } else if (
+            builder.canBuildWall(BUILDER_PILLBOX_COST) &&
+            canPlacePillbox(terrain)
+          ) {
+            // Building new pillbox costs 1 tree
+            if (this.tick % 10 === 0) {
+              builder.useTrees(BUILDER_PILLBOX_COST); // 1 tree
+              const newPillbox = new ServerPillbox(
+                builderTile.x,
+                builderTile.y,
+                tank.team
+              );
+              this.pillboxes.set(newPillbox.id, newPillbox);
+              tank.trees = builder.trees; // Sync
+              builder.recallToTank(tank.x, tank.y);
+              this.emitSound(SOUND_MAN_BUILDING, builder.x, builder.y);
+              console.log(
+                `[PILLBOX] Built new pillbox at (${builderTile.x}, ${builderTile.y}) for team ${tank.team}`
+              );
+            }
+          } else {
+            // Invalid terrain or insufficient resources
+            console.log(
+              `[PILLBOX] Cannot place pillbox at (${builderTile.x}, ${builderTile.y}): terrain=${terrain}, hasPillbox=${builder.hasPillbox}, trees=${builder.trees}`
+            );
+            builder.recallToTank(tank.x, tank.y);
+          }
+          break;
+        }
+
+        case BuilderOrder.REPAIRING: {
+          // Check if there's a pillbox at this location
+          const pillboxAtLocation = Array.from(this.pillboxes.values()).find(
+            pb =>
+              pb.tileX === builderTile.x &&
+              pb.tileY === builderTile.y &&
+              !pb.inTank
+          );
+
+          if (pillboxAtLocation && pillboxAtLocation.armor < PILLBOX_MAX_ARMOR) {
+            // Calculate tree cost based on damage
+            const damageRatio =
+              (PILLBOX_MAX_ARMOR - pillboxAtLocation.armor) / PILLBOX_MAX_ARMOR;
+            const repairCost = damageRatio * BUILDER_PILLBOX_COST; // Up to 1 tree
+
+            if (builder.canBuildWall(repairCost)) {
+              if (this.tick % 10 === 0) {
+                builder.useTrees(repairCost);
+                pillboxAtLocation.armor = PILLBOX_MAX_ARMOR; // Repair to full
+                tank.trees = builder.trees; // Sync
+                builder.recallToTank(tank.x, tank.y);
+                this.emitSound(SOUND_MAN_BUILDING, builder.x, builder.y);
+                console.log(
+                  `[PILLBOX] Repaired pillbox ${pillboxAtLocation.id} for ${repairCost.toFixed(2)} trees (ownership unchanged, still team ${pillboxAtLocation.ownerTeam})`
+                );
+              }
+            } else {
+              // Insufficient trees
+              console.log(
+                `[PILLBOX] Cannot repair: need ${repairCost.toFixed(2)} trees, have ${builder.trees}`
+              );
+              builder.recallToTank(tank.x, tank.y);
+            }
+          } else {
+            // No damaged pillbox at location, or already at full armor
+            console.log(
+              `[PILLBOX] No damaged pillbox to repair at (${builderTile.x}, ${builderTile.y})`
+            );
+            builder.recallToTank(tank.x, tank.y);
+          }
+          break;
+        }
+
         default:
           // Other orders not yet implemented
           break;
@@ -996,6 +1119,7 @@ export class GameSession {
       onBoat: p.tank.onBoat,
       reload: p.tank.reload,
       firingRange: p.tank.firingRange,
+      carriedPillbox: p.tank.carriedPillbox?.id ?? null,
     }));
 
     // Collect all pillboxes
@@ -1045,11 +1169,11 @@ export class GameSession {
    * Only includes mutable fields that clients need to know about.
    */
   private getTankStateHash(tank: ServerTank): string {
-    return `${Math.round(tank.x)},${Math.round(tank.y)},${tank.direction},${tank.speed},${tank.armor},${tank.shells},${tank.mines},${tank.trees},${tank.onBoat},${tank.reload},${tank.firingRange}`;
+    return `${Math.round(tank.x)},${Math.round(tank.y)},${tank.direction},${tank.speed},${tank.armor},${tank.shells},${tank.mines},${tank.trees},${tank.onBoat},${tank.reload},${tank.firingRange},${tank.carriedPillbox?.id ?? 'null'}`;
   }
 
   private getBuilderStateHash(builder: ServerBuilder): string {
-    return `${Math.round(builder.x)},${Math.round(builder.y)},${Math.round(builder.targetX)},${Math.round(builder.targetY)},${builder.order},${builder.trees},${builder.hasMine},${builder.respawnCounter}`;
+    return `${Math.round(builder.x)},${Math.round(builder.y)},${Math.round(builder.targetX)},${Math.round(builder.targetY)},${builder.order},${builder.trees},${builder.hasMine},${builder.hasPillbox},${builder.respawnCounter}`;
   }
 
   private getPillboxStateHash(pillbox: ServerPillbox): string {
@@ -1087,6 +1211,7 @@ export class GameSession {
           onBoat: tank.onBoat,
           reload: tank.reload,
           firingRange: tank.firingRange,
+          carriedPillbox: tank.carriedPillbox?.id ?? null,
         });
         this.previousState.tanks.set(tank.id, currentHash);
         changedTankIds.add(tank.id);
@@ -1108,6 +1233,7 @@ export class GameSession {
           order: builder.order,
           trees: builder.trees,
           hasMine: builder.hasMine,
+          hasPillbox: builder.hasPillbox,
           team: builder.team,
           respawnCounter: builder.respawnCounter,
         });

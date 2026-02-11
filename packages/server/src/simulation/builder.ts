@@ -19,6 +19,7 @@ export class ServerBuilder {
   order: BuilderOrder;
   trees: number;
   hasMine: boolean;
+  hasPillbox: boolean;
   team: number;
   respawnCounter: number; // Ticks remaining until builder respawns (0 = alive)
 
@@ -35,6 +36,7 @@ export class ServerBuilder {
     this.order = BuilderOrder.IN_TANK;
     this.trees = 0;
     this.hasMine = false;
+    this.hasPillbox = false;
     this.team = team;
     this.respawnCounter = 0; // 0 = alive, >0 = respawning
   }

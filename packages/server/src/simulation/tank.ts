@@ -12,9 +12,11 @@ import {
   TANK_STARTING_MINES,
   TANK_STARTING_TREES,
   TILE_SIZE_WORLD,
+  PILLBOX_STARTING_ARMOR,
   type PlayerInput,
 } from '@jsbolo/shared';
 import {ServerBuilder} from './builder.js';
+import type {ServerPillbox} from './pillbox.js';
 
 export class ServerTank {
   id: number;
@@ -44,6 +46,9 @@ export class ServerTank {
 
   // Builder
   builder: ServerBuilder;
+
+  // Pillbox inventory
+  carriedPillbox: ServerPillbox | null = null;
 
   constructor(id: number, team: number, tileX: number, tileY: number) {
     this.id = id;
@@ -88,6 +93,13 @@ export class ServerTank {
     // Handle builder orders
     if (input.buildOrder) {
       console.log(`[BUILD ORDER] Tank ${this.id} sending builder to (${input.buildOrder.targetX}, ${input.buildOrder.targetY}) with action ${input.buildOrder.action}`);
+
+      // Special handling for pillbox placement - transfer pillbox to builder
+      if (input.buildOrder.action === 6 && this.carriedPillbox) {
+        // BuildAction.PILLBOX = 6
+        this.builder.hasPillbox = true;
+      }
+
       this.builder.sendToLocation(
         input.buildOrder.targetX,
         input.buildOrder.targetY,
@@ -245,5 +257,38 @@ export class ServerTank {
       x: Math.floor(this.x / TILE_SIZE_WORLD),
       y: Math.floor(this.y / TILE_SIZE_WORLD),
     };
+  }
+
+  /**
+   * Check if tank can pickup a pillbox
+   */
+  canPickupPillbox(): boolean {
+    return this.carriedPillbox === null && this.armor > 0;
+  }
+
+  /**
+   * Pickup a disabled pillbox - repairs it and changes ownership
+   */
+  pickupPillbox(pillbox: ServerPillbox): void {
+    if (!this.canPickupPillbox()) {
+      return;
+    }
+
+    this.carriedPillbox = pillbox;
+    pillbox.inTank = true;
+    pillbox.armor = PILLBOX_STARTING_ARMOR; // Repair to full
+    pillbox.ownerTeam = this.team; // Change ownership
+  }
+
+  /**
+   * Drop carried pillbox (for placement)
+   */
+  dropPillbox(): ServerPillbox | null {
+    const pillbox = this.carriedPillbox;
+    if (pillbox) {
+      this.carriedPillbox = null;
+      pillbox.inTank = false;
+    }
+    return pillbox;
   }
 }

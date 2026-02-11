@@ -634,4 +634,43 @@ export class ServerWorld {
     };
     return names[terrain] || 'UNKNOWN';
   }
+
+  /**
+   * Check if a tank at given tile position is completely surrounded by forest.
+   * Returns true if all 8 adjacent tiles are FOREST terrain.
+   *
+   * Per Bolo manual: "tanks cannot be seen whilst they are under the cover of trees,
+   * completely enclosed in forest, surrounded on all sides"
+   *
+   * @param tileX Tank's tile X position
+   * @param tileY Tank's tile Y position
+   * @returns true if tank is hidden in forest
+   */
+  isTankConcealedInForest(tileX: number, tileY: number): boolean {
+    // Check all 8 adjacent tiles
+    const offsets = [
+      [-1, -1],
+      [0, -1],
+      [1, -1], // Top row
+      [-1, 0],
+      [1, 0], // Middle (skip center)
+      [-1, 1],
+      [0, 1],
+      [1, 1], // Bottom row
+    ];
+
+    for (const [dx, dy] of offsets) {
+      const checkX = tileX + dx;
+      const checkY = tileY + dy;
+      const terrain = this.getTerrainAt(checkX, checkY);
+
+      // If any neighbor is NOT forest, tank is not concealed
+      if (terrain !== TerrainType.FOREST) {
+        return false;
+      }
+    }
+
+    // All neighbors are forest - tank is concealed
+    return true;
+  }
 }

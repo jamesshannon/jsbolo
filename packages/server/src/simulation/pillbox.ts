@@ -125,6 +125,7 @@ export class ServerPillbox {
    * Find nearest enemy tank within range
    * Neutral pillboxes (team 255) shoot at ALL tanks
    * Team-owned pillboxes only shoot at enemy tanks
+   * Tanks concealed in forest cannot be targeted
    */
   findTarget(
     tanks: Array<{
@@ -136,7 +137,8 @@ export class ServerPillbox {
       team: number;
       armor: number;
     }>,
-    range: number
+    range: number,
+    checkConcealment?: (tileX: number, tileY: number) => boolean
   ): {id: number; x: number; y: number; direction: number; speed: number} | null {
     const pos = this.getWorldPosition();
     let nearestDistance = range;
@@ -157,6 +159,15 @@ export class ServerPillbox {
       // If pillbox is owned by a team, skip friendly tanks
       if (this.ownerTeam !== 255 && tank.team === this.ownerTeam) {
         continue;
+      }
+
+      // Check if tank is concealed in forest
+      if (checkConcealment) {
+        const tankTileX = Math.floor(tank.x / TILE_SIZE_WORLD);
+        const tankTileY = Math.floor(tank.y / TILE_SIZE_WORLD);
+        if (checkConcealment(tankTileX, tankTileY)) {
+          continue; // Skip concealed tanks
+        }
       }
 
       const dx = tank.x - pos.x;
