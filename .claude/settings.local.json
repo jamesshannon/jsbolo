@@ -48,7 +48,10 @@
       "Bash(npx vitest run:*)",
       "Bash(ls:*)",
       "Bash(npm run:*)",
-      "Bash(cut:*)"
+      "Bash(cut:*)",
+      "Bash(./kill-dev.sh:*)",
+      "Bash(/Users/jshannon/Projects/jsbolo/kill-dev.sh)",
+      "Bash(/Users/jshannon/Projects/jsbolo/restart-dev.sh)"
     ]
   }
 }

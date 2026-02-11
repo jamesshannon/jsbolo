@@ -829,8 +829,10 @@ export class GameSession {
               this.world.setTerrainAt(builderTile.x, builderTile.y, 7); // GRASS (7, not 0!)
               tank.trees = builder.trees; // Sync with tank
               this.emitSound(SOUND_FARMING_TREE, builder.x, builder.y);
-              // Start regrowth timer for this tile
+              // Broadcast terrain change to clients
               const tileKey = `${builderTile.x},${builderTile.y}`;
+              this.terrainChanges.add(tileKey);
+              // Start regrowth timer for this tile
               this.forestRegrowthTimers.set(tileKey, FOREST_REGROWTH_TICKS);
               console.log(`[REGROWTH] Started regrowth timer for (${builderTile.x}, ${builderTile.y}) with ${FOREST_REGROWTH_TICKS} ticks`);
             }
@@ -846,6 +848,7 @@ export class GameSession {
             if (this.tick % 10 === 0) {
               builder.useTrees(BUILDER_WALL_COST);
               this.world.setTerrainAt(builderTile.x, builderTile.y, 4); // ROAD
+              this.terrainChanges.add(`${builderTile.x},${builderTile.y}`);
               tank.trees = builder.trees;
               builder.recallToTank(tank.x, tank.y);
               this.emitSound(SOUND_MAN_BUILDING, builder.x, builder.y);
@@ -861,6 +864,7 @@ export class GameSession {
             if (this.tick % 10 === 0) {
               builder.useTrees(BUILDER_WALL_COST);
               this.world.setTerrainAt(builderTile.x, builderTile.y, 0); // BUILDING (0, not 6!)
+              this.terrainChanges.add(`${builderTile.x},${builderTile.y}`);
               tank.trees = builder.trees;
               builder.recallToTank(tank.x, tank.y);
               this.emitSound(SOUND_MAN_BUILDING, builder.x, builder.y);
@@ -877,6 +881,7 @@ export class GameSession {
               // Boats take longer and cost 5 trees
               builder.useTrees(BUILDER_BOAT_COST);
               this.world.setTerrainAt(builderTile.x, builderTile.y, 9); // BOAT
+              this.terrainChanges.add(`${builderTile.x},${builderTile.y}`);
               tank.trees = builder.trees;
               builder.recallToTank(tank.x, tank.y);
               this.emitSound(SOUND_MAN_BUILDING, builder.x, builder.y);

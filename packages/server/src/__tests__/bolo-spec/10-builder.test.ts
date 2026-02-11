@@ -739,5 +739,45 @@ describe('Bolo Manual Spec: 10. Builder / Man', () => {
       // Verify forest has regrown from crater
       expect(world.getTerrainAt(135, 135)).toBe(TerrainType.FOREST);
     });
+
+    it('should regrow forests shot by shells (collision damage)', () => {
+      const session = new GameSession();
+      const ws = createMockWebSocket();
+      const id = session.addPlayer(ws);
+      const player = getPlayer(session, id);
+      const world = getWorld(session);
+
+      // Place forest
+      world.setTerrainAt(135, 135, TerrainType.FOREST);
+      placeTankAtTile(player.tank, 135, 135);
+
+      // Verify forest exists
+      expect(world.getTerrainAt(135, 135)).toBe(TerrainType.FOREST);
+
+      // Simulate shell collision damage (FOREST has 1 life point)
+      const destroyed = world.damageTerrainFromCollision(135, 135);
+      expect(destroyed).toBe(true);
+
+      // Manually trigger regrowth tracking (as GameSession would)
+      (session as any).terrainChanges.add('135,135');
+      (session as any).forestRegrowthTimers.set('135,135', 500);
+
+      // Verify forest became GRASS from collision
+      expect(world.getTerrainAt(135, 135)).toBe(TerrainType.GRASS);
+
+      // Run for less than regrowth time - should still be GRASS
+      for (let i = 0; i < 100; i++) {
+        tickSession(session, 1);
+      }
+      expect(world.getTerrainAt(135, 135)).toBe(TerrainType.GRASS);
+
+      // Run for full regrowth time
+      for (let i = 0; i < 400; i++) {
+        tickSession(session, 1);
+      }
+
+      // Verify forest has regrown
+      expect(world.getTerrainAt(135, 135)).toBe(TerrainType.FOREST);
+    });
   });
 });
