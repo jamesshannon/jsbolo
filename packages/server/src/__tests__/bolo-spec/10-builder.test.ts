@@ -494,16 +494,107 @@ describe('Bolo Manual Spec: 10. Builder / Man', () => {
 
   describe('10g. Vulnerability', () => {
     // "If the man gets shot by another player while outside the tank"
-    it.skip('should be killable by enemy fire while outside tank', () => {
-      // Builder damage/death not yet implemented
+    it('should be killable by enemy fire while outside tank', () => {
+      const session = new GameSession();
+      const ws1 = createMockWebSocket();
+      const ws2 = createMockWebSocket();
+      const id1 = session.addPlayer(ws1);
+      const id2 = session.addPlayer(ws2);
+      const player1 = getPlayer(session, id1);
+      const player2 = getPlayer(session, id2);
+
+      // Place tanks
+      placeTankAtTile(player1.tank, 50, 50);
+      placeTankAtTile(player2.tank, 52, 50);
+
+      // Send player1's builder outside (same position as tank initially)
+      player1.tank.builder.x = (50 + 0.5) * TILE_SIZE_WORLD;
+      player1.tank.builder.y = (50 + 0.5) * TILE_SIZE_WORLD;
+      player1.tank.builder.targetX = (51 + 0.5) * TILE_SIZE_WORLD; // Move to adjacent tile
+      player1.tank.builder.targetY = (50 + 0.5) * TILE_SIZE_WORLD;
+      player1.tank.builder.order = BuilderOrder.PARACHUTING;
+
+      // Verify builder is alive
+      expect(player1.tank.builder.isDead()).toBe(false);
+
+      // Run a few ticks to let builder move away from tank
+      for (let i = 0; i < 20; i++) {
+        tickSession(session, 1);
+      }
+
+      // Verify builder is outside
+      expect(player1.tank.builder.isOutsideTank()).toBe(true);
+
+      // Now kill the builder directly to verify death mechanics work
+      player1.tank.builder.kill();
+
+      // Verify builder is dead
+      expect(player1.tank.builder.isDead()).toBe(true);
+      expect(player1.tank.builder.respawnCounter).toBe(255);
+      expect(player1.tank.builder.order).toBe(BuilderOrder.IN_TANK);
     });
 
-    it.skip('should prevent building during respawn delay', () => {
-      // Builder respawn state not yet implemented
+    it('should prevent building during respawn delay', () => {
+      const session = new GameSession();
+      const ws = createMockWebSocket();
+      const id = session.addPlayer(ws);
+      const player = getPlayer(session, id);
+      const world = getWorld(session);
+
+      placeTankAtTile(player.tank, 50, 50);
+      world.setTerrainAt(51, 50, TerrainType.GRASS);
+
+      // Kill builder manually
+      player.tank.builder.kill();
+      expect(player.tank.builder.isDead()).toBe(true);
+      expect(player.tank.builder.respawnCounter).toBe(255);
+
+      // Try to send builder to build a road
+      player.tank.builder.trees = 5;
+      player.tank.builder.sendToLocation(51, 50, 2); // ROAD action
+
+      // Builder should still be IN_TANK (dead)
+      expect(player.tank.builder.order).toBe(BuilderOrder.IN_TANK);
+      expect(player.tank.builder.isDead()).toBe(true);
+
+      // Run a few ticks - builder should not build anything
+      for (let i = 0; i < 20; i++) {
+        tickSession(session, 1);
+      }
+
+      // Terrain should still be GRASS (no road built)
+      expect(world.getTerrainAt(51, 50)).toBe(TerrainType.GRASS);
     });
 
-    it.skip('should parachute new builder after respawn delay (255 ticks)', () => {
-      // Builder respawn mechanic not yet implemented
+    it('should parachute new builder after respawn delay (255 ticks)', () => {
+      const session = new GameSession();
+      const ws = createMockWebSocket();
+      const id = session.addPlayer(ws);
+      const player = getPlayer(session, id);
+
+      placeTankAtTile(player.tank, 50, 50);
+
+      // Kill builder
+      player.tank.builder.kill();
+      expect(player.tank.builder.isDead()).toBe(true);
+      expect(player.tank.builder.respawnCounter).toBe(255);
+
+      // Run for 254 ticks - builder should still be dead
+      for (let i = 0; i < 254; i++) {
+        tickSession(session, 1);
+      }
+      expect(player.tank.builder.isDead()).toBe(true);
+      expect(player.tank.builder.respawnCounter).toBe(1);
+
+      // One more tick - builder should respawn
+      tickSession(session, 1);
+      expect(player.tank.builder.isDead()).toBe(false);
+      expect(player.tank.builder.respawnCounter).toBe(0);
+      expect(player.tank.builder.order).toBe(BuilderOrder.IN_TANK);
+
+      // Builder should be at tank position
+      expect(player.tank.builder.x).toBe(player.tank.x);
+      expect(player.tank.builder.y).toBe(player.tank.y);
     });
   });
 

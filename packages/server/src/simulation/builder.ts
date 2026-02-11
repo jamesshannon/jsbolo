@@ -20,6 +20,7 @@ export class ServerBuilder {
   trees: number;
   hasMine: boolean;
   team: number;
+  respawnCounter: number; // Ticks remaining until builder respawns (0 = alive)
 
   private static nextId = 1;
   private readonly speed = 4.0; // World units per tick (slower than tank)
@@ -35,6 +36,7 @@ export class ServerBuilder {
     this.trees = 0;
     this.hasMine = false;
     this.team = team;
+    this.respawnCounter = 0; // 0 = alive, >0 = respawning
   }
 
   /**
@@ -96,6 +98,11 @@ export class ServerBuilder {
     action: BuildAction,
     tankMines?: number
   ): void {
+    // Cannot dispatch builder during respawn delay
+    if (this.isDead()) {
+      return;
+    }
+
     // Convert tile to world coordinates (center of tile)
     this.targetX = (targetTileX + 0.5) * TILE_SIZE_WORLD;
     this.targetY = (targetTileY + 0.5) * TILE_SIZE_WORLD;
@@ -222,5 +229,45 @@ export class ServerBuilder {
    */
   useTrees(amount: number): void {
     this.trees = Math.max(0, this.trees - amount);
+  }
+
+  /**
+   * Check if builder is dead (respawning)
+   */
+  isDead(): boolean {
+    return this.respawnCounter > 0;
+  }
+
+  /**
+   * Check if builder is outside tank and vulnerable
+   */
+  isOutsideTank(): boolean {
+    return this.order !== BuilderOrder.IN_TANK && this.respawnCounter === 0;
+  }
+
+  /**
+   * Kill builder and start respawn timer
+   */
+  kill(): void {
+    this.respawnCounter = 255; // BUILDER_RESPAWN_TICKS
+    this.order = BuilderOrder.IN_TANK; // Return to tank (virtually)
+    this.hasMine = false; // Drop mine
+  }
+
+  /**
+   * Update respawn counter and respawn if ready
+   */
+  updateRespawn(tankX: number, tankY: number): void {
+    if (this.respawnCounter > 0) {
+      this.respawnCounter--;
+      if (this.respawnCounter === 0) {
+        // Respawn builder at tank position
+        this.x = tankX;
+        this.y = tankY;
+        this.targetX = tankX;
+        this.targetY = tankY;
+        this.order = BuilderOrder.IN_TANK;
+      }
+    }
   }
 }

@@ -25,6 +25,7 @@ import {
   SOUND_FARMING_TREE,
   SOUND_MAN_BUILDING,
   SOUND_MAN_LAY_MINE,
+  SOUND_MAN_DYING,
   SOUND_BUBBLES,
   BuilderOrder,
   TerrainType,
@@ -396,8 +397,13 @@ export class GameSession {
         this.emitSound(SOUND_SHOOTING, tank.x, tank.y);
       }
 
-      // Handle builder tasks
-      this.updateBuilder(tank);
+      // Update builder respawn
+      tank.builder.updateRespawn(tank.x, tank.y);
+
+      // Handle builder tasks (only if alive)
+      if (!tank.builder.isDead()) {
+        this.updateBuilder(tank);
+      }
 
       // Check for mines under the tank
       const tankTile = tank.getTilePosition();
@@ -476,6 +482,11 @@ export class GameSession {
       // Check collisions with bases
       if (shell.alive) {
         this.checkShellBaseCollisions(shell);
+      }
+
+      // Check collisions with builders
+      if (shell.alive) {
+        this.checkShellBuilderCollisions(shell);
       }
 
       // Handle dead shells
@@ -754,6 +765,31 @@ export class GameSession {
     }
   }
 
+  private checkShellBuilderCollisions(shell: ServerShell): void {
+    for (const player of this.players.values()) {
+      const builder = player.tank.builder;
+
+      // Skip if builder is dead, inside tank, or owned by same player
+      if (builder.isDead() || !builder.isOutsideTank() || player.tank.id === shell.ownerTankId) {
+        continue;
+      }
+
+      // Check distance
+      const dx = shell.x - builder.x;
+      const dy = shell.y - builder.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      // Hit detection (smaller radius for builder - 64 world units = 8 pixels)
+      if (distance < 64) {
+        shell.killByCollision();
+        builder.kill();
+        this.emitSound(SOUND_MAN_DYING, builder.x, builder.y);
+        console.log(`Builder ${builder.id} killed by shell from tank ${shell.ownerTankId}`);
+        break;
+      }
+    }
+  }
+
   private updateBuilder(tank: ServerTank): void {
     const builder = tank.builder;
 
@@ -977,7 +1013,7 @@ export class GameSession {
   }
 
   private getBuilderStateHash(builder: ServerBuilder): string {
-    return `${Math.round(builder.x)},${Math.round(builder.y)},${Math.round(builder.targetX)},${Math.round(builder.targetY)},${builder.order},${builder.trees},${builder.hasMine}`;
+    return `${Math.round(builder.x)},${Math.round(builder.y)},${Math.round(builder.targetX)},${Math.round(builder.targetY)},${builder.order},${builder.trees},${builder.hasMine},${builder.respawnCounter}`;
   }
 
   private getPillboxStateHash(pillbox: ServerPillbox): string {
@@ -1037,6 +1073,7 @@ export class GameSession {
           trees: builder.trees,
           hasMine: builder.hasMine,
           team: builder.team,
+          respawnCounter: builder.respawnCounter,
         });
         this.previousState.builders.set(builder.id, builderHash);
       }
