@@ -90,7 +90,7 @@ describe('Shell Behavior', () => {
     });
 
     it('should update tile position as shell moves', () => {
-      const shell = new ServerShell(1, 2560, 2560, 0, 10); // North
+      const shell = new ServerShell(1, 2560, 2560, 64, 10); // North
       const initialTile = shell.getTilePosition();
 
       // Move for several ticks to cross tile boundary

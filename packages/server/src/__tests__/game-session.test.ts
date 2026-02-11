@@ -208,7 +208,7 @@ describe('GameSession Integration', () => {
       player.tank.speed = 12; // Give it initial speed
 
       // Move tank south (towards tile 11)
-      player.tank.direction = 128; // South
+      player.tank.direction = 192; // South
       const input = {
         sequence: 1,
         tick: 1,
@@ -264,7 +264,7 @@ describe('GameSession Integration', () => {
       player.tank.speed = 12; // Give it initial speed
 
       // Move tank south towards land
-      player.tank.direction = 128; // South
+      player.tank.direction = 192; // South
       const input = {
         sequence: 1,
         tick: 1,

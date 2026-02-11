@@ -22,6 +22,9 @@ describe('Tank Movement', () => {
 
   describe('Basic Movement', () => {
     it('should move forward when accelerating', () => {
+      // Set diagonal direction so both X and Y change
+      tank.direction = 32; // Northeast (between East=0 and North=64)
+
       const initialX = tank.x;
       const initialY = tank.y;
 
