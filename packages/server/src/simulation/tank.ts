@@ -40,6 +40,7 @@ export class ServerTank {
   onBoat = false;
   reload = 0;
   firingRange = 7;
+  waterTickCounter = 0;
 
   // Builder
   builder: ServerBuilder;
@@ -140,6 +141,7 @@ export class ServerTank {
     this.mines = TANK_STARTING_MINES;
     this.trees = TANK_STARTING_TREES;
     this.reload = 0;
+    this.waterTickCounter = 0;
   }
 
   private updateTurning(input: PlayerInput): void {

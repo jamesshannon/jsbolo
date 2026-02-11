@@ -25,6 +25,7 @@ export class ServerWorld {
   private readonly pillboxSpawns: PillboxSpawnData[];
   private readonly baseSpawns: BaseSpawnData[];
   private readonly startPositions: StartPosition[];
+  private readonly craterPositions = new Set<string>();
 
   /**
    * Create a new world, optionally loading from a .map file.
@@ -57,6 +58,9 @@ export class ServerWorld {
       this.baseSpawns = [];
       this.startPositions = [];
     }
+
+    // Scan map for existing craters
+    this.scanInitialCraters();
   }
 
   private generateTestMap(): MapCell[][] {
@@ -90,6 +94,23 @@ export class ServerWorld {
     }
 
     return map;
+  }
+
+  /**
+   * Scan map for existing craters and populate tracking set.
+   * Called once at startup to handle map-loaded craters.
+   */
+  private scanInitialCraters(): void {
+    for (let y = 0; y < MAP_SIZE_TILES; y++) {
+      for (let x = 0; x < MAP_SIZE_TILES; x++) {
+        if (this.map[y]![x]!.terrain === TerrainType.CRATER) {
+          this.craterPositions.add(`${x},${y}`);
+        }
+      }
+    }
+    if (this.craterPositions.size > 0) {
+      console.log(`Found ${this.craterPositions.size} craters on map`);
+    }
   }
 
   /**
@@ -239,10 +260,20 @@ export class ServerWorld {
       return;
     }
     const cell = this.map[tileY]![tileX]!;
+    const oldTerrain = cell.terrain;
+
     cell.terrain = terrain;
     cell.terrainLife = getTerrainInitialLife(terrain);
     if (direction !== undefined) {
       cell.direction = direction;
+    }
+
+    // Update crater tracking
+    const key = `${tileX},${tileY}`;
+    if (terrain === TerrainType.CRATER) {
+      this.craterPositions.add(key);
+    } else if (oldTerrain === TerrainType.CRATER) {
+      this.craterPositions.delete(key);
     }
   }
 
@@ -383,6 +414,7 @@ export class ServerWorld {
         // All become CRATER
         cell.terrain = TerrainType.CRATER;
         cell.terrainLife = 0;
+        this.craterPositions.add(`${tileX},${tileY}`);
         break;
 
       case TerrainType.ROAD:
@@ -440,6 +472,113 @@ export class ServerWorld {
     }
 
     return affectedTiles;
+  }
+
+  /**
+   * Trigger mine explosion with chain reactions.
+   * Returns exploded mine positions and affected terrain tiles.
+   * Uses BFS to find adjacent mines within explosion radius.
+   */
+  triggerMineExplosion(tileX: number, tileY: number, radius: number): {
+    explodedMines: Array<{x: number; y: number}>;
+    affectedTiles: Array<{x: number; y: number}>;
+  } {
+    const explodedMines: Array<{x: number; y: number}> = [];
+    const affectedTiles: Array<{x: number; y: number}> = [];
+    const visited = new Set<string>();
+    const queue: Array<{x: number; y: number}> = [];
+
+    queue.push({x: tileX, y: tileY});
+
+    while (queue.length > 0) {
+      const current = queue.shift()!;
+      const key = `${current.x},${current.y}`;
+
+      if (visited.has(key)) continue;
+      visited.add(key);
+
+      if (!this.hasMineAt(current.x, current.y)) continue;
+
+      this.removeMineAt(current.x, current.y);
+      explodedMines.push({x: current.x, y: current.y});
+
+      const tiles = this.createMineExplosion(current.x, current.y, radius);
+      affectedTiles.push(...tiles);
+
+      // Find adjacent mines within explosion radius
+      for (let dy = -radius; dy <= radius; dy++) {
+        for (let dx = -radius; dx <= radius; dx++) {
+          if (dx === 0 && dy === 0) continue;
+
+          const adjX = current.x + dx;
+          const adjY = current.y + dy;
+          const adjKey = `${adjX},${adjY}`;
+
+          if (
+            adjX < 0 ||
+            adjX >= MAP_SIZE_TILES ||
+            adjY < 0 ||
+            adjY >= MAP_SIZE_TILES ||
+            visited.has(adjKey)
+          ) {
+            continue;
+          }
+
+          if (this.hasMineAt(adjX, adjY)) {
+            queue.push({x: adjX, y: adjY});
+          }
+        }
+      }
+    }
+
+    return {explodedMines, affectedTiles};
+  }
+
+  /**
+   * Check for craters adjacent to water and flood them.
+   * Returns array of flooded crater positions.
+   * Called periodically (every 10 ticks).
+   */
+  checkCraterFlooding(): Array<{x: number; y: number}> {
+    const toFlood: Array<{x: number; y: number}> = [];
+
+    // First pass: identify all craters adjacent to water
+    for (const key of this.craterPositions) {
+      const [xStr, yStr] = key.split(',');
+      const x = Number(xStr);
+      const y = Number(yStr);
+
+      // Check 4-directional adjacency
+      const adjacentTiles = [
+        {x: x, y: y - 1}, // North
+        {x: x, y: y + 1}, // South
+        {x: x - 1, y: y}, // West
+        {x: x + 1, y: y}, // East
+      ];
+
+      let adjacentToWater = false;
+      for (const adj of adjacentTiles) {
+        if (adj.x < 0 || adj.x >= MAP_SIZE_TILES || adj.y < 0 || adj.y >= MAP_SIZE_TILES)
+          continue;
+
+        const adjTerrain = this.map[adj.y]![adj.x]!.terrain;
+        if (adjTerrain === TerrainType.RIVER || adjTerrain === TerrainType.DEEP_SEA) {
+          adjacentToWater = true;
+          break;
+        }
+      }
+
+      if (adjacentToWater) {
+        toFlood.push({x, y});
+      }
+    }
+
+    // Second pass: flood all identified craters
+    for (const crater of toFlood) {
+      this.setTerrainAt(crater.x, crater.y, TerrainType.RIVER);
+    }
+
+    return toFlood;
   }
 
   /**

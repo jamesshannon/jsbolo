@@ -92,3 +92,17 @@ export const SHELL_TERRAIN_EXPLOSION_DAMAGE = 1; // End-of-range explosion
 
 /** Mine explosion constants */
 export const MINE_EXPLOSION_RADIUS_TILES = 1; // Explosion affects tiles in 1-tile radius (3x3 grid)
+
+/** Sound event IDs (from Orona sounds.coffee) */
+export const SOUND_BIG_EXPLOSION = 0;
+export const SOUND_BUBBLES = 1;
+export const SOUND_FARMING_TREE = 2;
+export const SOUND_HIT_TANK = 3;
+export const SOUND_MAN_BUILDING = 4;
+export const SOUND_MAN_DYING = 5;
+export const SOUND_MAN_LAY_MINE = 6;
+export const SOUND_MINE_EXPLOSION = 7;
+export const SOUND_SHOOTING = 8;
+export const SOUND_SHOT_BUILDING = 9;
+export const SOUND_SHOT_TREE = 10;
+export const SOUND_TANK_SINKING = 11;

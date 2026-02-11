@@ -119,21 +119,54 @@ describe('Bolo Manual Spec: 5. Mines', () => {
 
   describe('5d. Mine Chain Reactions', () => {
     // "an exploding mine will also set off any adjacent mines"
-    it.skip('should trigger adjacent mines in chain reaction', () => {
-      // Not yet implemented - mine chain reactions
-      // world.setMineAt(50, 50, true);
-      // world.setMineAt(51, 50, true);
-      // // Triggering mine at (50,50) should also trigger (51,50)
+    it('should trigger adjacent mines in chain reaction', () => {
+      const world = new ServerWorld();
+      world.setMineAt(50, 50, true);
+      world.setMineAt(51, 50, true);
+
+      const {explodedMines} = world.triggerMineExplosion(50, 50, MINE_EXPLOSION_RADIUS_TILES);
+
+      // Both mines should have exploded
+      expect(explodedMines.length).toBe(2);
+      expect(world.hasMineAt(50, 50)).toBe(false);
+      expect(world.hasMineAt(51, 50)).toBe(false);
     });
 
     // "a long line of mines will all go off together in a chain reaction"
-    it.skip('should chain-react a line of adjacent mines', () => {
-      // Not yet implemented
+    it('should chain-react a line of adjacent mines', () => {
+      const world = new ServerWorld();
+      // Place 5 mines in a horizontal line
+      for (let x = 50; x < 55; x++) {
+        world.setMineAt(x, 50, true);
+      }
+
+      const {explodedMines} = world.triggerMineExplosion(50, 50, MINE_EXPLOSION_RADIUS_TILES);
+
+      // All 5 mines should have exploded
+      expect(explodedMines.length).toBe(5);
+      for (let x = 50; x < 55; x++) {
+        expect(world.hasMineAt(x, 50)).toBe(false);
+      }
     });
 
     // "lay mines in a checker-board pattern so that they don't set each other off"
-    it.skip('should NOT chain-react mines in checker-board pattern', () => {
-      // Not yet implemented
+    it('should NOT chain-react mines in checker-board pattern', () => {
+      const world = new ServerWorld();
+      // Checker-board pattern (mines too far apart to chain)
+      world.setMineAt(50, 50, true);
+      world.setMineAt(52, 50, true); // 2 tiles away - outside radius of 1
+      world.setMineAt(50, 52, true);
+      world.setMineAt(52, 52, true);
+
+      const {explodedMines} = world.triggerMineExplosion(50, 50, MINE_EXPLOSION_RADIUS_TILES);
+
+      // Only the triggered mine should explode
+      expect(explodedMines.length).toBe(1);
+      expect(world.hasMineAt(50, 50)).toBe(false);
+      // Other mines should still exist
+      expect(world.hasMineAt(52, 50)).toBe(true);
+      expect(world.hasMineAt(50, 52)).toBe(true);
+      expect(world.hasMineAt(52, 52)).toBe(true);
     });
   });
 });

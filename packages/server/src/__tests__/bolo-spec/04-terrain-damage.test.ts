@@ -127,23 +127,66 @@ describe('Bolo Manual Spec: 4. Terrain Damage', () => {
 
   describe('4c. Crater Flooding', () => {
     // "Craters adjacent to sea or river will flood with water"
-    it.skip('should flood crater adjacent to river (becomes river)', () => {
-      // Not yet implemented
-      // world.setTerrainAt(50, 50, TerrainType.RIVER);
-      // world.setTerrainAt(51, 50, TerrainType.CRATER);
-      // // After some ticks, crater should flood
-      // expect(world.getTerrainAt(51, 50)).toBe(TerrainType.RIVER);
+    it('should flood crater adjacent to river (becomes river)', () => {
+      const world = new ServerWorld();
+      world.setTerrainAt(50, 50, TerrainType.RIVER);
+      world.setTerrainAt(51, 50, TerrainType.CRATER);
+
+      // Check for flooding
+      const flooded = world.checkCraterFlooding();
+
+      // Crater should have flooded
+      expect(flooded.length).toBe(1);
+      expect(flooded[0]).toEqual({x: 51, y: 50});
+      expect(world.getTerrainAt(51, 50)).toBe(TerrainType.RIVER);
     });
 
     // "setting off a long line of mines leading to the sea will have the effect
     //  of creating an artificial river"
-    it.skip('should chain-flood craters to create artificial rivers', () => {
-      // Not yet implemented
+    it('should chain-flood craters to create artificial rivers', () => {
+      const world = new ServerWorld();
+      // Use coordinates that are GRASS in procedural map: (121,121) avoids all patterns
+      world.setTerrainAt(121, 121, TerrainType.RIVER);
+      world.setTerrainAt(122, 121, TerrainType.CRATER);
+      world.setTerrainAt(123, 121, TerrainType.CRATER);
+      world.setTerrainAt(124, 121, TerrainType.CRATER);
+
+      // First flooding cycle - only crater adjacent to water floods
+      let flooded = world.checkCraterFlooding();
+      expect(flooded.length).toBe(1);
+      expect(world.getTerrainAt(122, 121)).toBe(TerrainType.RIVER);
+
+      // Second cycle - next crater floods (now adjacent to new river)
+      flooded = world.checkCraterFlooding();
+      expect(flooded.length).toBe(1);
+      expect(world.getTerrainAt(123, 121)).toBe(TerrainType.RIVER);
+
+      // Third cycle - last crater floods
+      flooded = world.checkCraterFlooding();
+      expect(flooded.length).toBe(1);
+      expect(world.getTerrainAt(124, 121)).toBe(TerrainType.RIVER);
     });
 
     // "you can create a moat around your fortress"
-    it.skip('should create moat by flooding crater chain from water source', () => {
-      // Not yet implemented
+    it('should create moat by flooding crater chain from water source', () => {
+      const world = new ServerWorld();
+      // Create crater not adjacent to water (use coordinates far from procedural river)
+      world.setTerrainAt(150, 150, TerrainType.GRASS);
+      world.setTerrainAt(150, 149, TerrainType.GRASS);
+      world.setTerrainAt(150, 150, TerrainType.CRATER);
+
+      // Check for flooding - nothing should flood
+      let flooded = world.checkCraterFlooding();
+      expect(flooded.length).toBe(0);
+      expect(world.getTerrainAt(150, 150)).toBe(TerrainType.CRATER);
+
+      // Add water nearby
+      world.setTerrainAt(150, 149, TerrainType.RIVER);
+
+      // Now crater should flood
+      flooded = world.checkCraterFlooding();
+      expect(flooded.length).toBe(1);
+      expect(world.getTerrainAt(150, 150)).toBe(TerrainType.RIVER);
     });
   });
 });

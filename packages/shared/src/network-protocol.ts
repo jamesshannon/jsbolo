@@ -49,6 +49,12 @@ export interface TerrainUpdate {
   terrainLife: number;
 }
 
+export interface SoundEvent {
+  soundId: number;
+  x: number; // World coordinates
+  y: number;
+}
+
 export interface UpdateMessage {
   type: 'update';
   tick: number;
@@ -60,6 +66,7 @@ export interface UpdateMessage {
   pillboxes?: Pillbox[];
   bases?: Base[];
   terrainUpdates?: TerrainUpdate[];
+  soundEvents?: SoundEvent[];
 }
 
 // Encoding/Decoding helpers

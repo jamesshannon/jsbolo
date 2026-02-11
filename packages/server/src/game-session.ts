@@ -8,12 +8,29 @@ import {
   PILLBOX_RANGE,
   BASE_REFUEL_RANGE,
   MINE_EXPLOSION_RADIUS_TILES,
+  MINE_DAMAGE,
+  TILE_SIZE_WORLD,
+  WATER_DRAIN_INTERVAL_TICKS,
+  WATER_SHELLS_DRAINED,
+  WATER_MINES_DRAINED,
+  SOUND_SHOOTING,
+  SOUND_SHOT_BUILDING,
+  SOUND_SHOT_TREE,
+  SOUND_HIT_TANK,
+  SOUND_TANK_SINKING,
+  SOUND_MINE_EXPLOSION,
+  SOUND_FARMING_TREE,
+  SOUND_MAN_BUILDING,
+  SOUND_MAN_LAY_MINE,
+  SOUND_BUBBLES,
   BuilderOrder,
+  TerrainType,
   type PlayerInput,
   encodeServerMessage,
   type WelcomeMessage,
   type UpdateMessage,
   type TerrainUpdate,
+  type SoundEvent,
 } from '@jsbolo/shared';
 import {ServerTank} from './simulation/tank.js';
 import {ServerWorld} from './simulation/world.js';
@@ -37,6 +54,7 @@ export class GameSession {
   private readonly pillboxes = new Map<number, ServerPillbox>();
   private readonly bases = new Map<number, ServerBase>();
   private readonly terrainChanges = new Set<string>(); // Track terrain changes as "x,y"
+  private readonly soundEvents: SoundEvent[] = [];
   private nextPlayerId = 1;
   private tick = 0;
   private running = false;
@@ -263,6 +281,7 @@ export class GameSession {
 
   private update(): void {
     this.tick++;
+    this.soundEvents.length = 0; // Clear sound events from previous tick
 
     // Update all tanks
     for (const player of this.players.values()) {
@@ -339,10 +358,38 @@ export class GameSession {
         }
       }
 
+      // Handle water drain mechanic
+      const currentTile = tank.getTilePosition();
+      const terrain = this.world.getTerrainAt(currentTile.x, currentTile.y);
+      const isInWater = (terrain === TerrainType.RIVER || terrain === TerrainType.DEEP_SEA);
+
+      if (isInWater && !tank.onBoat) {
+        tank.waterTickCounter++;
+
+        if (tank.waterTickCounter >= WATER_DRAIN_INTERVAL_TICKS) {
+          tank.waterTickCounter = 0;
+
+          if (tank.shells > 0) {
+            tank.shells = Math.max(0, tank.shells - WATER_SHELLS_DRAINED);
+            this.emitSound(SOUND_BUBBLES, tank.x, tank.y);
+          }
+
+          if (tank.mines > 0) {
+            tank.mines = Math.max(0, tank.mines - WATER_MINES_DRAINED);
+            if (tank.shells === 0) {
+              this.emitSound(SOUND_BUBBLES, tank.x, tank.y);
+            }
+          }
+        }
+      } else {
+        tank.waterTickCounter = 0;
+      }
+
       // Handle shooting
       if (player.lastInput.shooting && tank.canShoot()) {
         this.spawnShell(tank);
         tank.shoot();
+        this.emitSound(SOUND_SHOOTING, tank.x, tank.y);
       }
 
       // Handle builder tasks
@@ -351,50 +398,55 @@ export class GameSession {
       // Check for mines under the tank
       const tankTile = tank.getTilePosition();
       if (this.world.hasMineAt(tankTile.x, tankTile.y)) {
-        // Tank hit a mine! Create explosion
-        this.world.removeMineAt(tankTile.x, tankTile.y);
-
-        // Create explosion affecting terrain in radius
-        const affectedTiles = this.world.createMineExplosion(
+        // Trigger explosion with chain reactions
+        const {explodedMines, affectedTiles} = this.world.triggerMineExplosion(
           tankTile.x,
           tankTile.y,
           MINE_EXPLOSION_RADIUS_TILES
         );
 
-        // Track all terrain changes
+        // Track terrain changes
         for (const tile of affectedTiles) {
           this.terrainChanges.add(`${tile.x},${tile.y}`);
         }
 
-        // Damage all tanks in explosion radius
-        const explosionCenterX = (tankTile.x + 0.5) * 256; // TILE_SIZE_WORLD
-        const explosionCenterY = (tankTile.y + 0.5) * 256;
-        const explosionRadius = MINE_EXPLOSION_RADIUS_TILES * 256; // Convert to world units
+        // Emit sound at each exploded mine
+        for (const mine of explodedMines) {
+          const worldX = (mine.x + 0.5) * TILE_SIZE_WORLD;
+          const worldY = (mine.y + 0.5) * TILE_SIZE_WORLD;
+          this.emitSound(SOUND_MINE_EXPLOSION, worldX, worldY);
+        }
 
-        for (const otherPlayer of this.players.values()) {
-          const otherTank = otherPlayer.tank;
-          if (otherTank.isDead()) {
-            continue;
-          }
+        // Damage tanks in radius of each exploded mine
+        for (const mine of explodedMines) {
+          const centerX = (mine.x + 0.5) * TILE_SIZE_WORLD;
+          const centerY = (mine.y + 0.5) * TILE_SIZE_WORLD;
+          const explosionRadius = MINE_EXPLOSION_RADIUS_TILES * TILE_SIZE_WORLD;
 
-          const dx = otherTank.x - explosionCenterX;
-          const dy = otherTank.y - explosionCenterY;
-          const distance = Math.sqrt(dx * dx + dy * dy);
+          for (const otherPlayer of this.players.values()) {
+            const otherTank = otherPlayer.tank;
+            if (otherTank.isDead()) continue;
 
-          if (distance <= explosionRadius) {
-            const killed = otherTank.takeDamage(10); // MINE_DAMAGE
-            if (killed) {
-              console.log(`Tank ${otherTank.id} destroyed by mine explosion`);
-              setTimeout(() => {
-                const spawnX = 128 + Math.floor(Math.random() * 20);
-                const spawnY = 128 + Math.floor(Math.random() * 20);
-                otherTank.respawn(spawnX, spawnY);
-              }, 3000);
+            const dx = otherTank.x - centerX;
+            const dy = otherTank.y - centerY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance <= explosionRadius) {
+              const killed = otherTank.takeDamage(MINE_DAMAGE);
+              if (killed) {
+                console.log(`Tank ${otherTank.id} destroyed by mine explosion`);
+                this.emitSound(SOUND_TANK_SINKING, otherTank.x, otherTank.y);
+                setTimeout(() => {
+                  const spawnX = 128 + Math.floor(Math.random() * 20);
+                  const spawnY = 128 + Math.floor(Math.random() * 20);
+                  otherTank.respawn(spawnX, spawnY);
+                }, 3000);
+              }
             }
           }
         }
 
-        console.log(`Mine exploded at (${tankTile.x}, ${tankTile.y}), damaged ${affectedTiles.length} tiles`);
+        console.log(`Mine chain reaction: ${explodedMines.length} mines exploded at (${tankTile.x}, ${tankTile.y}), damaged ${affectedTiles.length} tiles`);
       }
     }
 
@@ -509,6 +561,23 @@ export class GameSession {
       }
     }
 
+    // Check for crater flooding every 10 ticks
+    if (this.tick % 10 === 0) {
+      const floodedCraters = this.world.checkCraterFlooding();
+
+      for (const crater of floodedCraters) {
+        this.terrainChanges.add(`${crater.x},${crater.y}`);
+
+        const worldX = (crater.x + 0.5) * TILE_SIZE_WORLD;
+        const worldY = (crater.y + 0.5) * TILE_SIZE_WORLD;
+        this.emitSound(SOUND_BUBBLES, worldX, worldY);
+      }
+
+      if (floodedCraters.length > 0) {
+        console.log(`Flooded ${floodedCraters.length} craters adjacent to water`);
+      }
+    }
+
     // Broadcast state to all players (throttled to reduce CPU usage)
     if (this.tick % this.BROADCAST_INTERVAL === 0) {
       this.broadcastState();
@@ -553,6 +622,15 @@ export class GameSession {
     if (this.world.checkShellTerrainCollision(tilePos.x, tilePos.y)) {
       console.log(`[DEBUG] COLLISION DETECTED! Shell ${shell.id} hit terrain at (${tilePos.x}, ${tilePos.y}), terrain=${terrainBeforeCheck} - THIS SHOULD NOT HAPPEN FOR ROADS!`);
 
+      // Emit sound based on terrain type
+      const worldX = (tilePos.x + 0.5) * TILE_SIZE_WORLD;
+      const worldY = (tilePos.y + 0.5) * TILE_SIZE_WORLD;
+      if (terrainBeforeCheck === TerrainType.FOREST) {
+        this.emitSound(SOUND_SHOT_TREE, worldX, worldY);
+      } else {
+        this.emitSound(SOUND_SHOT_BUILDING, worldX, worldY);
+      }
+
       // Damage terrain and kill shell
       const destroyed = this.world.damageTerrainFromCollision(tilePos.x, tilePos.y);
       this.terrainChanges.add(`${tilePos.x},${tilePos.y}`);
@@ -579,9 +657,11 @@ export class GameSession {
       if (distance < 128) {
         shell.killByCollision();
         const killed = tank.takeDamage(SHELL_DAMAGE);
+        this.emitSound(SOUND_HIT_TANK, tank.x, tank.y);
 
         if (killed) {
           console.log(`Tank ${tank.id} destroyed by tank ${shell.ownerTankId}`);
+          this.emitSound(SOUND_TANK_SINKING, tank.x, tank.y);
           // Tank will respawn after a delay
           setTimeout(() => {
             const spawnX = 128 + Math.floor(Math.random() * 20);
@@ -683,6 +763,7 @@ export class GameSession {
               builder.harvestTree();
               this.world.setTerrainAt(builderTile.x, builderTile.y, 7); // GRASS (7, not 0!)
               tank.trees = builder.trees; // Sync with tank
+              this.emitSound(SOUND_FARMING_TREE, builder.x, builder.y);
             }
           } else {
             // Done harvesting or invalid terrain
@@ -698,6 +779,7 @@ export class GameSession {
               this.world.setTerrainAt(builderTile.x, builderTile.y, 4); // ROAD
               tank.trees = builder.trees;
               builder.recallToTank(tank.x, tank.y);
+              this.emitSound(SOUND_MAN_BUILDING, builder.x, builder.y);
             }
           } else {
             builder.recallToTank(tank.x, tank.y);
@@ -712,6 +794,7 @@ export class GameSession {
               this.world.setTerrainAt(builderTile.x, builderTile.y, 0); // BUILDING (0, not 6!)
               tank.trees = builder.trees;
               builder.recallToTank(tank.x, tank.y);
+              this.emitSound(SOUND_MAN_BUILDING, builder.x, builder.y);
             }
           } else {
             builder.recallToTank(tank.x, tank.y);
@@ -738,6 +821,7 @@ export class GameSession {
               builder.hasMine = false;
               tank.mines = Math.max(0, tank.mines - 1);
               builder.recallToTank(tank.x, tank.y);
+              this.emitSound(SOUND_MAN_LAY_MINE, builder.x, builder.y);
             }
           } else {
             builder.recallToTank(tank.x, tank.y);
@@ -998,6 +1082,7 @@ export class GameSession {
       ...(pillboxes.length > 0 && { pillboxes }),
       ...(bases.length > 0 && { bases }),
       ...(terrainUpdates.length > 0 && { terrainUpdates }),
+      ...(this.soundEvents.length > 0 && { soundEvents: this.soundEvents }),
     };
 
     // Skip broadcast if nothing changed (rare but possible when idle)
@@ -1016,6 +1101,10 @@ export class GameSession {
         player.ws.send(message);
       }
     }
+  }
+
+  private emitSound(soundId: number, x: number, y: number): void {
+    this.soundEvents.push({soundId, x, y});
   }
 
   getPlayerCount(): number {
