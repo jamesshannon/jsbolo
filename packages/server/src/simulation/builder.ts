@@ -213,16 +213,14 @@ export class ServerBuilder {
   /**
    * Check if builder has enough trees for building
    */
-  canBuildWall(): boolean {
-    return this.trees > 0;
+  canBuildWall(cost: number = 0.5): boolean {
+    return this.trees >= cost;
   }
 
   /**
-   * Use a tree for building
+   * Use trees for building (supports fractional amounts)
    */
-  useTree(): void {
-    if (this.trees > 0) {
-      this.trees--;
-    }
+  useTrees(amount: number): void {
+    this.trees = Math.max(0, this.trees - amount);
   }
 }

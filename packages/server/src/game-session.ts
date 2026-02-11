@@ -13,6 +13,8 @@ import {
   WATER_DRAIN_INTERVAL_TICKS,
   WATER_SHELLS_DRAINED,
   WATER_MINES_DRAINED,
+  BUILDER_WALL_COST,
+  BUILDER_BOAT_COST,
   SOUND_SHOOTING,
   SOUND_SHOT_BUILDING,
   SOUND_SHOT_TREE,
@@ -772,10 +774,10 @@ export class GameSession {
           break;
 
         case BuilderOrder.BUILDING_ROAD:
-          if (builder.canBuildWall() && terrain === 7) {
+          if (builder.canBuildWall(BUILDER_WALL_COST) && terrain === 7) {
             // GRASS (7, not 0!)
             if (this.tick % 10 === 0) {
-              builder.useTree();
+              builder.useTrees(BUILDER_WALL_COST);
               this.world.setTerrainAt(builderTile.x, builderTile.y, 4); // ROAD
               tank.trees = builder.trees;
               builder.recallToTank(tank.x, tank.y);
@@ -787,10 +789,10 @@ export class GameSession {
           break;
 
         case BuilderOrder.BUILDING_WALL:
-          if (builder.canBuildWall() && terrain === 7) {
+          if (builder.canBuildWall(BUILDER_WALL_COST) && terrain === 7) {
             // GRASS (7, not 0!)
             if (this.tick % 10 === 0) {
-              builder.useTree();
+              builder.useTrees(BUILDER_WALL_COST);
               this.world.setTerrainAt(builderTile.x, builderTile.y, 0); // BUILDING (0, not 6!)
               tank.trees = builder.trees;
               builder.recallToTank(tank.x, tank.y);
@@ -802,12 +804,15 @@ export class GameSession {
           break;
 
         case BuilderOrder.BUILDING_BOAT:
-          if (terrain === 1) {
+          if (builder.canBuildWall(BUILDER_BOAT_COST) && terrain === 1) {
             // RIVER (1, not 3!)
             if (this.tick % 20 === 0) {
-              // Boats take longer
+              // Boats take longer and cost 5 trees
+              builder.useTrees(BUILDER_BOAT_COST);
               this.world.setTerrainAt(builderTile.x, builderTile.y, 9); // BOAT
+              tank.trees = builder.trees;
               builder.recallToTank(tank.x, tank.y);
+              this.emitSound(SOUND_MAN_BUILDING, builder.x, builder.y);
             }
           } else {
             builder.recallToTank(tank.x, tank.y);

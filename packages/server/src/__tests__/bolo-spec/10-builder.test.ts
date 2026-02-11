@@ -168,9 +168,15 @@ describe('Bolo Manual Spec: 10. Builder / Man', () => {
     });
 
     // "costs you 1/2 a tree"
-    it.skip('should cost 0.5 trees per road segment', () => {
-      // Currently builder.useTree() decrements by 1, not 0.5
-      // The BUILDER_WALL_COST constant is 0.5 but not yet used
+    it('should cost 0.5 trees per road segment', () => {
+      const builder = new ServerBuilder(1, 0);
+      builder.trees = 2;
+
+      // Use the builder's useTrees method with correct cost
+      const initialTrees = builder.trees;
+      builder.useTrees(0.5);
+
+      expect(builder.trees).toBe(initialTrees - 0.5);
     });
   });
 
@@ -207,8 +213,15 @@ describe('Bolo Manual Spec: 10. Builder / Man', () => {
     });
 
     // "costs you 1/2 a tree"
-    it.skip('should cost 0.5 trees per wall segment', () => {
-      // Same as roads - BUILDER_WALL_COST exists but isn't applied
+    it('should cost 0.5 trees per wall segment', () => {
+      const builder = new ServerBuilder(1, 0);
+      builder.trees = 2;
+
+      // Use the builder's useTrees method with correct cost
+      const initialTrees = builder.trees;
+      builder.useTrees(0.5);
+
+      expect(builder.trees).toBe(initialTrees - 0.5);
     });
   });
 
@@ -234,6 +247,7 @@ describe('Bolo Manual Spec: 10. Builder / Man', () => {
       player.tank.builder.targetX = player.tank.builder.x;
       player.tank.builder.targetY = player.tank.builder.y;
       player.tank.builder.order = BuilderOrder.BUILDING_BOAT;
+      player.tank.builder.trees = 5; // Boats cost 5 trees
 
       for (let i = 0; i < 40; i++) {
         tickSession(session, 1);

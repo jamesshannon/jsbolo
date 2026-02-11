@@ -48,7 +48,9 @@ export const TANK_SLIDE_TICKS = 8;
 export const BUILDER_SPEED = 16; // world units per tick
 export const BUILDER_RESPAWN_TICKS = 255;
 export const BUILDER_TREE_HARVEST = 4; // trees gained from harvesting forest
-export const BUILDER_WALL_COST = 0.5; // trees per wall segment
+export const BUILDER_WALL_COST = 0.5; // trees per road/wall/building segment
+export const BUILDER_BOAT_COST = 5; // trees per boat
+export const BUILDER_PILLBOX_COST = 1; // trees per pillbox
 export const BUILDER_WAIT_TICKS = 20; // pause after building
 
 /** Pillbox constants */
