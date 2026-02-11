@@ -292,6 +292,17 @@ export class ScenarioRunner {
 
   // --- Assertions ---
 
+  getInitialState(): { x: number; y: number; tileX: number; tileY: number } {
+    const player = getPlayer(this.session, this.playerId);
+    const tank = player.tank;
+    return {
+      x: tank.x,
+      y: tank.y,
+      tileX: Math.floor(tank.x / TILE_SIZE_WORLD),
+      tileY: Math.floor(tank.y / TILE_SIZE_WORLD),
+    };
+  }
+
   get latest(): TickSnapshot {
     if (this.history.length === 0) {
       throw new Error('No ticks executed yet');

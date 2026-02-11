@@ -13,7 +13,7 @@ describe('Terrain Transition Scenarios', () => {
       .terrain(45, 50, 5, 1, TerrainType.ROAD)
       .terrain(50, 50, 10, 1, TerrainType.SWAMP)
       .placeTank(47, 50)
-      .setTank({ speed: 16, direction: 64 }) // East
+      .setTank({ speed: 16, direction: 0 }) // East
       .input({ accelerating: true })
       .addInvariants(...MOVEMENT_INVARIANTS);
 
@@ -42,14 +42,17 @@ describe('Terrain Transition Scenarios', () => {
       .terrain(45, 50, 5, 1, TerrainType.SWAMP)
       .terrain(50, 50, 10, 1, TerrainType.ROAD)
       .placeTank(47, 50)
-      .setTank({ speed: 4, direction: 64 }) // East at swamp max speed
+      .setTank({ speed: 4, direction: 0 }) // East at swamp max speed
       .input({ accelerating: true })
       .addInvariants(...MOVEMENT_INVARIANTS);
 
-    runner.runUntil((snap) => snap.tank.tileX >= 52, 100);
+    runner.runUntil((snap) => snap.tank.tileX >= 52, 200);
 
     // Find the tick where tank enters road
     const roadEntryTick = runner.history.findIndex((s) => s.tank.tileX >= 50);
+    if (roadEntryTick === -1) {
+      throw new Error(`Tank never reached tile 50. Final position: ${runner.latest.tank.tileX}`);
+    }
     expect(roadEntryTick).toBeGreaterThan(0);
 
     // After entering road, speed should increase gradually
@@ -67,27 +70,27 @@ describe('Terrain Transition Scenarios', () => {
   });
 
   it('11. 5-point sampling at diagonal crossing', () => {
-    // Create 4 different terrain types at a corner
+    // Create 4 different terrain types at a corner (moved to tiles ~130 to avoid crater flooding)
     const runner = new ScenarioRunner()
-      .tile(50, 50, TerrainType.GRASS) // NW - speed 0.75
-      .tile(51, 50, TerrainType.ROAD) // NE - speed 1.0
-      .tile(50, 51, TerrainType.SWAMP) // SW - speed 0.25
-      .tile(51, 51, TerrainType.CRATER) // SE - speed 0.5
-      .placeTank(50, 50)
-      .setTank({ speed: 8, direction: 96 }) // Southeast
+      .tile(130, 130, TerrainType.GRASS) // NW - speed 0.75
+      .tile(131, 130, TerrainType.ROAD) // NE - speed 1.0
+      .tile(130, 131, TerrainType.SWAMP) // SW - speed 0.25
+      .tile(131, 131, TerrainType.CRATER) // SE - speed 0.5
+      .placeTank(130, 130)
+      .setTank({ speed: 8, direction: 224 }) // Southeast (0=E, 64=N, 128=W, 192=S, 224=SE)
       .input({ accelerating: true })
       .addInvariants(...MOVEMENT_INVARIANTS);
 
     runner.run(20);
 
-    // When tank is near corner (50.9, 50.9), sampling should pick minimum terrain speed
+    // When tank is near corner (130.9, 130.9), sampling should pick minimum terrain speed
     // Find snapshots where tank is near the corner junction
     const cornerSnapshots = runner.history.filter(
       (s) =>
-        s.tank.x >= 50.7 * 256 &&
-        s.tank.x <= 51.3 * 256 &&
-        s.tank.y >= 50.7 * 256 &&
-        s.tank.y <= 51.3 * 256
+        s.tank.x >= 130.7 * 256 &&
+        s.tank.x <= 131.3 * 256 &&
+        s.tank.y >= 130.7 * 256 &&
+        s.tank.y <= 131.3 * 256
     );
 
     // At least one snapshot should show terrain speed reflecting the minimum sampled value
@@ -103,9 +106,9 @@ describe('Terrain Transition Scenarios', () => {
 
   it('12. Terrain change mid-movement', () => {
     const runner = new ScenarioRunner()
-      .terrain(45, 50, 20, 1, TerrainType.ROAD)
-      .placeTank(47, 50)
-      .setTank({ speed: 16, direction: 64 }) // East
+      .terrain(125, 130, 20, 1, TerrainType.ROAD)
+      .placeTank(127, 130)
+      .setTank({ speed: 16, direction: 0 }) // East
       .input({ accelerating: true })
       .addInvariants(...MOVEMENT_INVARIANTS);
 
@@ -114,15 +117,18 @@ describe('Terrain Transition Scenarios', () => {
     const speedBeforeChange = runner.latest.tank.speed;
 
     // Change terrain ahead to crater
-    runner.tile(52, 50, TerrainType.CRATER);
-    runner.tile(53, 50, TerrainType.CRATER);
-    runner.tile(54, 50, TerrainType.CRATER);
+    runner.tile(132, 130, TerrainType.CRATER);
+    runner.tile(133, 130, TerrainType.CRATER);
+    runner.tile(134, 130, TerrainType.CRATER);
 
     // Continue running
-    runner.runUntil((snap) => snap.tank.tileX >= 54, 50);
+    runner.runUntil((snap) => snap.tank.tileX >= 134, 100);
 
     // Find when tank enters crater
-    const craterEntryTick = runner.history.findIndex((s) => s.tank.tileX >= 52);
+    const craterEntryTick = runner.history.findIndex((s) => s.tank.tileX >= 132);
+    if (craterEntryTick === -1) {
+      throw new Error(`Tank never reached tile 132. Final position: ${runner.latest.tank.tileX}`);
+    }
     expect(craterEntryTick).toBeGreaterThan(10);
 
     // Speed should decrease after entering crater
