@@ -178,6 +178,71 @@ describe('Bolo Manual Spec: 10. Builder / Man', () => {
 
       expect(builder.trees).toBe(initialTrees - 0.5);
     });
+
+    it('should deduct 0.5 trees from tank when building road via game session', () => {
+      const session = new GameSession();
+      const ws = createMockWebSocket();
+      const id = session.addPlayer(ws);
+      const player = getPlayer(session, id);
+      const world = getWorld(session);
+
+      world.setTerrainAt(50, 50, TerrainType.GRASS);
+      placeTankAtTile(player.tank, 50, 50);
+
+      // Give tank 2 trees
+      player.tank.trees = 2;
+      player.tank.builder.trees = 2;
+
+      player.tank.builder.x = (50 + 0.5) * TILE_SIZE_WORLD;
+      player.tank.builder.y = (50 + 0.5) * TILE_SIZE_WORLD;
+      player.tank.builder.targetX = player.tank.builder.x;
+      player.tank.builder.targetY = player.tank.builder.y;
+      player.tank.builder.order = BuilderOrder.BUILDING_ROAD;
+
+      // Run until road is built
+      for (let i = 0; i < 20; i++) {
+        tickSession(session, 1);
+        if (world.getTerrainAt(50, 50) === TerrainType.ROAD) break;
+      }
+
+      // Verify road was built
+      expect(world.getTerrainAt(50, 50)).toBe(TerrainType.ROAD);
+
+      // Verify 0.5 trees were deducted
+      expect(player.tank.trees).toBe(1.5);
+    });
+
+    it('should recall builder if not enough trees for road', () => {
+      const session = new GameSession();
+      const ws = createMockWebSocket();
+      const id = session.addPlayer(ws);
+      const player = getPlayer(session, id);
+      const world = getWorld(session);
+
+      world.setTerrainAt(50, 50, TerrainType.GRASS);
+      placeTankAtTile(player.tank, 50, 50);
+
+      // Give tank 0 trees (not enough)
+      player.tank.trees = 0;
+      player.tank.builder.trees = 0;
+
+      player.tank.builder.x = (50 + 0.5) * TILE_SIZE_WORLD;
+      player.tank.builder.y = (50 + 0.5) * TILE_SIZE_WORLD;
+      player.tank.builder.targetX = player.tank.builder.x;
+      player.tank.builder.targetY = player.tank.builder.y;
+      player.tank.builder.order = BuilderOrder.BUILDING_ROAD;
+
+      // Run ticks
+      tickSession(session, 20);
+
+      // Verify road was NOT built (no trees)
+      expect(world.getTerrainAt(50, 50)).toBe(TerrainType.GRASS);
+
+      // Verify builder was recalled (may be IN_TANK if already returned)
+      expect([BuilderOrder.IN_TANK, BuilderOrder.RETURNING]).toContain(
+        player.tank.builder.order
+      );
+    });
   });
 
   describe('10d. Building Walls', () => {
@@ -222,6 +287,39 @@ describe('Bolo Manual Spec: 10. Builder / Man', () => {
       builder.useTrees(0.5);
 
       expect(builder.trees).toBe(initialTrees - 0.5);
+    });
+
+    it('should deduct 0.5 trees from tank when building wall via game session', () => {
+      const session = new GameSession();
+      const ws = createMockWebSocket();
+      const id = session.addPlayer(ws);
+      const player = getPlayer(session, id);
+      const world = getWorld(session);
+
+      world.setTerrainAt(50, 50, TerrainType.GRASS);
+      placeTankAtTile(player.tank, 50, 50);
+
+      // Give tank 2 trees
+      player.tank.trees = 2;
+      player.tank.builder.trees = 2;
+
+      player.tank.builder.x = (50 + 0.5) * TILE_SIZE_WORLD;
+      player.tank.builder.y = (50 + 0.5) * TILE_SIZE_WORLD;
+      player.tank.builder.targetX = player.tank.builder.x;
+      player.tank.builder.targetY = player.tank.builder.y;
+      player.tank.builder.order = BuilderOrder.BUILDING_WALL;
+
+      // Run until wall is built
+      for (let i = 0; i < 20; i++) {
+        tickSession(session, 1);
+        if (world.getTerrainAt(50, 50) === TerrainType.BUILDING) break;
+      }
+
+      // Verify wall was built
+      expect(world.getTerrainAt(50, 50)).toBe(TerrainType.BUILDING);
+
+      // Verify 0.5 trees were deducted
+      expect(player.tank.trees).toBe(1.5);
     });
   });
 
@@ -278,6 +376,71 @@ describe('Bolo Manual Spec: 10. Builder / Man', () => {
 
       // Should still be grass (builder recalled since wrong terrain)
       expect(world.getTerrainAt(50, 50)).toBe(TerrainType.GRASS);
+    });
+
+    it('should deduct 5 trees from tank when building boat via game session', () => {
+      const session = new GameSession();
+      const ws = createMockWebSocket();
+      const id = session.addPlayer(ws);
+      const player = getPlayer(session, id);
+      const world = getWorld(session);
+
+      world.setTerrainAt(50, 50, TerrainType.RIVER);
+      placeTankAtTile(player.tank, 49, 50);
+
+      // Give tank 10 trees
+      player.tank.trees = 10;
+      player.tank.builder.trees = 10;
+
+      player.tank.builder.x = (50 + 0.5) * TILE_SIZE_WORLD;
+      player.tank.builder.y = (50 + 0.5) * TILE_SIZE_WORLD;
+      player.tank.builder.targetX = player.tank.builder.x;
+      player.tank.builder.targetY = player.tank.builder.y;
+      player.tank.builder.order = BuilderOrder.BUILDING_BOAT;
+
+      // Run until boat is built (boats take 20 ticks)
+      for (let i = 0; i < 40; i++) {
+        tickSession(session, 1);
+        if (world.getTerrainAt(50, 50) === TerrainType.BOAT) break;
+      }
+
+      // Verify boat was built
+      expect(world.getTerrainAt(50, 50)).toBe(TerrainType.BOAT);
+
+      // Verify 5 trees were deducted
+      expect(player.tank.trees).toBe(5);
+    });
+
+    it('should recall builder if not enough trees for boat', () => {
+      const session = new GameSession();
+      const ws = createMockWebSocket();
+      const id = session.addPlayer(ws);
+      const player = getPlayer(session, id);
+      const world = getWorld(session);
+
+      world.setTerrainAt(50, 50, TerrainType.RIVER);
+      placeTankAtTile(player.tank, 49, 50);
+
+      // Give tank only 2 trees (not enough for boat which costs 5)
+      player.tank.trees = 2;
+      player.tank.builder.trees = 2;
+
+      player.tank.builder.x = (50 + 0.5) * TILE_SIZE_WORLD;
+      player.tank.builder.y = (50 + 0.5) * TILE_SIZE_WORLD;
+      player.tank.builder.targetX = player.tank.builder.x;
+      player.tank.builder.targetY = player.tank.builder.y;
+      player.tank.builder.order = BuilderOrder.BUILDING_BOAT;
+
+      // Run ticks
+      tickSession(session, 30);
+
+      // Verify boat was NOT built (not enough trees)
+      expect(world.getTerrainAt(50, 50)).toBe(TerrainType.RIVER);
+
+      // Verify builder was recalled (may be IN_TANK if already returned)
+      expect([BuilderOrder.IN_TANK, BuilderOrder.RETURNING]).toContain(
+        player.tank.builder.order
+      );
     });
   });
 
