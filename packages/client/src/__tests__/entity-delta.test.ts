@@ -28,4 +28,27 @@ describe('applyRemovedEntityIds', () => {
     expect(bases.has(200)).toBe(true);
     expect(bases.has(201)).toBe(false);
   });
+
+  it('should let removals win when update and removal for same id arrive together', () => {
+    const tanks = new Map<number, any>();
+    const builders = new Map<number, any>();
+    const pillboxes = new Map<number, any>();
+    const bases = new Map<number, any>();
+
+    // Simulate the same ordering used in MultiplayerGame.onUpdate:
+    // 1) Merge changed entities from delta.
+    // 2) Apply explicit removed ids.
+    tanks.set(7, {id: 7, x: 100, y: 100});
+
+    applyRemovedEntityIds(
+      {
+        type: 'update',
+        tick: 200,
+        removedTankIds: [7],
+      },
+      {tanks, builders, pillboxes, bases}
+    );
+
+    expect(tanks.has(7)).toBe(false);
+  });
 });
