@@ -155,7 +155,6 @@ describe('GameSession Integration', () => {
       (session as any).update();
 
       expect(victim.tank.isDead()).toBe(true);
-      expect(victim.respawnAtTick).toBe((session as any).tick + TANK_RESPAWN_TICKS);
 
       for (let i = 0; i < TANK_RESPAWN_TICKS - 1; i++) {
         (session as any).update();
@@ -164,7 +163,6 @@ describe('GameSession Integration', () => {
 
       (session as any).update();
       expect(victim.tank.isDead()).toBe(false);
-      expect(victim.respawnAtTick).toBeUndefined();
     });
   });
 

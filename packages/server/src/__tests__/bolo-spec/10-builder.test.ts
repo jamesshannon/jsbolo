@@ -724,9 +724,9 @@ describe('Bolo Manual Spec: 10. Builder / Man', () => {
       // Manually damage the forest with explosion (simulating shell explosion)
       world.damageTerrainFromExplosion(135, 135);
 
-      // Manually add to regrowth timer (as GameSession would)
+      // Manually add to regrowth timer via terrain effects system
       const tileKey = `135,135`;
-      (session as any).forestRegrowthTimers.set(tileKey, 500);
+      (session as any).terrainEffects.trackForestRegrowth(tileKey);
 
       // Verify forest became crater
       expect(world.getTerrainAt(135, 135)).toBe(TerrainType.CRATER);
@@ -758,9 +758,8 @@ describe('Bolo Manual Spec: 10. Builder / Man', () => {
       const destroyed = world.damageTerrainFromCollision(135, 135);
       expect(destroyed).toBe(true);
 
-      // Manually trigger regrowth tracking (as GameSession would)
-      (session as any).terrainChanges.add('135,135');
-      (session as any).forestRegrowthTimers.set('135,135', 500);
+      // Manually trigger regrowth tracking via terrain effects system
+      (session as any).terrainEffects.trackForestRegrowth('135,135');
 
       // Verify forest became GRASS from collision
       expect(world.getTerrainAt(135, 135)).toBe(TerrainType.GRASS);

@@ -56,7 +56,6 @@ interface Player {
   ws: WebSocket;
   tank: ServerTank;
   lastInput: PlayerInput;
-  respawnAtTick?: number;
 }
 
 export class GameSession {
@@ -69,8 +68,6 @@ export class GameSession {
   private readonly soundEvents: SoundEvent[] = [];
   private readonly terrainEffects = new TerrainEffectsSystem();
   private readonly respawnSystem = new RespawnSystem();
-  // Test compatibility shim: some specs access this via (session as any).
-  private readonly forestRegrowthTimers = this.terrainEffects.getRegrowthTimersForDebug();
   private readonly matchState = new MatchStateSystem();
   private nextPlayerId = 1;
   private tick = 0;
@@ -719,7 +716,7 @@ export class GameSession {
       // Start regrowth timer if a forest was destroyed
       if (terrainBeforeCheck === TerrainType.FOREST) {
         const tileKey = `${tilePos.x},${tilePos.y}`;
-        this.forestRegrowthTimers.set(tileKey, FOREST_REGROWTH_TICKS);
+        this.terrainEffects.trackForestRegrowth(tileKey);
       }
     }
   }
@@ -1351,14 +1348,7 @@ export class GameSession {
   }
 
   private scheduleTankRespawn(tankId: number): void {
-    const player = this.players.get(tankId);
-    if (!player) {
-      return;
-    }
-
     this.respawnSystem.schedule(tankId, this.tick, TANK_RESPAWN_TICKS);
-    // Compatibility mirror for existing integration tests and debug inspection.
-    player.respawnAtTick = this.tick + TANK_RESPAWN_TICKS;
   }
 
   private tryRespawnTank(player: Player): void {
@@ -1372,7 +1362,6 @@ export class GameSession {
     const spawnY = 128 + Math.floor(Math.random() * 20);
     player.tank.respawn(spawnX, spawnY);
     this.respawnSystem.clear(player.id);
-    delete player.respawnAtTick;
   }
 
   public requestAlliance(fromTeam: number, toTeam: number): boolean {
