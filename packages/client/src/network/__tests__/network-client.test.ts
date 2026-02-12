@@ -50,4 +50,56 @@ describe('NetworkClient', () => {
     expect(client.getState().tanks.get(2)?.x).toBe(30);
     expect(client.getState().tanks.get(2)?.y).toBe(30);
   });
+
+  it('should remove tanks from local cache when update includes removedTankIds', () => {
+    const client = new NetworkClient();
+    const internal = client as any;
+
+    internal.handleUpdate({
+      type: 'update',
+      tick: 1,
+      tanks: [{id: 9, x: 100, y: 100}],
+    });
+    expect(client.getState().tanks.has(9)).toBe(true);
+
+    internal.handleUpdate({
+      type: 'update',
+      tick: 2,
+      shells: [],
+      removedTankIds: [9],
+    });
+    expect(client.getState().tanks.has(9)).toBe(false);
+  });
+
+  it('should clear cached tanks on welcome to avoid stale entities across reconnects', () => {
+    const client = new NetworkClient();
+    const internal = client as any;
+
+    internal.handleUpdate({
+      type: 'update',
+      tick: 50,
+      tanks: [{id: 3, x: 44, y: 55}],
+    });
+    expect(client.getState().tanks.size).toBe(1);
+
+    internal.handleWelcome({
+      type: 'welcome',
+      playerId: 1,
+      assignedTeam: 0,
+      currentTick: 5,
+      mapName: 'test',
+      map: {
+        width: 256,
+        height: 256,
+        terrain: [],
+        terrainLife: [],
+      },
+      tanks: [],
+      pillboxes: [],
+      bases: [],
+    });
+
+    expect(client.getState().currentTick).toBe(5);
+    expect(client.getState().tanks.size).toBe(0);
+  });
 });

@@ -103,6 +103,9 @@ export class NetworkClient {
   }
 
   private handleWelcome(welcome: WelcomeMessage): void {
+    // Welcome establishes a new authoritative baseline for this connection.
+    // Clear cached entities so reconnect/new-match flows never retain stale tanks.
+    this.state.tanks.clear();
     this.state.playerId = welcome.playerId;
     this.state.currentTick = welcome.currentTick;
 
@@ -129,6 +132,9 @@ export class NetworkClient {
       for (const tank of update.tanks) {
         this.state.tanks.set(tank.id, tank);
       }
+    }
+    for (const tankId of update.removedTankIds ?? []) {
+      this.state.tanks.delete(tankId);
     }
 
     if (this.onUpdateCallback) {
