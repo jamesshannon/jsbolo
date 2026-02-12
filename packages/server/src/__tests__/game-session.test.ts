@@ -10,7 +10,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { GameSession } from '../game-session.js';
-import { TerrainType, TANK_RESPAWN_TICKS } from '@jsbolo/shared';
+import { BuildAction, BuilderOrder, TerrainType, TANK_RESPAWN_TICKS } from '@jsbolo/shared';
 import type { WebSocket } from 'ws';
 
 // Mock WebSocket
@@ -163,6 +163,129 @@ describe('GameSession Integration', () => {
 
       (session as any).update();
       expect(victim.tank.isDead()).toBe(false);
+    });
+  });
+
+  describe('Pillbox Capture Lifecycle', () => {
+    const idleInput = {
+      sequence: 0,
+      tick: 0,
+      accelerating: false,
+      braking: false,
+      turningClockwise: false,
+      turningCounterClockwise: false,
+      shooting: false,
+      rangeAdjustment: 0,
+    };
+
+    it('should allow capturing another disabled pillbox after placing a carried one', () => {
+      const ws = createMockWebSocket();
+      const playerId = session.addPlayer(ws);
+      const players = (session as any).players;
+      const player = players.get(playerId);
+      const tank = player.tank;
+
+      const pillboxes = Array.from((session as any).pillboxes.values());
+      const first = pillboxes[0];
+      const second = pillboxes[1];
+      expect(first).toBeDefined();
+      expect(second).toBeDefined();
+
+      first.armor = 0;
+      second.armor = 0;
+      const world = (session as any).world;
+      world.setTerrainAt(first.tileX + 2, first.tileY, TerrainType.GRASS);
+
+      // Pick up first disabled pillbox
+      tank.x = (first.tileX + 0.5) * 256;
+      tank.y = (first.tileY + 0.5) * 256;
+      (session as any).update();
+      expect(tank.carriedPillbox?.id).toBe(first.id);
+      expect(first.inTank).toBe(true);
+
+      // Place carried pillbox via builder at a nearby valid land tile.
+      session.handlePlayerInput(playerId, {
+        ...idleInput,
+        sequence: 1,
+        tick: 1,
+        buildOrder: {
+          action: BuildAction.PILLBOX,
+          targetX: first.tileX + 2,
+          targetY: first.tileY,
+        },
+      });
+      (session as any).update();
+
+      // Builder movement is in world units (4/tick), so even nearby placements can
+      // take >100 ticks before reaching the target and completing the build action.
+      for (let i = 0; i < 220; i++) {
+        (session as any).update();
+        if (tank.carriedPillbox === null) {
+          break;
+        }
+      }
+      expect(tank.carriedPillbox).toBeNull();
+      expect(first.inTank).toBe(false);
+
+      // Pick up second disabled pillbox
+      tank.x = (second.tileX + 0.5) * 256;
+      tank.y = (second.tileY + 0.5) * 256;
+      (session as any).update();
+      expect(tank.carriedPillbox?.id).toBe(second.id);
+      expect(second.inTank).toBe(true);
+    });
+
+    it('should not lose one-shot build orders when a later movement input arrives in the same tick', () => {
+      const ws = createMockWebSocket();
+      const playerId = session.addPlayer(ws);
+      const players = (session as any).players;
+      const player = players.get(playerId);
+      const tank = player.tank;
+      const world = (session as any).world;
+
+      const first = Array.from((session as any).pillboxes.values())[0];
+      expect(first).toBeDefined();
+
+      first.armor = 0;
+      world.setTerrainAt(first.tileX + 2, first.tileY, TerrainType.GRASS);
+
+      // Pick up a disabled pillbox.
+      tank.x = (first.tileX + 0.5) * 256;
+      tank.y = (first.tileY + 0.5) * 256;
+      (session as any).update();
+      expect(tank.carriedPillbox?.id).toBe(first.id);
+
+      // Simulate client packet race:
+      // 1) Click-to-build packet with buildOrder.
+      // 2) Immediate regular movement packet without buildOrder.
+      session.handlePlayerInput(playerId, {
+        ...idleInput,
+        sequence: 10,
+        tick: 10,
+        buildOrder: {
+          action: BuildAction.PILLBOX,
+          targetX: first.tileX + 2,
+          targetY: first.tileY,
+        },
+      });
+      session.handlePlayerInput(playerId, {
+        ...idleInput,
+        sequence: 11,
+        tick: 10,
+      });
+
+      (session as any).update();
+      expect(tank.builder.order).toBe(BuilderOrder.PLACING_PILLBOX);
+
+      for (let i = 0; i < 220; i++) {
+        (session as any).update();
+        if (tank.carriedPillbox === null) {
+          break;
+        }
+      }
+
+      expect(tank.carriedPillbox).toBeNull();
+      expect(first.inTank).toBe(false);
     });
   });
 

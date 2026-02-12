@@ -57,6 +57,7 @@ interface Player {
   ws: WebSocket;
   tank: ServerTank;
   lastInput: PlayerInput;
+  pendingBuildOrder?: NonNullable<PlayerInput['buildOrder']>;
 }
 
 export class GameSession {
@@ -292,7 +293,18 @@ export class GameSession {
   handlePlayerInput(playerId: number, input: PlayerInput): void {
     const player = this.players.get(playerId);
     if (player) {
-      player.lastInput = input;
+      // Build orders are one-shot commands from the client (e.g. click-to-place).
+      // Queue them so a subsequent movement packet in the same server tick
+      // does not clobber the command before simulation consumes it.
+      if (input.buildOrder) {
+        player.pendingBuildOrder = input.buildOrder;
+      }
+
+      // Keep latest movement/fire/range state, but do not persist buildOrder here.
+      player.lastInput = {
+        ...input,
+        buildOrder: undefined,
+      };
     }
   }
 
@@ -332,7 +344,12 @@ export class GameSession {
       // Track previous tank position for boat movement
       const prevTile = tank.getTilePosition();
 
-      tank.update(player.lastInput, terrainSpeed, checkCollision);
+      const inputForTick: PlayerInput = player.pendingBuildOrder
+        ? {...player.lastInput, buildOrder: player.pendingBuildOrder}
+        : player.lastInput;
+      player.pendingBuildOrder = undefined;
+
+      tank.update(inputForTick, terrainSpeed, checkCollision);
 
       // Handle boat movement: boat "carried" by tank, only exists as tile when disembarked
       // ASSUMPTION: Boats can only be disembarked from RIVER terrain (coastlines).
