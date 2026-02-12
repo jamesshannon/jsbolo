@@ -20,14 +20,17 @@ describe('GameServer bot admin surface', () => {
   });
 
   it('adds and lists bots through server API', () => {
+    const session = new GameSession();
+    const startSpy = vi.spyOn(session, 'start');
     const server = new GameServer(0, {
-      session: new GameSession(),
+      session,
       createWebSocketServer: () => createMockWss() as any,
     });
 
     const addResult = server.addBot('idle');
 
     expect(addResult.ok).toBe(true);
+    expect(startSpy).toHaveBeenCalledTimes(1);
     expect(server.listBots()).toHaveLength(1);
     expect(server.listBots()[0]?.profile).toBe('idle');
   });

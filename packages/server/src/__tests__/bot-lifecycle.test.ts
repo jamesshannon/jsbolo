@@ -74,6 +74,19 @@ describe('GameSession bot lifecycle', () => {
     expect(session.areTeamsAllied(teamA, teamB)).toBe(true);
   });
 
+  it('defaults to all-bots alliance mode', () => {
+    const session = new GameSession();
+    const botA = session.addBot('idle');
+    const botB = session.addBot('patrol');
+    expect(botA).not.toBeNull();
+    expect(botB).not.toBeNull();
+
+    const players = (session as any).players as Map<number, any>;
+    const teamA = players.get(botA!)?.tank.team;
+    const teamB = players.get(botB!)?.tank.team;
+    expect(teamA).toBe(teamB);
+  });
+
   it('keeps default none mode assigning independent teams', () => {
     const session = new GameSession(undefined, {
       botPolicy: {

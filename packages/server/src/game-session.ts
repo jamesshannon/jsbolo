@@ -47,7 +47,7 @@ export interface SessionBotSummary {
 const DEFAULT_BOT_POLICY: BotPolicyOptions = {
   allowBots: true,
   maxBots: 4,
-  botAllianceMode: 'none',
+  botAllianceMode: 'all-bots',
 };
 
 export class GameSession {

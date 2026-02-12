@@ -124,6 +124,12 @@ export class GameServer {
       return {ok: false, reason: 'Bot policy rejected add request (allowBots/maxBots).'};
     }
 
+    // Keep bot-only sessions alive: first bot should start authoritative ticking
+    // even before any human WebSocket client connects.
+    if (this.session.getPlayerCount() === 1) {
+      this.session.start();
+    }
+
     return {ok: true, playerId: botPlayerId};
   }
 
