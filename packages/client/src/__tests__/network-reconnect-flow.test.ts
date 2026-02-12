@@ -159,4 +159,144 @@ describe('Network Reconnect Flow', () => {
     expect(client.getState().tanks.size).toBe(0);
     expect(client.getState().currentTick).toBe(1);
   });
+
+  it('should apply removals deterministically and ignore stale updates before reconnect reset', () => {
+    const client = new NetworkClient();
+    const world = new World();
+    const tankInterpolator = new TankInterpolator(100);
+
+    const tanks = new Map<number, Tank>();
+    const shells = new Map<number, Shell>();
+    const builders = new Map<number, Builder>();
+    const pillboxes = new Map<number, Pillbox>();
+    const bases = new Map<number, Base>();
+
+    client.onWelcome(welcome => {
+      applyNetworkWelcomeState(welcome, {
+        world,
+        tanks,
+        shells,
+        builders,
+        pillboxes,
+        bases,
+        tankInterpolator,
+        nowMs: 2_000,
+        log: () => {},
+      });
+    });
+
+    client.onUpdate(update => {
+      applyNetworkEntityUpdate(
+        update,
+        {tanks, shells, builders, pillboxes, bases},
+        2_100,
+        {
+          onTankUpdated: (tank, tick, receivedAtMs) => {
+            tankInterpolator.pushSnapshot(tank, tick, receivedAtMs);
+          },
+          onTankRemoved: tankId => {
+            tankInterpolator.removeTank(tankId);
+          },
+        }
+      );
+    });
+
+    const internal = client as any;
+    internal.handleMessage(
+      encodeServerMessage({
+        type: 'welcome',
+        playerId: 1,
+        assignedTeam: 0,
+        currentTick: 5,
+        mapName: 'session-c',
+        map: {
+          width: 2,
+          height: 2,
+          terrain: [7, 7, 7, 7],
+          terrainLife: [255, 255, 255, 255],
+        },
+        tanks: [createTank(10, 300, 300), createTank(11, 320, 320)],
+        pillboxes: [{id: 100, tileX: 40, tileY: 40, armor: 255, ownerTeam: 1, inTank: false}],
+        bases: [{id: 200, tileX: 50, tileY: 50, armor: 90, shells: 8, mines: 3, ownerTeam: 2}],
+      })
+    );
+
+    internal.handleMessage(
+      encodeServerMessage({
+        type: 'update',
+        tick: 6,
+        tanks: [createTank(11, 330, 330)],
+        shells: [{id: 500, x: 330, y: 330, direction: 0, ownerTankId: 11}],
+        builders: [{
+          id: 600,
+          ownerTankId: 11,
+          x: 330,
+          y: 331,
+          targetX: 331,
+          targetY: 331,
+          order: 0,
+          trees: 0,
+          hasMine: false,
+          team: 0,
+        }],
+      })
+    );
+
+    internal.handleMessage(
+      encodeServerMessage({
+        type: 'update',
+        tick: 7,
+        shells: [],
+        removedTankIds: [10],
+        removedBuilderIds: [600],
+        removedPillboxIds: [100],
+        removedBaseIds: [200],
+      })
+    );
+
+    expect(tanks.has(10)).toBe(false);
+    expect(tanks.has(11)).toBe(true);
+    expect(builders.has(600)).toBe(false);
+    expect(pillboxes.has(100)).toBe(false);
+    expect(bases.has(200)).toBe(false);
+    expect(tankInterpolator.getInterpolatedTank(10, 2_200)).toBeUndefined();
+    expect(client.getState().currentTick).toBe(7);
+
+    // Stale updates must not roll state backward after newer tick is processed.
+    internal.handleMessage(
+      encodeServerMessage({
+        type: 'update',
+        tick: 6,
+        tanks: [createTank(10, 999, 999)],
+      })
+    );
+    expect(tanks.has(10)).toBe(false);
+    expect(client.getState().currentTick).toBe(7);
+
+    internal.handleMessage(
+      encodeServerMessage({
+        type: 'welcome',
+        playerId: 2,
+        assignedTeam: 2,
+        currentTick: 1,
+        mapName: 'session-d',
+        map: {
+          width: 2,
+          height: 2,
+          terrain: [4, 4, 4, 4],
+          terrainLife: [255, 255, 255, 255],
+        },
+        tanks: [],
+        pillboxes: [],
+        bases: [],
+      })
+    );
+
+    expect(tanks.size).toBe(0);
+    expect(shells.size).toBe(0);
+    expect(builders.size).toBe(0);
+    expect(pillboxes.size).toBe(0);
+    expect(bases.size).toBe(0);
+    expect(client.getState().currentTick).toBe(1);
+  });
 });
