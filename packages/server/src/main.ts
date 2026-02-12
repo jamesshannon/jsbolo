@@ -6,7 +6,8 @@ import * as path from 'node:path';
 import express, {type Request, type Response} from 'express';
 import type {Server as HttpServer} from 'node:http';
 import {fileURLToPath} from 'node:url';
-import {GameSession, type BotPolicyOptions} from './game-session.js';
+import {GameSession} from './game-session.js';
+import {parseBotPolicyFromEnv, resolveStartupBotProfiles} from './bot-startup.js';
 import {GameServer} from './game-server.js';
 
 const PORT = process.env['PORT'] ? parseInt(process.env['PORT'], 10) : 8080;
@@ -22,29 +23,6 @@ const moduleDirName = path.dirname(moduleFileName);
 // To use procedural map instead, comment out this line
 const DEFAULT_MAP = path.join(moduleDirName, '../maps/everard_island.map');
 
-function parseBotPolicyFromEnv(): Partial<BotPolicyOptions> {
-  const parsed: Partial<BotPolicyOptions> = {};
-
-  if (process.env['ALLOW_BOTS'] !== undefined) {
-    parsed.allowBots = process.env['ALLOW_BOTS'] !== 'false';
-  }
-
-  if (process.env['MAX_BOTS'] !== undefined) {
-    const maxBots = Number.parseInt(process.env['MAX_BOTS'], 10);
-    if (Number.isInteger(maxBots) && maxBots >= 0) {
-      parsed.maxBots = maxBots;
-    }
-  }
-
-  if (process.env['BOT_ALLIANCE_MODE'] === 'all-bots') {
-    parsed.botAllianceMode = 'all-bots';
-  } else if (process.env['BOT_ALLIANCE_MODE'] === 'none') {
-    parsed.botAllianceMode = 'none';
-  }
-
-  return parsed;
-}
-
 function main(): void {
   console.log('Starting JSBolo server...');
 
@@ -52,6 +30,18 @@ function main(): void {
     botPolicy: parseBotPolicyFromEnv(),
   });
   const server = new GameServer(PORT, {session});
+
+  const startupProfiles = resolveStartupBotProfiles(server.listAvailableBotProfiles());
+  for (const profile of startupProfiles) {
+    const result = server.addBot(profile);
+    if (!result.ok) {
+      console.warn(`[BOT STARTUP] Failed to add '${profile}' bot: ${result.reason}`);
+      break;
+    }
+  }
+  if (startupProfiles.length > 0) {
+    console.log(`[BOT STARTUP] Added ${server.listBots().length} bot(s) at startup`);
+  }
   let controlServer: HttpServer | null = null;
 
   if (ENABLE_BOT_CONTROL) {

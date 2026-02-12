@@ -464,9 +464,15 @@ ALLOW_BOTS=true
 MAX_BOTS=4
 
 # Bot alliance policy:
-# - none: bots use normal team assignment (default)
-# - all-bots: every bot joins one shared bot team
+# - all-bots: every bot joins one shared bot team (default)
+# - none: bots use normal team assignment
 BOT_ALLIANCE_MODE=all-bots
+
+# Optional startup spawn count (default: 0)
+BOT_COUNT=4
+
+# Optional startup profile for BOT_COUNT spawns (default: patrol)
+BOT_PROFILE=patrol
 ```
 
 Endpoints:

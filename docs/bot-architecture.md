@@ -195,6 +195,11 @@ Add session options (server-owned):
 - `botAllianceMode: 'none' | 'all-bots'`
 - `botAssistMode: 'off' | 'standard' | 'advantage'`
 
+Current operational defaults:
+
+- `botAllianceMode` defaults to `all-bots`.
+- Startup bot spawning can be configured from env (`BOT_COUNT`, `BOT_PROFILE`).
+
 This mirrors classic intent of `allow_AI`/`assist_AI` while keeping naming clear.
 
 ### 5. Observability
