@@ -273,10 +273,8 @@ export class GameSession {
       }
 
       // Keep latest movement/fire/range state, but do not persist buildOrder here.
-      player.lastInput = {
-        ...input,
-        buildOrder: undefined,
-      };
+      const {buildOrder: _ignoredBuildOrder, ...movementInput} = input;
+      player.lastInput = movementInput;
     }
   }
 

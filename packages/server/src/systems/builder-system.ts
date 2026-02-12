@@ -133,7 +133,7 @@ export class BuilderSystem {
         break;
 
       case BuilderOrder.PLACING_PILLBOX:
-        this.updatePillboxPlacement(tank, tick, terrain, builderTile.x, builderTile.y, context, callbacks);
+        this.updatePillboxPlacement(tank, tick, terrain, builderTile.x, builderTile.y, callbacks);
         break;
 
       case BuilderOrder.REPAIRING:
@@ -151,7 +151,6 @@ export class BuilderSystem {
     terrain: TerrainType,
     tileX: number,
     tileY: number,
-    context: BuilderSystemContext,
     callbacks: BuilderSystemCallbacks
   ): void {
     const builder = tank.builder;

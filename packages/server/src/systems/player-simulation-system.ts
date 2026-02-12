@@ -105,7 +105,7 @@ export class PlayerSimulationSystem {
         ? {...player.lastInput, buildOrder: player.pendingBuildOrder}
         : player.lastInput;
       // Build orders are one-shot commands. Consume exactly once per server tick.
-      player.pendingBuildOrder = undefined;
+      delete player.pendingBuildOrder;
 
       tank.update(inputForTick, terrainSpeed, checkCollision);
       this.updateBoatState(tank, prevTile, context.world, callbacks);
