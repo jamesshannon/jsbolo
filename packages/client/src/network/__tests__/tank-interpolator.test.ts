@@ -51,6 +51,26 @@ describe('TankInterpolator', () => {
     expect(result?.x).toBe(200);
   });
 
+  it('should replace same-tick snapshots without creating interpolation drift', () => {
+    const interpolator = new TankInterpolator(100);
+    interpolator.pushSnapshot(createTank(1, 100, 100), 10, 1000);
+    interpolator.pushSnapshot(createTank(1, 200, 100), 11, 1100);
+    interpolator.pushSnapshot(createTank(1, 300, 100), 11, 1300);
+
+    const result = interpolator.getInterpolatedTank(1, 1410);
+    expect(result?.x).toBe(300);
+  });
+
+  it('should use newest same-tick direction snapshot', () => {
+    const interpolator = new TankInterpolator(100);
+    interpolator.pushSnapshot(createTank(1, 0, 0, 32), 20, 2000);
+    interpolator.pushSnapshot(createTank(1, 0, 0, 64), 21, 2100);
+    interpolator.pushSnapshot(createTank(1, 0, 0, 96), 21, 2200);
+
+    const result = interpolator.getInterpolatedTank(1, 2310);
+    expect(result?.direction).toBe(96);
+  });
+
   it('should interpolate direction across 0/255 wrap using shortest path', () => {
     const interpolator = new TankInterpolator(100);
     interpolator.pushSnapshot(createTank(1, 0, 0, 250), 10, 1000);

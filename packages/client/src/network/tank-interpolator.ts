@@ -44,6 +44,14 @@ export class TankInterpolator {
       return;
     }
 
+    // Equal-tick updates replace the current authoritative snapshot in place.
+    // This avoids creating a fake interpolation window between two samples
+    // that represent the same simulation tick.
+    if (pair.current && tick === pair.current.tick) {
+      pair.current = nextSnapshot;
+      return;
+    }
+
     pair.previous = pair.current;
     pair.current = nextSnapshot;
   }
