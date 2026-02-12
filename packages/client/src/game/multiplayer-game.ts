@@ -21,6 +21,7 @@ import {Camera} from '../renderer/camera.js';
 import {Renderer} from '../renderer/renderer.js';
 import {World} from '../world/world.js';
 import {NetworkClient} from '../network/network-client.js';
+import {TankInterpolator} from '../network/tank-interpolator.js';
 import {DebugOverlay} from '../debug/debug-overlay.js';
 import {SoundManager} from '../audio/sound-manager.js';
 
@@ -31,6 +32,7 @@ export class MultiplayerGame {
   private readonly renderer: Renderer;
   private readonly world: World;
   private readonly network: NetworkClient;
+  private readonly tankInterpolator: TankInterpolator;
   private readonly debugOverlay: DebugOverlay;
   private readonly soundManager: SoundManager;
 
@@ -63,6 +65,7 @@ export class MultiplayerGame {
     this.renderer = new Renderer(ctx, this.camera);
     this.world = new World();
     this.network = new NetworkClient();
+    this.tankInterpolator = new TankInterpolator();
     this.debugOverlay = new DebugOverlay();
     this.soundManager = new SoundManager();
 
@@ -131,8 +134,10 @@ export class MultiplayerGame {
 
       // Load initial entity state
       if (welcome.tanks) {
+        const now = performance.now();
         for (const tank of welcome.tanks) {
           this.tanks.set(tank.id, tank);
+          this.tankInterpolator.pushSnapshot(tank, welcome.currentTick, now);
         }
         console.log(`Loaded ${welcome.tanks.length} tanks from welcome message`);
       }
@@ -155,9 +160,11 @@ export class MultiplayerGame {
     this.network.onUpdate(update => {
       // Delta updates: merge changed entities instead of replacing all state
       if (update.tanks) {
+        const now = performance.now();
         for (const tank of update.tanks) {
           if (tank.id !== undefined) {
             this.tanks.set(tank.id, tank);
+            this.tankInterpolator.pushSnapshot(tank, update.tick, now);
           }
         }
       }
@@ -345,15 +352,33 @@ export class MultiplayerGame {
   }
 
   private render(): void {
+    const renderTanks = this.getRenderTanks();
     this.renderer.renderMultiplayer(
       this.world,
-      this.tanks,
+      renderTanks,
       this.shells,
       this.builders,
       this.pillboxes,
       this.bases,
       this.playerId
     );
+  }
+
+  private getRenderTanks(): Map<number, Tank> {
+    const now = performance.now();
+    const renderTanks = new Map<number, Tank>();
+
+    for (const [tankId, tank] of this.tanks) {
+      if (this.playerId !== null && tankId === this.playerId) {
+        renderTanks.set(tankId, tank);
+        continue;
+      }
+
+      const interpolated = this.tankInterpolator.getInterpolatedTank(tankId, now);
+      renderTanks.set(tankId, interpolated ?? tank);
+    }
+
+    return renderTanks;
   }
 
   private updateDebugInfo(): void {
@@ -491,6 +516,7 @@ export class MultiplayerGame {
   destroy(): void {
     this.stop();
     this.network.disconnect();
+    this.tankInterpolator.clear();
     this.input.destroy();
     this.builderInput.destroy();
     this.debugOverlay.destroy();
