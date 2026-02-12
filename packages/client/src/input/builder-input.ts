@@ -93,8 +93,8 @@ export class BuilderInput {
       this.onBuildCommand(this.pendingAction, tileX, tileY);
     }
 
-    // Clear pending action after use
-    this.pendingAction = BuildAction.NONE;
+    // NOTE: Action stays active (sticky mode) until changed by another key
+    // User can click multiple tiles with the same action without re-pressing the key
   }
 
   /**

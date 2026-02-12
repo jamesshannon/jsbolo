@@ -142,7 +142,7 @@ describe('BuilderInput Controls', () => {
       );
     });
 
-    it('should clear pending action after click', () => {
+    it('should keep action active after click (sticky mode)', () => {
       const handler = vi.fn();
       builderInput.setBuildCommandHandler(handler);
 
@@ -165,8 +165,8 @@ describe('BuilderInput Controls', () => {
 
       canvas.dispatchEvent(new MouseEvent('click', {clientX: 100, clientY: 100}));
 
-      // Action should be cleared
-      expect(builderInput.getPendingAction()).toBe(BuildAction.NONE);
+      // Action should STAY ACTIVE (sticky mode)
+      expect(builderInput.getPendingAction()).toBe(BuildAction.REPAIR);
     });
 
     it('should not call handler if no action is pending', () => {
@@ -193,7 +193,7 @@ describe('BuilderInput Controls', () => {
   });
 
   describe('Complete Builder Control Flow', () => {
-    it('should support full pillbox placement workflow', () => {
+    it('should support full pillbox placement workflow with sticky mode', () => {
       const handler = vi.fn();
       builderInput.setBuildCommandHandler(handler);
 
@@ -201,7 +201,7 @@ describe('BuilderInput Controls', () => {
       window.dispatchEvent(new KeyboardEvent('keydown', {key: 'p'}));
       expect(builderInput.getPendingAction()).toBe(BuildAction.PILLBOX);
 
-      // 2. Click to place
+      // 2. Click to place first pillbox
       canvas.getBoundingClientRect = vi.fn(() => ({
         left: 0,
         top: 0,
@@ -216,16 +216,21 @@ describe('BuilderInput Controls', () => {
 
       canvas.dispatchEvent(new MouseEvent('click', {clientX: 200, clientY: 150}));
 
-      // 3. Verify handler called and action cleared
+      // 3. Verify handler called and action STILL ACTIVE (sticky)
       expect(handler).toHaveBeenCalledWith(
         BuildAction.PILLBOX,
         expect.any(Number),
         expect.any(Number)
       );
-      expect(builderInput.getPendingAction()).toBe(BuildAction.NONE);
+      expect(builderInput.getPendingAction()).toBe(BuildAction.PILLBOX);
+
+      // 4. Click again to place second pillbox (same mode)
+      canvas.dispatchEvent(new MouseEvent('click', {clientX: 250, clientY: 200}));
+      expect(handler).toHaveBeenCalledTimes(2);
+      expect(builderInput.getPendingAction()).toBe(BuildAction.PILLBOX);
     });
 
-    it('should support full repair workflow', () => {
+    it('should support full repair workflow with sticky mode', () => {
       const handler = vi.fn();
       builderInput.setBuildCommandHandler(handler);
 
@@ -233,7 +238,7 @@ describe('BuilderInput Controls', () => {
       window.dispatchEvent(new KeyboardEvent('keydown', {key: 'r'}));
       expect(builderInput.getPendingAction()).toBe(BuildAction.REPAIR);
 
-      // 2. Click to repair
+      // 2. Click to repair first pillbox
       canvas.getBoundingClientRect = vi.fn(() => ({
         left: 0,
         top: 0,
@@ -248,12 +253,38 @@ describe('BuilderInput Controls', () => {
 
       canvas.dispatchEvent(new MouseEvent('click', {clientX: 300, clientY: 200}));
 
-      // 3. Verify handler called and action cleared
+      // 3. Verify handler called and action STILL ACTIVE
       expect(handler).toHaveBeenCalledWith(
         BuildAction.REPAIR,
         expect.any(Number),
         expect.any(Number)
       );
+      expect(builderInput.getPendingAction()).toBe(BuildAction.REPAIR);
+
+      // 4. Click again to repair second pillbox
+      canvas.dispatchEvent(new MouseEvent('click', {clientX: 350, clientY: 250}));
+      expect(handler).toHaveBeenCalledTimes(2);
+      expect(builderInput.getPendingAction()).toBe(BuildAction.REPAIR);
+    });
+
+    it('should allow changing modes by pressing different keys', () => {
+      const handler = vi.fn();
+      builderInput.setBuildCommandHandler(handler);
+
+      // Start with harvest mode
+      window.dispatchEvent(new KeyboardEvent('keydown', {key: 't'}));
+      expect(builderInput.getPendingAction()).toBe(BuildAction.FOREST);
+
+      // Switch to pillbox mode
+      window.dispatchEvent(new KeyboardEvent('keydown', {key: 'p'}));
+      expect(builderInput.getPendingAction()).toBe(BuildAction.PILLBOX);
+
+      // Switch to repair mode
+      window.dispatchEvent(new KeyboardEvent('keydown', {key: 'r'}));
+      expect(builderInput.getPendingAction()).toBe(BuildAction.REPAIR);
+
+      // Recall (clear mode)
+      window.dispatchEvent(new KeyboardEvent('keydown', {key: 'c'}));
       expect(builderInput.getPendingAction()).toBe(BuildAction.NONE);
     });
   });
