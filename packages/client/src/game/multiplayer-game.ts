@@ -6,9 +6,9 @@ import {
   TICK_LENGTH_MS,
   TILE_SIZE_WORLD,
   PIXEL_SIZE_WORLD,
+  BuildAction,
   RangeAdjustment,
   TerrainType,
-  BuilderOrder,
   type Tank,
   type Shell,
   type Builder,
@@ -60,6 +60,7 @@ export class MultiplayerGame {
   private fps = 0;
   private frameCount = 0;
   private lastFpsUpdate = 0;
+  private pillboxButtonUsesRepair = false;
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -75,6 +76,7 @@ export class MultiplayerGame {
     this.builderInterpolator = new BuilderInterpolator();
     this.debugOverlay = new DebugOverlay();
     this.soundManager = new SoundManager();
+    this.bindBuilderHudButtons();
 
     // Setup builder command handler
     this.builderInput.setBuildCommandHandler((action, worldTileX, worldTileY) => {
@@ -343,8 +345,18 @@ export class MultiplayerGame {
     const hudShells = document.getElementById('hud-shells');
     const hudMines = document.getElementById('hud-mines');
     const hudTrees = document.getElementById('hud-trees');
+    const hudKills = document.getElementById('hud-player-kills');
+    const hudDeaths = document.getElementById('hud-player-deaths');
+    const hudBuilderMode = document.getElementById('hud-builder-mode');
+    const hudBuilderModeSide = document.getElementById('hud-builder-mode-side');
     const hudRange = document.getElementById('hud-range');
-    const hudBuilder = document.getElementById('hud-builder');
+    const hudPlayerShield = document.getElementById('hud-player-shield');
+    const hudPillboxes = document.getElementById('hud-pillbox-list');
+    const hudBases = document.getElementById('hud-base-list');
+    const hudNearestBaseOwner = document.getElementById('hud-nearest-base-owner');
+    const hudNearestBaseArmor = document.getElementById('hud-nearest-base-armor');
+    const hudNearestBaseShells = document.getElementById('hud-nearest-base-shells');
+    const hudNearestBaseMines = document.getElementById('hud-nearest-base-mines');
 
     if (hudArmor) {
       hudArmor.textContent = `${tank.armor}/40`;
@@ -362,16 +374,167 @@ export class MultiplayerGame {
     if (hudTrees) {
       hudTrees.textContent = `${tank.trees}/40`;
     }
-    if (hudRange && tank.firingRange !== undefined) {
+    if (hudPlayerShield) {
+      hudPlayerShield.textContent = `${tank.armor}/40`;
+    }
+    if (hudRange) {
       hudRange.textContent = `${tank.firingRange} tiles`;
     }
+    // ASSUMPTION: kill/death counters are not yet authoritative in protocol.
+    // Keep placeholders until server emits these stats.
+    if (hudKills) {
+      hudKills.textContent = '0';
+    }
+    if (hudDeaths) {
+      hudDeaths.textContent = '0';
+    }
+    if (hudBuilderMode) {
+      hudBuilderMode.textContent = this.getBuildActionLabel(this.builderInput.getPendingAction());
+    }
+    if (hudBuilderModeSide) {
+      hudBuilderModeSide.textContent = this.getBuildActionLabel(this.builderInput.getPendingAction());
+    }
+    this.refreshBuilderHudButtonState();
 
-    // Update builder status
-    if (hudBuilder && this.playerId !== null) {
-      const myBuilder = this.builders.get(this.playerId);
-      if (myBuilder) {
-        hudBuilder.textContent = this.getBuilderOrderName(myBuilder.order);
+    if (hudPillboxes) {
+      const myTeam = tank.team;
+      const chips = Array.from(this.pillboxes.values()).map(pillbox => {
+        const cls =
+          pillbox.ownerTeam === 255
+            ? 'neutral'
+            : pillbox.ownerTeam === myTeam
+              ? 'owned'
+              : 'enemy';
+        return `<span class="hud-chip ${cls}"></span>`;
+      });
+      hudPillboxes.innerHTML = chips.join('');
+    }
+
+    if (hudBases) {
+      const myTeam = tank.team;
+      const chips = Array.from(this.bases.values()).map(base => {
+        const cls =
+          base.ownerTeam === 255
+            ? 'neutral'
+            : base.ownerTeam === myTeam
+              ? 'owned'
+              : 'enemy';
+        return `<span class="hud-chip ${cls}"></span>`;
+      });
+      hudBases.innerHTML = chips.join('');
+    }
+
+    if (
+      hudNearestBaseOwner &&
+      hudNearestBaseArmor &&
+      hudNearestBaseShells &&
+      hudNearestBaseMines
+    ) {
+      const nearestBase = this.getNearestBaseToTank(tank);
+      if (!nearestBase) {
+        hudNearestBaseOwner.textContent = 'None';
+        hudNearestBaseArmor.textContent = '-';
+        hudNearestBaseShells.textContent = '-';
+        hudNearestBaseMines.textContent = '-';
+      } else {
+        hudNearestBaseOwner.textContent =
+          nearestBase.ownerTeam === 255 ? 'Neutral' : `Team ${nearestBase.ownerTeam}`;
+        hudNearestBaseArmor.textContent = `${nearestBase.armor}`;
+        hudNearestBaseShells.textContent = `${nearestBase.shells}`;
+        hudNearestBaseMines.textContent = `${nearestBase.mines}`;
       }
+    }
+  }
+
+  private getNearestBaseToTank(tank: Tank): Base | null {
+    let nearest: Base | null = null;
+    let nearestDistance = Number.POSITIVE_INFINITY;
+
+    for (const base of this.bases.values()) {
+      const baseX = (base.tileX + 0.5) * TILE_SIZE_WORLD;
+      const baseY = (base.tileY + 0.5) * TILE_SIZE_WORLD;
+      const dx = tank.x - baseX;
+      const dy = tank.y - baseY;
+      const distance = (dx * dx) + (dy * dy);
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
+        nearest = base;
+      }
+    }
+
+    return nearest;
+  }
+
+  private bindBuilderHudButtons(): void {
+    const buttons = Array.from(
+      document.querySelectorAll<HTMLButtonElement>('[data-build-action]')
+    );
+
+    for (const button of buttons) {
+      button.addEventListener('click', () => {
+        const action = button.dataset.buildAction;
+        if (action === 'pillbox-toggle') {
+          this.pillboxButtonUsesRepair = !this.pillboxButtonUsesRepair;
+          const nextAction = this.pillboxButtonUsesRepair
+            ? BuildAction.REPAIR
+            : BuildAction.PILLBOX;
+          this.builderInput.setPendingAction(nextAction);
+          button.dataset.mode = this.pillboxButtonUsesRepair ? 'repair' : 'place';
+        } else {
+          const parsedAction = Number(action);
+          if (!Number.isNaN(parsedAction)) {
+            this.builderInput.setPendingAction(parsedAction as BuildAction);
+          }
+        }
+        this.refreshBuilderHudButtonState();
+      });
+    }
+  }
+
+  private refreshBuilderHudButtonState(): void {
+    const activeAction = this.builderInput.getPendingAction();
+    // Keep button mode aligned even when action was selected from keyboard.
+    if (activeAction === BuildAction.REPAIR) {
+      this.pillboxButtonUsesRepair = true;
+    } else if (activeAction === BuildAction.PILLBOX) {
+      this.pillboxButtonUsesRepair = false;
+    }
+
+    const buttons = Array.from(
+      document.querySelectorAll<HTMLButtonElement>('[data-build-action]')
+    );
+    for (const button of buttons) {
+      const action = button.dataset.buildAction;
+      if (action === 'pillbox-toggle') {
+        button.dataset.mode = this.pillboxButtonUsesRepair ? 'repair' : 'place';
+        const isActive =
+          (this.pillboxButtonUsesRepair && activeAction === BuildAction.REPAIR) ||
+          (!this.pillboxButtonUsesRepair && activeAction === BuildAction.PILLBOX);
+        button.classList.toggle('active', isActive);
+      } else {
+        button.classList.toggle('active', Number(action) === activeAction);
+      }
+    }
+  }
+
+  private getBuildActionLabel(action: BuildAction): string {
+    switch (action) {
+      case BuildAction.FOREST:
+        return 'Harvest';
+      case BuildAction.ROAD:
+        return 'Road';
+      case BuildAction.BUILDING:
+        return 'Wall';
+      case BuildAction.PILLBOX:
+        return 'Pillbox';
+      case BuildAction.REPAIR:
+        return 'Repair';
+      case BuildAction.MINE:
+        return 'Mine';
+      case BuildAction.BOAT:
+        return 'Boat';
+      default:
+        return 'None';
     }
   }
 
@@ -399,35 +562,6 @@ export class MultiplayerGame {
         return 'Boat';
       case TerrainType.DEEP_SEA:
         return 'Deep Sea';
-      default:
-        return 'Unknown';
-    }
-  }
-
-  private getBuilderOrderName(order: BuilderOrder): string {
-    switch (order) {
-      case BuilderOrder.IN_TANK:
-        return 'In Tank';
-      case BuilderOrder.WAITING:
-        return 'Waiting';
-      case BuilderOrder.RETURNING:
-        return 'Returning';
-      case BuilderOrder.PARACHUTING:
-        return 'Parachuting';
-      case BuilderOrder.HARVESTING:
-        return 'Harvesting';
-      case BuilderOrder.BUILDING_ROAD:
-        return 'Building Road';
-      case BuilderOrder.REPAIRING:
-        return 'Repairing';
-      case BuilderOrder.BUILDING_BOAT:
-        return 'Building Boat';
-      case BuilderOrder.BUILDING_WALL:
-        return 'Building Wall';
-      case BuilderOrder.PLACING_PILLBOX:
-        return 'Placing Pillbox';
-      case BuilderOrder.LAYING_MINE:
-        return 'Laying Mine';
       default:
         return 'Unknown';
     }

@@ -107,6 +107,21 @@ describe('BuilderInput Controls', () => {
     });
   });
 
+  describe('Programmatic Builder Controls', () => {
+    it('should set pending action via setPendingAction', () => {
+      builderInput.setPendingAction(BuildAction.BUILDING);
+      expect(builderInput.getPendingAction()).toBe(BuildAction.BUILDING);
+    });
+
+    it('should clear pending action via recallBuilder', () => {
+      builderInput.setPendingAction(BuildAction.MINE);
+      expect(builderInput.getPendingAction()).toBe(BuildAction.MINE);
+
+      builderInput.recallBuilder();
+      expect(builderInput.getPendingAction()).toBe(BuildAction.NONE);
+    });
+  });
+
   describe('Build Command Callback', () => {
     it('should call handler with correct action and coordinates when clicking', () => {
       const handler = vi.fn();

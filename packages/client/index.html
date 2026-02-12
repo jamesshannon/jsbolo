@@ -12,7 +12,7 @@
       }
 
       body {
-        font-family: monospace;
+        font-family: "IBM Plex Mono", "Consolas", monospace;
         background: radial-gradient(circle at center, #1b1b1b 0%, #070707 70%, #000 100%);
         color: #d7d7d7;
         min-height: 100vh;
@@ -25,7 +25,7 @@
 
       #game-shell {
         display: grid;
-        grid-template-columns: 86px 640px 186px;
+        grid-template-columns: 86px 640px 248px;
         grid-template-rows: 480px 28px;
         gap: 6px;
         background: #0f0f0f;
@@ -45,14 +45,18 @@
         gap: 6px;
       }
 
-      .left-cell {
+      .builder-button {
         border: 2px solid #767676;
-        background: #050505;
+        background: linear-gradient(180deg, #0f1612 0%, #060806 100%);
+        color: #d4f8c8;
         position: relative;
         overflow: hidden;
+        cursor: pointer;
+        padding: 6px 4px;
+        text-align: center;
       }
 
-      .left-cell::after {
+      .builder-button::after {
         content: "";
         position: absolute;
         inset: 3px;
@@ -60,16 +64,45 @@
         pointer-events: none;
       }
 
-      .left-cell.map {
-        background:
-          linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)),
-          repeating-linear-gradient(
-            45deg,
-            #003500 0,
-            #003500 2px,
-            #001a00 2px,
-            #001a00 4px
-          );
+      .builder-button .icon {
+        display: block;
+        font-size: 24px;
+        line-height: 1;
+        margin-bottom: 5px;
+      }
+
+      .builder-button .label {
+        display: block;
+        font-size: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+      }
+
+      .builder-button:hover {
+        background: linear-gradient(180deg, #1c2621 0%, #0c120d 100%);
+      }
+
+      .builder-button.active {
+        border-color: #a7e58c;
+        box-shadow: inset 0 0 0 1px #315224;
+        background: linear-gradient(180deg, #203720 0%, #122012 100%);
+        color: #dfffd3;
+      }
+
+      .builder-button[data-build-action="pillbox-toggle"] .mode {
+        display: block;
+        margin-top: 3px;
+        font-size: 8px;
+        color: #9eb99f;
+        letter-spacing: 0.3px;
+      }
+
+      .builder-button[data-build-action="pillbox-toggle"][data-mode="repair"] .mode::after {
+        content: "Repair";
+      }
+
+      .builder-button[data-build-action="pillbox-toggle"][data-mode="place"] .mode::after {
+        content: "Place";
       }
 
       #center-column {
@@ -102,81 +135,107 @@
         grid-column: 3;
         grid-row: 1;
         display: grid;
-        grid-template-rows: 108px 1fr 124px;
+        grid-template-columns: 1fr 82px;
         gap: 6px;
       }
 
-      .right-panel {
+      #status-column {
+        display: grid;
+        grid-template-rows: 68px 112px 112px 1fr;
+        gap: 6px;
+      }
+
+      .status-panel,
+      #player-stats {
         border: 2px solid #767676;
         background: #020202;
         padding: 6px;
+        position: relative;
+      }
+
+      .status-panel::after,
+      #player-stats::after {
+        content: "";
+        position: absolute;
+        inset: 3px;
+        border: 1px solid #121212;
+        pointer-events: none;
       }
 
       .panel-title {
         font-size: 10px;
-        color: #bcbcbc;
+        color: #b8b8b8;
         text-transform: uppercase;
         margin-bottom: 4px;
         letter-spacing: 1px;
       }
 
-      #hud {
-        height: 100%;
-        display: grid;
-        gap: 3px;
-      }
-
-      #hud .stat {
+      .panel-row,
+      .player-stat {
         display: flex;
         justify-content: space-between;
-        font-size: 12px;
-        line-height: 1.2;
+        font-size: 11px;
+        margin: 2px 0;
       }
 
-      #hud .stat-label {
-        color: #6ee36e;
+      .panel-row .label,
+      .player-stat .label {
+        color: #8fb08f;
       }
 
-      #hud .stat-value {
+      .panel-row .value,
+      .player-stat .value {
         color: #f0f0f0;
-        font-weight: bold;
       }
 
-      #hud .bar {
+      #hud-pillbox-list,
+      #hud-base-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 3px;
+        min-height: 72px;
+        align-content: flex-start;
+      }
+
+      .hud-chip {
+        width: 12px;
+        height: 12px;
+        border: 1px solid #5c5c5c;
+        border-radius: 50%;
+        background: #101010;
+      }
+
+      .hud-chip.neutral {
+        background: #0f0f0f;
+        border-color: #808080;
+      }
+
+      .hud-chip.owned {
+        background: #28d83b;
+        border-color: #8cff8d;
+      }
+
+      .hud-chip.enemy {
+        background: #de2f2f;
+        border-color: #ff8a8a;
+      }
+
+      #player-stats {
+        background: #010101;
+      }
+
+      .armor-bar {
         width: 100%;
         height: 7px;
         background: #171717;
         border: 1px solid #5f5f5f;
-        position: relative;
+        margin: 2px 0 4px;
       }
 
-      #hud .bar-fill {
+      .armor-bar-fill {
         height: 100%;
-        background: #13bb13;
+        background: #22ca22;
         transition: width 0.2s;
-      }
-
-      #hud .bar-fill.armor {
-        background: #1ad31a;
-      }
-
-      #builder-controls {
-        font-size: 10px;
-        color: #d8d8d8;
-      }
-
-      #builder-controls .control {
-        margin: 2px 0;
-      }
-
-      #builder-controls .key {
-        display: inline-block;
-        background: #171717;
-        border: 1px solid #606060;
-        padding: 1px 4px;
-        margin-right: 5px;
-        color: #9adf9a;
-        font-weight: bold;
       }
 
       #hud-ticker {
@@ -244,11 +303,32 @@
   <body>
     <div id="game-shell">
       <aside id="left-column">
-        <div class="left-cell map"></div>
-        <div class="left-cell map"></div>
-        <div class="left-cell map"></div>
-        <div class="left-cell map"></div>
-        <div class="left-cell map"></div>
+        <button class="builder-button" data-build-action="1" title="Harvest Forest (T)">
+          <span class="icon">Y</span>
+          <span class="label">Harvest</span>
+        </button>
+        <button class="builder-button" data-build-action="2" title="Build Road (D)">
+          <span class="icon">=</span>
+          <span class="label">Road</span>
+        </button>
+        <button class="builder-button" data-build-action="5" title="Build Wall (W)">
+          <span class="icon">#</span>
+          <span class="label">Wall</span>
+        </button>
+        <button
+          class="builder-button"
+          data-build-action="pillbox-toggle"
+          data-mode="place"
+          title="Place or Repair Pillbox (P/R)"
+        >
+          <span class="icon">P</span>
+          <span class="label">Pillbox</span>
+          <span class="mode"></span>
+        </button>
+        <button class="builder-button" data-build-action="7" title="Place Mine (M)">
+          <span class="icon">*</span>
+          <span class="label">Mine</span>
+        </button>
       </aside>
 
       <main id="center-column">
@@ -258,54 +338,94 @@
       </main>
 
       <aside id="right-column">
-        <section class="right-panel">
-          <div class="panel-title">Players</div>
-        </section>
+        <div id="status-column">
+          <section class="status-panel">
+            <div class="panel-title">Status</div>
+            <div class="panel-row">
+              <span class="label">Builder</span>
+              <span class="value" id="hud-builder-mode">None</span>
+            </div>
+            <div class="panel-row">
+              <span class="label">Range</span>
+              <span class="value" id="hud-range">-</span>
+            </div>
+            <div class="panel-row">
+              <span class="label">Base</span>
+              <span class="value" id="hud-nearest-base-owner">None</span>
+            </div>
+          </section>
 
-        <section class="right-panel">
-          <div class="panel-title">Tank</div>
-          <div id="hud">
-            <div class="stat">
-              <span class="stat-label">Armor</span>
-              <span class="stat-value" id="hud-armor">40/40</span>
+          <section class="status-panel">
+            <div class="panel-title">Pillboxes</div>
+            <div id="hud-pillbox-list"></div>
+          </section>
+
+          <section class="status-panel">
+            <div class="panel-title">Bases</div>
+            <div id="hud-base-list"></div>
+          </section>
+
+          <section class="status-panel">
+            <div class="panel-title">Nearest Base</div>
+            <div class="panel-row">
+              <span class="label">Shells</span>
+              <span class="value" id="hud-nearest-base-shells">-</span>
             </div>
-            <div class="bar">
-              <div class="bar-fill armor" id="hud-armor-bar" style="width: 100%"></div>
+            <div class="panel-row">
+              <span class="label">Mines</span>
+              <span class="value" id="hud-nearest-base-mines">-</span>
             </div>
-            <div class="stat">
-              <span class="stat-label">Shells</span>
-              <span class="stat-value" id="hud-shells">40/40</span>
+            <div class="panel-row">
+              <span class="label">Armor</span>
+              <span class="value" id="hud-nearest-base-armor">-</span>
             </div>
-            <div class="stat">
-              <span class="stat-label">Mines</span>
-              <span class="stat-value" id="hud-mines">0/40</span>
-            </div>
-            <div class="stat">
-              <span class="stat-label">Trees</span>
-              <span class="stat-value" id="hud-trees">0/40</span>
-            </div>
-            <div class="stat">
-              <span class="stat-label">Range</span>
-              <span class="stat-value" id="hud-range">7 tiles</span>
-            </div>
-            <div class="stat">
-              <span class="stat-label">Builder</span>
-              <span class="stat-value" id="hud-builder">In Tank</span>
-            </div>
+          </section>
+        </div>
+
+        <section id="player-stats">
+          <div class="panel-title">Player</div>
+          <div class="player-stat">
+            <span class="label">Kills</span>
+            <span class="value" id="hud-player-kills">0</span>
           </div>
-        </section>
-
-        <section class="right-panel">
-          <div class="panel-title">Builder</div>
-          <div id="builder-controls">
-            <div class="control"><span class="key">T</span> Harvest</div>
-            <div class="control"><span class="key">D</span> Road</div>
-            <div class="control"><span class="key">R</span> Repair</div>
-            <div class="control"><span class="key">W</span> Wall</div>
-            <div class="control"><span class="key">B</span> Boat</div>
-            <div class="control"><span class="key">P</span> Pillbox</div>
-            <div class="control"><span class="key">M</span> Mine</div>
-            <div class="control"><span class="key">C</span> Recall</div>
+          <div class="player-stat">
+            <span class="label">Deaths</span>
+            <span class="value" id="hud-player-deaths">0</span>
+          </div>
+          <div class="player-stat">
+            <span class="label">Shells</span>
+            <span class="value" id="hud-shells">0</span>
+          </div>
+          <div class="player-stat">
+            <span class="label">Mines</span>
+            <span class="value" id="hud-mines">0</span>
+          </div>
+          <div class="player-stat">
+            <span class="label">Shield</span>
+            <span class="value" id="hud-player-shield">0</span>
+          </div>
+          <div class="armor-bar">
+            <div class="armor-bar-fill" id="hud-armor-bar" style="width: 100%"></div>
+          </div>
+          <div class="player-stat">
+            <span class="label">Trees</span>
+            <span class="value" id="hud-trees">0</span>
+          </div>
+          <div class="player-stat">
+            <span class="label">Armor</span>
+            <span class="value" id="hud-armor">40/40</span>
+          </div>
+          <div class="player-stat">
+            <span class="label">Build</span>
+            <span class="value" id="hud-builder-mode-side">None</span>
+          </div>
+          <div class="player-stat">
+            <span class="label">Recall</span>
+            <span class="value">C</span>
+          </div>
+          <div class="player-stat">
+            <span class="label">Boat</span>
+            <span class="value">B</span>
           </div>
         </section>
       </aside>

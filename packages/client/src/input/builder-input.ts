@@ -32,39 +32,29 @@ export class BuilderInput {
   private readonly handleKeyDown = (event: KeyboardEvent): void => {
     switch (event.key.toLowerCase()) {
       case 't':
-        this.pendingAction = BuildAction.FOREST; // Harvest trees
-        console.log('Builder: Select tile to harvest trees');
+        this.setPendingAction(BuildAction.FOREST);
         break;
       case 'd':
-        this.pendingAction = BuildAction.ROAD; // Build road
-        console.log('Builder: Select tile to build road');
+        this.setPendingAction(BuildAction.ROAD);
         break;
       case 'r':
-        this.pendingAction = BuildAction.REPAIR; // Repair pillbox
-        console.log('Builder: Select pillbox to repair');
+        this.setPendingAction(BuildAction.REPAIR);
         break;
       case 'w':
-        this.pendingAction = BuildAction.BUILDING; // Build wall
-        console.log('Builder: Select tile to build wall');
+        this.setPendingAction(BuildAction.BUILDING);
         break;
       case 'b':
-        this.pendingAction = BuildAction.BOAT; // Build boat
-        console.log('Builder: Select tile to build boat');
+        this.setPendingAction(BuildAction.BOAT);
         break;
       case 'p':
-        this.pendingAction = BuildAction.PILLBOX; // Place pillbox
-        console.log('Builder: Select tile to place pillbox');
+        this.setPendingAction(BuildAction.PILLBOX);
         break;
       case 'm':
-        this.pendingAction = BuildAction.MINE; // Lay mine
-        console.log('Builder: Select tile to lay mine');
+        this.setPendingAction(BuildAction.MINE);
         break;
       case 'c':
       case 'escape':
-        // Recall builder (send to tank position)
-        this.pendingAction = BuildAction.NONE;
-        console.log('Builder: Recalled');
-        // TODO: Send recall command
+        this.recallBuilder();
         break;
     }
   };
@@ -111,6 +101,44 @@ export class BuilderInput {
    */
   getPendingAction(): BuildAction {
     return this.pendingAction;
+  }
+
+  /**
+   * Programmatically set builder action mode (used by HUD buttons and keyboard).
+   */
+  setPendingAction(action: BuildAction): void {
+    this.pendingAction = action;
+    switch (action) {
+      case BuildAction.FOREST:
+        console.log('Builder: Select tile to harvest trees');
+        break;
+      case BuildAction.ROAD:
+        console.log('Builder: Select tile to build road');
+        break;
+      case BuildAction.REPAIR:
+        console.log('Builder: Select pillbox to repair');
+        break;
+      case BuildAction.BUILDING:
+        console.log('Builder: Select tile to build wall');
+        break;
+      case BuildAction.BOAT:
+        console.log('Builder: Select tile to build boat');
+        break;
+      case BuildAction.PILLBOX:
+        console.log('Builder: Select tile to place pillbox');
+        break;
+      case BuildAction.MINE:
+        console.log('Builder: Select tile to lay mine');
+        break;
+      default:
+        break;
+    }
+  }
+
+  recallBuilder(): void {
+    // TODO: Send recall command
+    this.pendingAction = BuildAction.NONE;
+    console.log('Builder: Recalled');
   }
 
   destroy(): void {
