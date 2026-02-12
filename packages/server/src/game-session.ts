@@ -5,7 +5,6 @@
 import {
   TICK_LENGTH_MS,
   TANK_RESPAWN_TICKS,
-  TerrainType,
   type PlayerInput,
   encodeServerMessage,
   type WelcomeMessage,
@@ -17,22 +16,19 @@ import {ServerShell} from './simulation/shell.js';
 import {ServerPillbox} from './simulation/pillbox.js';
 import {ServerBase} from './simulation/base.js';
 import {RespawnSystem} from './systems/respawn-system.js';
+import {
+  SessionPlayerManager,
+  type SessionPlayer,
+} from './systems/session-player-manager.js';
 import {SessionUpdatePipeline} from './systems/session-update-pipeline.js';
 import {SessionStateBroadcaster} from './systems/session-state-broadcaster.js';
 import {SessionWelcomeBuilder} from './systems/session-welcome-builder.js';
 import type {WebSocket} from 'ws';
 
-interface Player {
-  id: number;
-  ws: WebSocket;
-  tank: ServerTank;
-  lastInput: PlayerInput;
-  pendingBuildOrder?: NonNullable<PlayerInput['buildOrder']>;
-}
-
 export class GameSession {
   private readonly world: ServerWorld;
-  private readonly players = new Map<number, Player>();
+  private readonly playerManager: SessionPlayerManager;
+  private readonly players: Map<number, SessionPlayer>;
   private readonly shells = new Map<number, ServerShell>();
   private readonly pillboxes = new Map<number, ServerPillbox>();
   private readonly bases = new Map<number, ServerBase>();
@@ -43,9 +39,6 @@ export class GameSession {
   private readonly broadcaster = new SessionStateBroadcaster();
   private readonly welcomeBuilder = new SessionWelcomeBuilder();
   private readonly matchState = this.updatePipeline.getMatchState();
-  // Compatibility exposure for existing tests that manually seed regrowth tracking.
-  public readonly terrainEffects = this.updatePipeline.getTerrainEffects();
-  private nextPlayerId = 1;
   private tick = 0;
   private running = false;
   private tickInterval?: NodeJS.Timeout;
@@ -70,6 +63,11 @@ export class GameSession {
    */
   constructor(mapPath?: string) {
     this.world = new ServerWorld(mapPath);
+    this.playerManager = new SessionPlayerManager(
+      this.world,
+      player => this.sendWelcome(player)
+    );
+    this.players = this.playerManager.getPlayers();
 
     // Use map spawn data if available, otherwise fall back to hardcoded spawns
     const pillboxSpawns = this.world.getPillboxSpawns();
@@ -185,72 +183,14 @@ export class GameSession {
     console.log('Game session stopped');
   }
 
-  addPlayer(ws: WebSocket): number {
-    const playerId = this.nextPlayerId++;
-    const team = (playerId - 1) % 16; // Simple team assignment
-
-    // Use map start positions if available, otherwise fallback to hardcoded position
-    const startPositions = this.world.getStartPositions();
-    let spawnX: number;
-    let spawnY: number;
-
-    if (startPositions.length > 0) {
-      // Cycle through start positions (wrap around if more players than start positions)
-      const startPos = startPositions[(playerId - 1) % startPositions.length]!;
-      spawnX = startPos.tileX;
-      spawnY = startPos.tileY;
-      const terrain = this.world.getTerrainAt(spawnX, spawnY);
-      console.log(`Player ${playerId} spawning at start position (${spawnX}, ${spawnY}) - terrain: ${terrain}`);
-    } else {
-      // Fallback: spawn near center with some offset
-      spawnX = 128 + (playerId * 5);
-      spawnY = 128 + (playerId * 5);
-      console.log(`Player ${playerId} spawning at fallback position (${spawnX}, ${spawnY})`);
-    }
-
-    const terrain = this.world.getTerrainAt(spawnX, spawnY);
-
-    const tank = new ServerTank(playerId, team, spawnX, spawnY);
-
-    // Auto-place tank on boat if spawning in water (deep sea or river)
-    // ASSUMPTION: Boat is "carried" by tank - no BOAT tile created at spawn
-    // BOAT tiles only exist when tank disembarks onto land from water
-    if (terrain === TerrainType.DEEP_SEA || terrain === TerrainType.RIVER) {
-      tank.onBoat = true;
-      console.log(`  -> Tank spawned on boat in water at (${spawnX}, ${spawnY}), no BOAT tile created`);
-    }
-
-    const player: Player = {
-      id: playerId,
-      ws,
-      tank,
-      lastInput: {
-        sequence: 0,
-        tick: 0,
-        accelerating: false,
-        braking: false,
-        turningClockwise: false,
-        turningCounterClockwise: false,
-        shooting: false,
-        rangeAdjustment: 0, // NONE
-      },
-    };
-
-    this.players.set(playerId, player);
-
-    // Send welcome message
-    this.sendWelcome(player);
-
-    console.log(`Player ${playerId} joined (total: ${this.players.size})`);
-    return playerId;
+  addPlayer(ws: WebSocket, _legacyUnusedTeamOverride?: number): number {
+    // NOTE: optional second arg is accepted for legacy test compatibility.
+    return this.playerManager.addPlayer(ws);
   }
 
   removePlayer(playerId: number): void {
-    this.players.delete(playerId);
-    console.log(`Player ${playerId} left (remaining: ${this.players.size})`);
-
-    // Stop session if no players
-    if (this.players.size === 0) {
+    const result = this.playerManager.removePlayer(playerId);
+    if (result.isEmpty) {
       this.stop();
     }
   }
@@ -336,7 +276,7 @@ export class GameSession {
     this.shells.set(shell.id, shell);
   }
 
-  private sendWelcome(player: Player): void {
+  private sendWelcome(player: SessionPlayer): void {
     const welcome: WelcomeMessage = this.welcomeBuilder.buildWelcome({
       playerId: player.id,
       assignedTeam: player.tank.team,
@@ -378,7 +318,7 @@ export class GameSession {
     this.respawnSystem.schedule(tankId, this.tick, TANK_RESPAWN_TICKS);
   }
 
-  private tryRespawnTank(player: Pick<Player, 'id' | 'tank'>): void {
+  private tryRespawnTank(player: Pick<SessionPlayer, 'id' | 'tank'>): void {
     if (!this.respawnSystem.shouldRespawn(player.id, this.tick)) {
       return;
     }
@@ -436,7 +376,14 @@ export class GameSession {
     return this.matchState.getWinningTeams();
   }
 
+  /**
+   * Test-only hook for regrowth scenarios that directly mutate terrain state.
+   */
+  public trackForestRegrowth(tileKey: string): void {
+    this.updatePipeline.trackForestRegrowth(tileKey);
+  }
+
   getPlayerCount(): number {
-    return this.players.size;
+    return this.playerManager.getPlayerCount();
   }
 }

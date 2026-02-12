@@ -70,10 +70,11 @@ export class SessionUpdatePipeline {
   }
 
   /**
-   * Test hook compatibility for existing suites that inspect forest-regrowth state.
+   * Seed forest-regrowth tracking for integration tests that simulate out-of-band
+   * terrain damage without going through full combat/player pipelines.
    */
-  getTerrainEffects(): TerrainEffectsSystem {
-    return this.terrainEffects;
+  trackForestRegrowth(tileKey: string): void {
+    this.terrainEffects.trackForestRegrowth(tileKey);
   }
 
   runTick(context: SessionUpdateContext, callbacks: SessionUpdateCallbacks): void {

@@ -726,7 +726,7 @@ describe('Bolo Manual Spec: 10. Builder / Man', () => {
 
       // Manually add to regrowth timer via terrain effects system
       const tileKey = `135,135`;
-      (session as any).terrainEffects.trackForestRegrowth(tileKey);
+      session.trackForestRegrowth(tileKey);
 
       // Verify forest became crater
       expect(world.getTerrainAt(135, 135)).toBe(TerrainType.CRATER);
@@ -759,7 +759,7 @@ describe('Bolo Manual Spec: 10. Builder / Man', () => {
       expect(destroyed).toBe(true);
 
       // Manually trigger regrowth tracking via terrain effects system
-      (session as any).terrainEffects.trackForestRegrowth('135,135');
+      session.trackForestRegrowth('135,135');
 
       // Verify forest became GRASS from collision
       expect(world.getTerrainAt(135, 135)).toBe(TerrainType.GRASS);
