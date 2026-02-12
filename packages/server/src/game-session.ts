@@ -23,6 +23,7 @@ import {
 import {SessionUpdatePipeline} from './systems/session-update-pipeline.js';
 import {SessionStateBroadcaster} from './systems/session-state-broadcaster.js';
 import {SessionWelcomeBuilder} from './systems/session-welcome-builder.js';
+import {SessionWorldBootstrap} from './systems/session-world-bootstrap.js';
 import type {WebSocket} from 'ws';
 
 export class GameSession {
@@ -30,14 +31,15 @@ export class GameSession {
   private readonly playerManager: SessionPlayerManager;
   private readonly players: Map<number, SessionPlayer>;
   private readonly shells = new Map<number, ServerShell>();
-  private readonly pillboxes = new Map<number, ServerPillbox>();
-  private readonly bases = new Map<number, ServerBase>();
+  private pillboxes: Map<number, ServerPillbox>;
+  private bases: Map<number, ServerBase>;
   private readonly terrainChanges = new Set<string>(); // Track terrain changes as "x,y"
   private readonly soundEvents: SoundEvent[] = [];
   private readonly respawnSystem = new RespawnSystem();
   private readonly updatePipeline = new SessionUpdatePipeline();
   private readonly broadcaster = new SessionStateBroadcaster();
   private readonly welcomeBuilder = new SessionWelcomeBuilder();
+  private readonly worldBootstrap = new SessionWorldBootstrap();
   private readonly matchState = this.updatePipeline.getMatchState();
   private tick = 0;
   private running = false;
@@ -68,98 +70,11 @@ export class GameSession {
       player => this.sendWelcome(player)
     );
     this.players = this.playerManager.getPlayers();
-
-    // Use map spawn data if available, otherwise fall back to hardcoded spawns
-    const pillboxSpawns = this.world.getPillboxSpawns();
-    if (pillboxSpawns.length > 0) {
-      this.spawnPillboxesFromMap(pillboxSpawns);
-      console.log(`  Spawned ${pillboxSpawns.length} pillboxes from map`);
-    } else {
-      this.spawnInitialPillboxes();  // Hardcoded fallback
-    }
-
-    const baseSpawns = this.world.getBaseSpawns();
-    if (baseSpawns.length > 0) {
-      this.spawnBasesFromMap(baseSpawns);
-      console.log(`  Spawned ${baseSpawns.length} bases from map`);
-    } else {
-      this.spawnInitialBases();  // Hardcoded fallback
-    }
+    const bootstrap = this.worldBootstrap.initialize(this.world);
+    this.pillboxes = bootstrap.pillboxes;
+    this.bases = bootstrap.bases;
 
     console.log(`Map ready: ${this.world.getMapName()}`);
-  }
-
-  private spawnInitialPillboxes(): void {
-    // Spawn some neutral pillboxes around the map
-    const pillboxLocations = [
-      {x: 100, y: 100},
-      {x: 150, y: 100},
-      {x: 100, y: 150},
-      {x: 150, y: 150},
-      {x: 125, y: 75},
-      {x: 175, y: 125},
-    ];
-
-    for (const loc of pillboxLocations) {
-      const pillbox = new ServerPillbox(loc.x, loc.y, 255); // Neutral
-      this.pillboxes.set(pillbox.id, pillbox);
-    }
-  }
-
-  private spawnInitialBases(): void {
-    // Spawn some neutral bases around the map
-    const baseLocations = [
-      {x: 80, y: 80},
-      {x: 170, y: 80},
-      {x: 80, y: 170},
-      {x: 170, y: 170},
-    ];
-
-    for (const loc of baseLocations) {
-      const base = new ServerBase(loc.x, loc.y, 255); // Neutral
-      this.bases.set(base.id, base);
-    }
-  }
-
-  /**
-   * Spawn pillboxes from loaded map data.
-   *
-   * WHY RESTORE MAP STATE:
-   * - Map files include pillbox health, team ownership, reload speed
-   * - Preserves map designer's intended difficulty/balance
-   * - Some maps have damaged or team-owned pillboxes for strategic gameplay
-   *
-   * @param spawns Pillbox spawn data from map file
-   */
-  private spawnPillboxesFromMap(spawns: import('./simulation/map-loader.js').PillboxSpawnData[]): void {
-    for (const spawn of spawns) {
-      const pillbox = new ServerPillbox(spawn.tileX, spawn.tileY, spawn.ownerTeam);
-      pillbox.armor = spawn.armor;
-      // Note: ServerPillbox already implements variable reload speed system
-      // The 'speed' value from map is stored but our implementation
-      // uses dynamic speed adjustment (aggravation mechanics)
-      this.pillboxes.set(pillbox.id, pillbox);
-    }
-  }
-
-  /**
-   * Spawn bases from loaded map data.
-   *
-   * WHY RESTORE RESOURCES:
-   * - Map files include base stockpiles (shells, mines)
-   * - Different maps have different resource availability
-   * - Affects gameplay balance (resource-rich vs resource-scarce maps)
-   *
-   * @param spawns Base spawn data from map file
-   */
-  private spawnBasesFromMap(spawns: import('./simulation/map-loader.js').BaseSpawnData[]): void {
-    for (const spawn of spawns) {
-      const base = new ServerBase(spawn.tileX, spawn.tileY, spawn.ownerTeam);
-      base.armor = spawn.armor;
-      base.shells = spawn.shells;
-      base.mines = spawn.mines;
-      this.bases.set(base.id, base);
-    }
   }
 
   start(): void {
