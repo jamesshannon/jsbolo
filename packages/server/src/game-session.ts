@@ -42,6 +42,7 @@ import {MatchStateSystem} from './systems/match-state-system.js';
 import {RespawnSystem} from './systems/respawn-system.js';
 import {TerrainEffectsSystem} from './systems/terrain-effects-system.js';
 import {BuilderSystem} from './systems/builder-system.js';
+import {PlayerSimulationSystem} from './systems/player-simulation-system.js';
 import type {WebSocket} from 'ws';
 
 interface Player {
@@ -65,6 +66,7 @@ export class GameSession {
   private readonly respawnSystem = new RespawnSystem();
   private readonly matchState = new MatchStateSystem();
   private readonly builderSystem = new BuilderSystem();
+  private readonly playerSimulation = new PlayerSimulationSystem();
   private nextPlayerId = 1;
   private tick = 0;
   private running = false;
@@ -305,231 +307,44 @@ export class GameSession {
     this.tick++;
     this.soundEvents.length = 0; // Clear sound events from previous tick
 
-    // Update all tanks
-    for (const player of this.players.values()) {
-      const tank = player.tank;
-
-      if (tank.isDead()) {
-        this.tryRespawnTank(player);
-        continue; // Skip dead tanks
-      }
-
-      // Get terrain speed using multi-point sampling at tank's current position.
-      // This samples terrain under the tank's footprint (5 points: center + 4 corners)
-      // and uses the slowest terrain to determine speed. This prevents unrealistic
-      // behavior when crossing terrain boundaries at angles.
-      let terrainSpeed = this.world.getTankSpeedAtPosition(tank.x, tank.y);
-
-      // If tank is on a boat, always use full speed
-      // This overrides terrain sampling to prevent getting stuck when boat
-      // is near the edge and samples ahead to DEEP_SEA (speed 0)
-      if (tank.onBoat) {
-        terrainSpeed = 1.0;
-      }
-
-      // Collision check function
-      const checkCollision = (newX: number, newY: number): boolean => {
-        const newTileX = Math.floor(newX / 256); // TILE_SIZE_WORLD
-        const newTileY = Math.floor(newY / 256);
-        return this.world.isPassable(newTileX, newTileY);
-      };
-
-      // Track previous tank position for boat movement
-      const prevTile = tank.getTilePosition();
-
-      const inputForTick: PlayerInput = player.pendingBuildOrder
-        ? {...player.lastInput, buildOrder: player.pendingBuildOrder}
-        : player.lastInput;
-      player.pendingBuildOrder = undefined;
-
-      tank.update(inputForTick, terrainSpeed, checkCollision);
-
-      // Handle boat movement: boat "carried" by tank, only exists as tile when disembarked
-      // ASSUMPTION: Boats can only be disembarked from RIVER terrain (coastlines).
-      // Deep sea is too far from shore to disembark onto land.
-      // Therefore, all BOAT tiles are always restored to RIVER when re-boarded.
-      if (tank.onBoat) {
-        const newTile = tank.getTilePosition();
-        const newTerrain = this.world.getTerrainAt(newTile.x, newTile.y);
-
-        // Check if tank moved to a new tile
-        if (newTile.x !== prevTile.x || newTile.y !== prevTile.y) {
-          const isWaterTerrain = (t: TerrainType): boolean =>
-            t === TerrainType.DEEP_SEA || t === TerrainType.RIVER || t === TerrainType.BOAT;
-
-          if (isWaterTerrain(newTerrain)) {
-            // Tank still in water - boat is "carried" by the tank
-            // NO terrain changes - boat moves smoothly with tank, no tile jumping
-          } else {
-            // Tank moved onto land - disembark and leave boat behind
-            tank.onBoat = false;
-            // Place BOAT tile at the water position tank just left
-            // Boat faces opposite direction so tank can re-board by backing up
-            // (Assumption: this is always RIVER since you can't disembark from deep sea)
-            const boatDirection = (tank.direction + 128) % 256;
-            this.world.setTerrainAt(
-              prevTile.x,
-              prevTile.y,
-              TerrainType.BOAT,
-              boatDirection
-            );
-            this.terrainChanges.add(`${prevTile.x},${prevTile.y}`);
-            console.log(`Tank ${tank.id} disembarked at (${newTile.x}, ${newTile.y}), left boat facing ${boatDirection} at (${prevTile.x}, ${prevTile.y})`);
-          }
-        }
-      } else {
-        // Tank is NOT on boat - check if it should board an existing boat
-        const currentTile = tank.getTilePosition();
-        const currentTerrain = this.world.getTerrainAt(currentTile.x, currentTile.y);
-
-        // If tank is on a BOAT tile, board it and restore terrain
-        if (currentTerrain === TerrainType.BOAT) {
-          tank.onBoat = true;
-          // Remove BOAT tile and restore to RIVER (see assumption above)
-          this.world.setTerrainAt(currentTile.x, currentTile.y, TerrainType.RIVER);
-          this.terrainChanges.add(`${currentTile.x},${currentTile.y}`);
-          console.log(`Tank ${tank.id} boarded boat at (${currentTile.x}, ${currentTile.y}), restored RIVER terrain`);
-        }
-      }
-
-      // Handle water drain mechanic
-      const currentTile = tank.getTilePosition();
-      const terrain = this.world.getTerrainAt(currentTile.x, currentTile.y);
-      const isInWater = (terrain === TerrainType.RIVER || terrain === TerrainType.DEEP_SEA);
-
-      if (isInWater && !tank.onBoat) {
-        tank.waterTickCounter++;
-
-        if (tank.waterTickCounter >= WATER_DRAIN_INTERVAL_TICKS) {
-          tank.waterTickCounter = 0;
-
-          if (tank.shells > 0) {
-            tank.shells = Math.max(0, tank.shells - WATER_SHELLS_DRAINED);
-            this.emitSound(SOUND_BUBBLES, tank.x, tank.y);
-          }
-
-          if (tank.mines > 0) {
-            tank.mines = Math.max(0, tank.mines - WATER_MINES_DRAINED);
-            if (tank.shells === 0) {
-              this.emitSound(SOUND_BUBBLES, tank.x, tank.y);
+    this.playerSimulation.updatePlayers(
+      this.tick,
+      {
+        world: this.world,
+        players: this.players.values(),
+        pillboxes: this.pillboxes.values(),
+      },
+      {
+        tryRespawn: (player) => this.tryRespawnTank(player),
+        emitSound: (soundId, x, y) => this.emitSound(soundId, x, y),
+        onTerrainChanged: (tileX, tileY) => this.terrainChanges.add(`${tileX},${tileY}`),
+        onForestDestroyed: (tileX, tileY) =>
+          this.terrainEffects.trackForestRegrowth(`${tileX},${tileY}`),
+        scheduleTankRespawn: (tankId) => this.scheduleTankRespawn(tankId),
+        onMineExploded: (tileX, tileY) =>
+          this.matchState.clearMineVisibilityAt(tileX, tileY),
+        spawnShell: (tank) => this.spawnShell(tank),
+        updateBuilder: (tank, tick) =>
+          this.builderSystem.update(
+            tank,
+            tick,
+            {
+              world: this.world,
+              pillboxes: this.pillboxes.values(),
+            },
+            {
+              emitSound: (soundId, x, y) => this.emitSound(soundId, x, y),
+              onTerrainChanged: (tileX, tileY) =>
+                this.terrainChanges.add(`${tileX},${tileY}`),
+              onTrackForestRegrowth: (tileX, tileY) =>
+                this.terrainEffects.trackForestRegrowth(`${tileX},${tileY}`),
+              onPlaceMine: (team, tileX, tileY) =>
+                this.placeMineForTeam(team, tileX, tileY),
+              onCreatePillbox: (pillbox) => this.pillboxes.set(pillbox.id, pillbox),
             }
-          }
-        }
-      } else {
-        tank.waterTickCounter = 0;
+          ),
       }
-
-      // Handle shooting
-      if (player.lastInput.shooting && tank.canShoot()) {
-        this.spawnShell(tank);
-        tank.shoot();
-        this.emitSound(SOUND_SHOOTING, tank.x, tank.y);
-      }
-
-      // Update builder respawn
-      tank.builder.updateRespawn(tank.x, tank.y);
-
-      // Handle builder tasks (only if alive)
-      if (!tank.builder.isDead()) {
-        // Update builder movement and state
-        tank.builder.update(tank.x, tank.y);
-        // Handle builder work tasks
-        this.builderSystem.update(
-          tank,
-          this.tick,
-          {
-            world: this.world,
-            pillboxes: this.pillboxes.values(),
-          },
-          {
-            emitSound: (soundId, x, y) => this.emitSound(soundId, x, y),
-            onTerrainChanged: (tileX, tileY) =>
-              this.terrainChanges.add(`${tileX},${tileY}`),
-            onTrackForestRegrowth: (tileX, tileY) =>
-              this.terrainEffects.trackForestRegrowth(`${tileX},${tileY}`),
-            onPlaceMine: (team, tileX, tileY) =>
-              this.placeMineForTeam(team, tileX, tileY),
-            onCreatePillbox: (pillbox) => this.pillboxes.set(pillbox.id, pillbox),
-          }
-        );
-      }
-
-      // Check for pillbox pickup (tank drives over disabled pillbox)
-      if (tank.canPickupPillbox()) {
-        for (const pillbox of this.pillboxes.values()) {
-          // Skip if pillbox not disabled, in tank, or not on same tile
-          if (pillbox.armor > 0 || pillbox.inTank) {
-            continue;
-          }
-
-          const tankTilePos = tank.getTilePosition();
-          if (pillbox.tileX === tankTilePos.x && pillbox.tileY === tankTilePos.y) {
-            tank.pickupPillbox(pillbox);
-            console.log(
-              `[PILLBOX] Tank ${tank.id} picked up pillbox ${pillbox.id}, repaired and captured for team ${tank.team}`
-            );
-            break; // Only pick up one per tick
-          }
-        }
-      }
-
-      // Check for mines under the tank
-      const tankTile = tank.getTilePosition();
-      if (this.world.hasMineAt(tankTile.x, tankTile.y)) {
-        // Trigger explosion with chain reactions
-        const {explodedMines, affectedTiles} = this.world.triggerMineExplosion(
-          tankTile.x,
-          tankTile.y,
-          MINE_EXPLOSION_RADIUS_TILES
-        );
-
-        // Track terrain changes and forest regrowth
-        for (const tile of affectedTiles) {
-          this.terrainChanges.add(`${tile.x},${tile.y}`);
-
-          // Start regrowth timer if a forest was destroyed
-          if (tile.originalTerrain === TerrainType.FOREST) {
-            const tileKey = `${tile.x},${tile.y}`;
-            this.terrainEffects.trackForestRegrowth(tileKey);
-          }
-        }
-
-        // Emit sound at each exploded mine
-        for (const mine of explodedMines) {
-          const worldX = (mine.x + 0.5) * TILE_SIZE_WORLD;
-          const worldY = (mine.y + 0.5) * TILE_SIZE_WORLD;
-          this.emitSound(SOUND_MINE_EXPLOSION, worldX, worldY);
-          this.matchState.clearMineVisibilityAt(mine.x, mine.y);
-        }
-
-        // Damage tanks in radius of each exploded mine
-        for (const mine of explodedMines) {
-          const centerX = (mine.x + 0.5) * TILE_SIZE_WORLD;
-          const centerY = (mine.y + 0.5) * TILE_SIZE_WORLD;
-          const explosionRadius = MINE_EXPLOSION_RADIUS_TILES * TILE_SIZE_WORLD;
-
-          for (const otherPlayer of this.players.values()) {
-            const otherTank = otherPlayer.tank;
-            if (otherTank.isDead()) continue;
-
-            const dx = otherTank.x - centerX;
-            const dy = otherTank.y - centerY;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-
-            if (distance <= explosionRadius) {
-              const killed = otherTank.takeDamage(MINE_DAMAGE);
-              if (killed) {
-                console.log(`Tank ${otherTank.id} destroyed by mine explosion`);
-                this.emitSound(SOUND_TANK_SINKING, otherTank.x, otherTank.y);
-                this.scheduleTankRespawn(otherTank.id);
-              }
-            }
-          }
-        }
-
-        console.log(`Mine chain reaction: ${explodedMines.length} mines exploded at (${tankTile.x}, ${tankTile.y}), damaged ${affectedTiles.length} tiles`);
-      }
-    }
+    );
 
     this.combatSystem.updateShells(
       this.shells,
