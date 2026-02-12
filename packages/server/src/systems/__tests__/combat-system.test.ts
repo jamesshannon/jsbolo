@@ -111,4 +111,84 @@ describe('CombatSystem', () => {
     expect(sounds).toContain(SOUND_SHOT_TREE);
     expect(shells.size).toBe(0);
   });
+
+  it('should schedule one respawn when multiple same-tick shells overlap a tank', () => {
+    const system = new CombatSystem();
+    const world = new ServerWorld();
+    world.setTerrainAt(70, 70, TerrainType.ROAD);
+    const attackerA = new ServerTank(10, 0, 20, 20);
+    const attackerB = new ServerTank(11, 2, 25, 25);
+    const victim = new ServerTank(12, 1, 70, 70);
+    victim.armor = 1;
+
+    const shells = new Map<number, any>();
+    // ASSUMPTION: both shells are processed during the same simulation tick.
+    // Deterministic behavior should still produce a single death/respawn event.
+    shells.set(101, {
+      id: 101,
+      x: victim.x,
+      y: victim.y,
+      direction: 0,
+      ownerTankId: attackerA.id,
+      alive: true,
+      shouldExplode: false,
+      update() {},
+      getTilePosition: () => ({x: 70, y: 70}),
+      killByCollision() {
+        this.alive = false;
+      },
+    });
+    shells.set(102, {
+      id: 102,
+      x: victim.x,
+      y: victim.y,
+      direction: 128,
+      ownerTankId: attackerB.id,
+      alive: true,
+      shouldExplode: false,
+      update() {},
+      getTilePosition: () => ({x: 70, y: 70}),
+      killByCollision() {
+        this.alive = false;
+      },
+    });
+
+    const respawns: number[] = [];
+    const sinkingSounds: number[] = [];
+
+    system.updateShells(
+      shells,
+      {
+        world,
+        players: [{tank: attackerA}, {tank: attackerB}, {tank: victim}],
+        getPlayerByTankId: (id) => {
+          if (id === attackerA.id) return {tank: attackerA};
+          if (id === attackerB.id) return {tank: attackerB};
+          if (id === victim.id) return {tank: victim};
+          return undefined;
+        },
+        pillboxes: [],
+        bases: [],
+      },
+      {
+        areTeamsAllied: () => false,
+        emitSound: (soundId) => {
+          if (soundId === SOUND_TANK_SINKING) {
+            sinkingSounds.push(soundId);
+          }
+        },
+        scheduleTankRespawn: (tankId) => respawns.push(tankId),
+        onTerrainChanged: () => {},
+        onForestDestroyed: () => {},
+      }
+    );
+
+    expect(victim.isDead()).toBe(true);
+    expect(respawns).toEqual([victim.id]);
+    expect(sinkingSounds).toHaveLength(1);
+    // Only the lethal shell is consumed; once the victim is dead, the other
+    // same-tick shell no longer has a valid tank collision target.
+    expect(shells.size).toBe(1);
+    expect(Array.from(shells.values())[0]?.alive).toBe(true);
+  });
 });
