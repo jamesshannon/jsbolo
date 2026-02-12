@@ -6,17 +6,18 @@
   "main": "./dist/index.js",
   "scripts": {
     "dev": "tsx watch src/main.ts",
-    "build": "tsc",
+    "build": "pnpm --filter @jsbolo/bots build && tsc",
     "start": "node dist/main.js",
     "clean": "rm -rf dist",
-    "type-check": "tsc --noEmit",
+    "type-check": "pnpm --filter @jsbolo/bots build && tsc --noEmit",
     "lint": "eslint \"src/**/*.ts\" --ignore-pattern \"src/**/*.test.ts\" --ignore-pattern \"src/**/__tests__/**\"",
-    "test": "vitest run",
+    "test": "pnpm --filter @jsbolo/bots build && vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "@jsbolo/bots": "workspace:*",
     "@jsbolo/shared": "workspace:*",
     "express": "^4.18.2",
     "protobufjs": "^7.2.6",

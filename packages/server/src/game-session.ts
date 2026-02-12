@@ -24,6 +24,8 @@ import {SessionUpdatePipeline} from './systems/session-update-pipeline.js';
 import {SessionStateBroadcaster} from './systems/session-state-broadcaster.js';
 import {SessionWelcomeBuilder} from './systems/session-welcome-builder.js';
 import {SessionWorldBootstrap} from './systems/session-world-bootstrap.js';
+import {BotInputSystem} from './systems/bot-input-system.js';
+import {InProcessBotRuntimeAdapter} from './systems/in-process-bot-runtime-adapter.js';
 import type {WebSocket} from 'ws';
 
 export class GameSession {
@@ -40,6 +42,7 @@ export class GameSession {
   private readonly broadcaster = new SessionStateBroadcaster();
   private readonly welcomeBuilder = new SessionWelcomeBuilder();
   private readonly worldBootstrap = new SessionWorldBootstrap();
+  private readonly botInputSystem = new BotInputSystem(new InProcessBotRuntimeAdapter());
   private readonly matchState = this.updatePipeline.getMatchState();
   private tick = 0;
   private running = false;
@@ -95,6 +98,7 @@ export class GameSession {
     if (this.tickInterval) {
       clearInterval(this.tickInterval);
     }
+    this.botInputSystem.shutdown();
     console.log('Game session stopped');
   }
 
@@ -129,6 +133,11 @@ export class GameSession {
   private update(): void {
     this.tick++;
     this.soundEvents.length = 0; // Clear sound events from previous tick
+    this.botInputSystem.injectBotInputs({
+      tick: this.tick,
+      players: this.players,
+      areTeamsAllied: (teamA, teamB) => this.areTeamsAllied(teamA, teamB),
+    });
 
     this.updatePipeline.runTick(
       {
@@ -162,6 +171,32 @@ export class GameSession {
     if (this.tick % this.broadcastInterval === 0) {
       this.broadcastState();
     }
+  }
+
+  /**
+   * Enable server-authoritative bot control for an existing player tank.
+   */
+  public enableBotControl(playerId: number, profile: string): boolean {
+    const player = this.players.get(playerId);
+    if (!player) {
+      return false;
+    }
+
+    this.botInputSystem.enableBotForPlayer(player, profile);
+    return true;
+  }
+
+  /**
+   * Disable bot control and return player to human input mode.
+   */
+  public disableBotControl(playerId: number): boolean {
+    const player = this.players.get(playerId);
+    if (!player) {
+      return false;
+    }
+
+    this.botInputSystem.disableBotForPlayer(player);
+    return true;
   }
 
   private spawnShell(tank: ServerTank): void {

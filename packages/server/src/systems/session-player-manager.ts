@@ -9,6 +9,9 @@ export interface SessionPlayer {
   ws: WebSocket;
   tank: ServerTank;
   lastInput: PlayerInput;
+  controlType: 'human' | 'bot';
+  botProfile?: string;
+  botRuntimeId?: string;
   pendingBuildOrder?: NonNullable<PlayerInput['buildOrder']>;
 }
 
@@ -76,6 +79,7 @@ export class SessionPlayerManager {
         shooting: false,
         rangeAdjustment: 0,
       },
+      controlType: 'human',
     };
 
     this.players.set(playerId, player);
