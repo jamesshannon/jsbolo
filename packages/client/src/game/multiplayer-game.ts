@@ -22,6 +22,7 @@ import {Renderer} from '../renderer/renderer.js';
 import {World} from '../world/world.js';
 import {NetworkClient} from '../network/network-client.js';
 import {TankInterpolator} from '../network/tank-interpolator.js';
+import {BuilderInterpolator} from '../network/builder-interpolator.js';
 import {DebugOverlay} from '../debug/debug-overlay.js';
 import {SoundManager} from '../audio/sound-manager.js';
 import {toNetworkInput} from './input-mapping.js';
@@ -37,6 +38,7 @@ export class MultiplayerGame {
   private readonly world: World;
   private readonly network: NetworkClient;
   private readonly tankInterpolator: TankInterpolator;
+  private readonly builderInterpolator: BuilderInterpolator;
   private readonly debugOverlay: DebugOverlay;
   private readonly soundManager: SoundManager;
 
@@ -70,6 +72,7 @@ export class MultiplayerGame {
     this.world = new World();
     this.network = new NetworkClient();
     this.tankInterpolator = new TankInterpolator();
+    this.builderInterpolator = new BuilderInterpolator();
     this.debugOverlay = new DebugOverlay();
     this.soundManager = new SoundManager();
 
@@ -103,6 +106,7 @@ export class MultiplayerGame {
         pillboxes: this.pillboxes,
         bases: this.bases,
         tankInterpolator: this.tankInterpolator,
+        builderInterpolator: this.builderInterpolator,
         nowMs: performance.now(),
       });
       this.playerId = welcomeState.playerId;
@@ -127,6 +131,12 @@ export class MultiplayerGame {
           },
           onTankRemoved: tankId => {
             this.tankInterpolator.removeTank(tankId);
+          },
+          onBuilderUpdated: (builder, tick, receivedAtMs) => {
+            this.builderInterpolator.pushSnapshot(builder, tick, receivedAtMs);
+          },
+          onBuilderRemoved: builderId => {
+            this.builderInterpolator.removeBuilder(builderId);
           },
         }
       );
@@ -245,11 +255,12 @@ export class MultiplayerGame {
 
   private render(): void {
     const renderTanks = this.getRenderTanks();
+    const renderBuilders = this.getRenderBuilders();
     this.renderer.renderMultiplayer(
       this.world,
       renderTanks,
       this.shells,
-      this.builders,
+      renderBuilders,
       this.pillboxes,
       this.bases,
       this.playerId
@@ -271,6 +282,23 @@ export class MultiplayerGame {
     }
 
     return renderTanks;
+  }
+
+  private getRenderBuilders(): Map<number, Builder> {
+    const now = performance.now();
+    const renderBuilders = new Map<number, Builder>();
+
+    for (const [builderId, builder] of this.builders) {
+      if (this.playerId !== null && builder.ownerTankId === this.playerId) {
+        renderBuilders.set(builderId, builder);
+        continue;
+      }
+
+      const interpolated = this.builderInterpolator.getInterpolatedBuilder(builderId, now);
+      renderBuilders.set(builderId, interpolated ?? builder);
+    }
+
+    return renderBuilders;
   }
 
   private updateDebugInfo(): void {
@@ -409,6 +437,7 @@ export class MultiplayerGame {
     this.stop();
     this.network.disconnect();
     this.tankInterpolator.clear();
+    this.builderInterpolator.clear();
     this.input.destroy();
     this.builderInput.destroy();
     this.debugOverlay.destroy();

@@ -3,6 +3,7 @@ import {describe, expect, it} from 'vitest';
 import {applyNetworkEntityUpdate} from '../game/network-entity-state.js';
 import {applyNetworkWelcomeState} from '../game/network-welcome-state.js';
 import {NetworkClient} from '../network/network-client.js';
+import {BuilderInterpolator} from '../network/builder-interpolator.js';
 import {TankInterpolator} from '../network/tank-interpolator.js';
 import {World} from '../world/world.js';
 
@@ -29,6 +30,7 @@ describe('Network Reconnect Flow', () => {
     const client = new NetworkClient();
     const world = new World();
     const tankInterpolator = new TankInterpolator(100);
+    const builderInterpolator = new BuilderInterpolator(100);
 
     const tanks = new Map<number, Tank>();
     const shells = new Map<number, Shell>();
@@ -48,6 +50,7 @@ describe('Network Reconnect Flow', () => {
         pillboxes,
         bases,
         tankInterpolator,
+        builderInterpolator,
         nowMs: 1_000,
         log: () => {},
       });
@@ -72,6 +75,12 @@ describe('Network Reconnect Flow', () => {
           },
           onTankRemoved: tankId => {
             tankInterpolator.removeTank(tankId);
+          },
+          onBuilderUpdated: (builder, tick, receivedAtMs) => {
+            builderInterpolator.pushSnapshot(builder, tick, receivedAtMs);
+          },
+          onBuilderRemoved: builderId => {
+            builderInterpolator.removeBuilder(builderId);
           },
         }
       );
@@ -128,6 +137,7 @@ describe('Network Reconnect Flow', () => {
     expect(pillboxes.size).toBe(1);
     expect(bases.size).toBe(1);
     expect(tankInterpolator.getInterpolatedTank(1, 1_200)).toBeDefined();
+    expect(builderInterpolator.getInterpolatedBuilder(88, 1_200)).toBeDefined();
 
     internal.handleMessage(
       encodeServerMessage({
@@ -156,6 +166,7 @@ describe('Network Reconnect Flow', () => {
     expect(pillboxes.size).toBe(0);
     expect(bases.size).toBe(0);
     expect(tankInterpolator.getInterpolatedTank(1, 1_300)).toBeUndefined();
+    expect(builderInterpolator.getInterpolatedBuilder(88, 1_300)).toBeUndefined();
     expect(client.getState().tanks.size).toBe(0);
     expect(client.getState().currentTick).toBe(1);
   });
@@ -164,6 +175,7 @@ describe('Network Reconnect Flow', () => {
     const client = new NetworkClient();
     const world = new World();
     const tankInterpolator = new TankInterpolator(100);
+    const builderInterpolator = new BuilderInterpolator(100);
 
     const tanks = new Map<number, Tank>();
     const shells = new Map<number, Shell>();
@@ -180,6 +192,7 @@ describe('Network Reconnect Flow', () => {
         pillboxes,
         bases,
         tankInterpolator,
+        builderInterpolator,
         nowMs: 2_000,
         log: () => {},
       });
@@ -196,6 +209,12 @@ describe('Network Reconnect Flow', () => {
           },
           onTankRemoved: tankId => {
             tankInterpolator.removeTank(tankId);
+          },
+          onBuilderUpdated: (builder, tick, receivedAtMs) => {
+            builderInterpolator.pushSnapshot(builder, tick, receivedAtMs);
+          },
+          onBuilderRemoved: builderId => {
+            builderInterpolator.removeBuilder(builderId);
           },
         }
       );

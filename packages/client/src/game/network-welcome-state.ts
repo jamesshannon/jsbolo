@@ -7,6 +7,7 @@ import type {
   WelcomeMessage,
 } from '@shared';
 import type {TankInterpolator} from '../network/tank-interpolator.js';
+import type {BuilderInterpolator} from '../network/builder-interpolator.js';
 import type {World} from '../world/world.js';
 
 export interface WelcomeStateDeps {
@@ -17,6 +18,7 @@ export interface WelcomeStateDeps {
   pillboxes: Map<number, Pillbox>;
   bases: Map<number, Base>;
   tankInterpolator: TankInterpolator;
+  builderInterpolator?: BuilderInterpolator;
   nowMs: number;
   log?: (message: string, ...args: unknown[]) => void;
 }
@@ -46,6 +48,7 @@ export function applyNetworkWelcomeState(
   deps.pillboxes.clear();
   deps.bases.clear();
   deps.tankInterpolator.clear();
+  deps.builderInterpolator?.clear();
 
   const playerId = welcome.playerId ?? null;
   const mapName = welcome.mapName || 'Unknown';

@@ -19,6 +19,8 @@ export interface NetworkEntityState {
 export interface NetworkEntityCallbacks {
   onTankUpdated?(tank: Tank, tick: number, receivedAtMs: number): void;
   onTankRemoved?(tankId: number): void;
+  onBuilderUpdated?(builder: Builder, tick: number, receivedAtMs: number): void;
+  onBuilderRemoved?(builderId: number): void;
 }
 
 /**
@@ -63,6 +65,7 @@ export function applyNetworkEntityUpdate(
         continue;
       }
       state.builders.set(builder.id, builder);
+      callbacks.onBuilderUpdated?.(builder, update.tick, receivedAtMs);
     }
   }
 
@@ -87,5 +90,8 @@ export function applyNetworkEntityUpdate(
   applyRemovedEntityIds(update, state);
   for (const tankId of update.removedTankIds ?? []) {
     callbacks.onTankRemoved?.(tankId);
+  }
+  for (const builderId of update.removedBuilderIds ?? []) {
+    callbacks.onBuilderRemoved?.(builderId);
   }
 }

@@ -12,6 +12,8 @@ describe('applyNetworkEntityUpdate', () => {
     };
     const onTankUpdated = vi.fn();
     const onTankRemoved = vi.fn();
+    const onBuilderUpdated = vi.fn();
+    const onBuilderRemoved = vi.fn();
 
     applyNetworkEntityUpdate(
       {
@@ -22,15 +24,16 @@ describe('applyNetworkEntityUpdate', () => {
         pillboxes: [{id: 90, armor: 10}],
         bases: [{id: 7}],
         removedTankIds: [1],
+        removedBuilderIds: [4],
       } as any,
       state,
       1234,
-      {onTankUpdated, onTankRemoved}
+      {onTankUpdated, onTankRemoved, onBuilderUpdated, onBuilderRemoved}
     );
 
     expect(state.tanks.has(1)).toBe(false);
     expect(state.tanks.get(2)?.x).toBe(30);
-    expect(state.builders.has(4)).toBe(true);
+    expect(state.builders.has(4)).toBe(false);
     expect(state.pillboxes.get(90)?.armor).toBe(10);
     expect(state.bases.has(7)).toBe(true);
     expect(onTankUpdated).toHaveBeenCalledTimes(2);
@@ -40,6 +43,12 @@ describe('applyNetworkEntityUpdate', () => {
       1234
     );
     expect(onTankRemoved).toHaveBeenCalledWith(1);
+    expect(onBuilderUpdated).toHaveBeenCalledWith(
+      expect.objectContaining({id: 4}),
+      77,
+      1234
+    );
+    expect(onBuilderRemoved).toHaveBeenCalledWith(4);
   });
 
   it('should replace shell map when shells are present in update', () => {
