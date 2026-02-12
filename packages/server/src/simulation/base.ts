@@ -23,6 +23,8 @@ export class ServerBase {
 
   private static nextId = 1;
   private refuelCooldown = 0; // Ticks between refueling
+  // ASSUMPTION: base self-replenishment cadence is one pulse every 50 ticks.
+  // Start at 49 so newly spawned bases do not replenish immediately on first update.
   private replenishCooldown = 49; // Ticks between self-replenishment pulses
 
   constructor(tileX: number, tileY: number, ownerTeam = 255) {
@@ -43,7 +45,8 @@ export class ServerBase {
       this.refuelCooldown--;
     }
 
-    // Bases slowly replenish their own stocks over time.
+    // ASSUMPTION: replenishment is symmetric across armor/shells/mines (+1 each pulse),
+    // and each stock caps at its starting value.
     if (this.replenishCooldown > 0) {
       this.replenishCooldown--;
       return;

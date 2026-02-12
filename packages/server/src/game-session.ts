@@ -627,6 +627,8 @@ export class GameSession {
         }
 
         if (base.isTankInRange(tank.x, tank.y, BASE_REFUEL_RANGE)) {
+          // ASSUMPTION: "drive-over" is implemented as BASE_REFUEL_RANGE proximity,
+          // not strict same-tile overlap.
           // Drive-over capture: neutral bases are captured on contact.
           if (base.ownerTeam === NEUTRAL_TEAM) {
             base.capture(tank.team);
@@ -1420,6 +1422,8 @@ export class GameSession {
       return;
     }
 
+    // ASSUMPTION: respawns use a simple randomized center-area spawn bucket.
+    // This preserves existing behavior until spawn-point rules are fully specified.
     const spawnX = 128 + Math.floor(Math.random() * 20);
     const spawnY = 128 + Math.floor(Math.random() * 20);
     player.tank.respawn(spawnX, spawnY);
@@ -1441,6 +1445,8 @@ export class GameSession {
       if (base.ownerTeam === NEUTRAL_TEAM) {
         return [];
       }
+      // ASSUMPTION: alliance checks are direct pair membership.
+      // Transitive alliance resolution (A-B and B-C implies A-C) is not applied yet.
       if (!this.areTeamsAllied(firstOwner, base.ownerTeam)) {
         return [];
       }
@@ -1521,6 +1527,7 @@ export class GameSession {
     if (teamA === NEUTRAL_TEAM || teamB === NEUTRAL_TEAM) {
       return false;
     }
+    // ASSUMPTION: alliance graph is non-transitive for now (direct links only).
     return this.alliances.get(teamA)?.has(teamB) ?? false;
   }
 
@@ -1542,6 +1549,8 @@ export class GameSession {
         }
 
         const visibility = this.mineVisibility.get(`${x},${y}`);
+        // ASSUMPTION: mines without visibility metadata (for example map-loaded mines)
+        // are treated as globally visible for compatibility.
         if (!visibility || visibility.visibleToTeams.has(playerTeam)) {
           visible.push({x, y});
         }
@@ -1558,6 +1567,8 @@ export class GameSession {
     this.world.setMineAt(tileX, tileY, true);
     this.mineVisibility.set(`${tileX},${tileY}`, {
       ownerTeam: team,
+      // ASSUMPTION: mine visibility is snapshot-based at placement time.
+      // Pre-alliance mines are not retro-shared; post-break sharing applies only to new mines.
       visibleToTeams: this.getMineVisibilityTeams(team),
     });
     return true;
