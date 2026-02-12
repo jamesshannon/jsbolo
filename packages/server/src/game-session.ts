@@ -28,6 +28,20 @@ import {BotInputSystem} from './systems/bot-input-system.js';
 import {InProcessBotRuntimeAdapter} from './systems/in-process-bot-runtime-adapter.js';
 import type {WebSocket} from 'ws';
 
+export interface BotPolicyOptions {
+  allowBots: boolean;
+  maxBots: number;
+}
+
+export interface GameSessionOptions {
+  botPolicy?: Partial<BotPolicyOptions>;
+}
+
+const DEFAULT_BOT_POLICY: BotPolicyOptions = {
+  allowBots: true,
+  maxBots: 4,
+};
+
 export class GameSession {
   private readonly world: ServerWorld;
   private readonly playerManager: SessionPlayerManager;
@@ -44,6 +58,8 @@ export class GameSession {
   private readonly worldBootstrap = new SessionWorldBootstrap();
   private readonly botInputSystem = new BotInputSystem(new InProcessBotRuntimeAdapter());
   private readonly matchState = this.updatePipeline.getMatchState();
+  private readonly botPolicy: BotPolicyOptions;
+  private readonly botPlayerIds = new Set<number>();
   private tick = 0;
   private running = false;
   private tickInterval?: NodeJS.Timeout;
@@ -65,9 +81,14 @@ export class GameSession {
    * 3. Spawn entities from map data OR use hardcoded fallback
    *
    * @param mapPath Optional path to .map file
+   * @param options Session options (including bot policy)
    */
-  constructor(mapPath?: string) {
+  constructor(mapPath?: string, options?: GameSessionOptions) {
     this.world = new ServerWorld(mapPath);
+    this.botPolicy = {
+      ...DEFAULT_BOT_POLICY,
+      ...(options?.botPolicy ?? {}),
+    };
     this.playerManager = new SessionPlayerManager(
       this.world,
       player => this.sendWelcome(player)
@@ -108,6 +129,12 @@ export class GameSession {
   }
 
   removePlayer(playerId: number): void {
+    const player = this.players.get(playerId);
+    if (player?.controlType === 'bot') {
+      this.botInputSystem.disableBotForPlayer(player);
+      this.botPlayerIds.delete(playerId);
+    }
+
     const result = this.playerManager.removePlayer(playerId);
     if (result.isEmpty) {
       this.stop();
@@ -196,7 +223,41 @@ export class GameSession {
     }
 
     this.botInputSystem.disableBotForPlayer(player);
+    this.botPlayerIds.delete(playerId);
     return true;
+  }
+
+  /**
+   * Create a bot-controlled player in this session.
+   *
+   * The bot uses a no-op in-memory socket sink because authoritative simulation
+   * does not require a network transport for server-side controllers.
+   */
+  public addBot(profile: string): number | null {
+    if (!this.botPolicy.allowBots) {
+      return null;
+    }
+
+    if (this.botPlayerIds.size >= this.botPolicy.maxBots) {
+      return null;
+    }
+
+    const botPlayerId = this.addPlayer(this.createBotSocket());
+    const enabled = this.enableBotControl(botPlayerId, profile);
+    if (!enabled) {
+      this.removePlayer(botPlayerId);
+      return null;
+    }
+
+    this.botPlayerIds.add(botPlayerId);
+    return botPlayerId;
+  }
+
+  /**
+   * Return the number of currently connected bot-controlled players.
+   */
+  public getBotCount(): number {
+    return this.botPlayerIds.size;
   }
 
   private spawnShell(tank: ServerTank): void {
@@ -335,5 +396,14 @@ export class GameSession {
 
   getPlayerCount(): number {
     return this.playerManager.getPlayerCount();
+  }
+
+  private createBotSocket(): WebSocket {
+    return {
+      send: () => {},
+      readyState: 1,
+      on: () => {},
+      close: () => {},
+    } as unknown as WebSocket;
   }
 }
