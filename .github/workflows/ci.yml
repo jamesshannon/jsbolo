@@ -41,3 +41,39 @@ jobs:
 
       - name: Test
         run: pnpm --filter "${{ matrix.package }}" --if-present test
+
+  runtime-smoke:
+    name: Runtime Smoke (Node ESM Imports)
+    runs-on: ubuntu-latest
+    needs: quality
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build shared and server
+        run: |
+          pnpm --filter "@jsbolo/shared" build
+          pnpm --filter "@jsbolo/server" build
+
+      - name: Import generated protobuf module
+        run: |
+          node -e "import('./packages/shared/dist/generated/protocol.js').then(()=>console.log('shared protobuf import ok')).catch((error)=>{console.error(error); process.exit(1);})"
+
+      - name: Import server entry module
+        run: |
+          node -e "import('./packages/server/dist/main.js').then(()=>{console.log('server entry import ok'); process.exit(0);}).catch((error)=>{console.error(error); process.exit(1);})"
