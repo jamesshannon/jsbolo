@@ -119,6 +119,33 @@ describe('GameSession Integration', () => {
     });
   });
 
+  describe('Sound Event Delivery', () => {
+    it('should broadcast update when only sound events changed', () => {
+      const ws = createMockWebSocket();
+      session.addPlayer(ws);
+
+      // Ignore welcome message
+      (ws.send as any).mockClear();
+
+      // Inject a sound event with no other state changes
+      (session as any).emitSound(8, 1000, 2000); // SOUND_SHOOTING
+      (session as any).broadcastState();
+
+      expect(ws.send).toHaveBeenCalledTimes(1);
+      const lastCall = (ws.send as any).mock.calls.slice(-1)[0];
+      const message = JSON.parse(lastCall[0]);
+
+      expect(message.type).toBe('update');
+      expect(message.soundEvents).toBeDefined();
+      expect(message.soundEvents).toHaveLength(1);
+      expect(message.soundEvents[0]).toEqual({
+        soundId: 8,
+        x: 1000,
+        y: 2000,
+      });
+    });
+  });
+
   describe('Boat Movement Mechanics', () => {
     it('should set onBoat=true when tank spawns in water (no BOAT tile)', () => {
       // ASSUMPTION: Boat is "carried" by tank - no BOAT tile created at spawn

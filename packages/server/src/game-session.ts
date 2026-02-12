@@ -1337,8 +1337,13 @@ export class GameSession {
     };
 
     // Skip broadcast if nothing changed (rare but possible when idle)
-    const hasChanges = tanks.length > 0 || shells.length > 0 || builders.length > 0 ||
-                       pillboxes.length > 0 || bases.length > 0 || terrainUpdates.length > 0;
+    const hasChanges = tanks.length > 0 ||
+                       shells.length > 0 ||
+                       builders.length > 0 ||
+                       pillboxes.length > 0 ||
+                       bases.length > 0 ||
+                       terrainUpdates.length > 0 ||
+                       this.soundEvents.length > 0;
 
     if (!hasChanges) {
       return; // No changes, skip broadcast entirely
