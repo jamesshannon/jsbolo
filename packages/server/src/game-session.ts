@@ -37,6 +37,12 @@ export interface GameSessionOptions {
   botPolicy?: Partial<BotPolicyOptions>;
 }
 
+export interface SessionBotSummary {
+  playerId: number;
+  profile: string;
+  team: number;
+}
+
 const DEFAULT_BOT_POLICY: BotPolicyOptions = {
   allowBots: true,
   maxBots: 4,
@@ -258,6 +264,40 @@ export class GameSession {
    */
   public getBotCount(): number {
     return this.botPlayerIds.size;
+  }
+
+  /**
+   * Remove a bot-controlled player by id.
+   */
+  public removeBot(botPlayerId: number): boolean {
+    const player = this.players.get(botPlayerId);
+    if (!player || player.controlType !== 'bot') {
+      return false;
+    }
+
+    this.removePlayer(botPlayerId);
+    return true;
+  }
+
+  /**
+   * List connected bot-controlled players.
+   */
+  public listBots(): SessionBotSummary[] {
+    const bots: SessionBotSummary[] = [];
+
+    for (const botPlayerId of this.botPlayerIds) {
+      const player = this.players.get(botPlayerId);
+      if (!player || player.controlType !== 'bot' || !player.botProfile) {
+        continue;
+      }
+      bots.push({
+        playerId: botPlayerId,
+        profile: player.botProfile,
+        team: player.tank.team,
+      });
+    }
+
+    return bots.sort((a, b) => a.playerId - b.playerId);
   }
 
   private spawnShell(tank: ServerTank): void {

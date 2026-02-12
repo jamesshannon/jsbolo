@@ -3,7 +3,8 @@
  */
 
 import {WebSocketServer, type RawData, type WebSocket} from 'ws';
-import {GameSession} from './game-session.js';
+import {listBuiltInBotProfiles} from '@jsbolo/bots';
+import {GameSession, type SessionBotSummary} from './game-session.js';
 import {decodeClientMessage, type ClientMessage} from '@jsbolo/shared';
 
 interface PlayerConnection {
@@ -11,14 +12,31 @@ interface PlayerConnection {
   session: GameSession;
 }
 
+type WebSocketServerLike = Pick<WebSocketServer, 'on' | 'close'>;
+
+interface GameServerOptions {
+  mapPath?: string;
+  session?: GameSession;
+  createWebSocketServer?: (port: number) => WebSocketServerLike;
+}
+
 export class GameServer {
-  private readonly wss: WebSocketServer;
+  private readonly wss: WebSocketServerLike;
   private readonly session: GameSession; // Single session for Phase 2
   private readonly connections = new Map<WebSocket, PlayerConnection>();
 
-  constructor(port: number, mapPath?: string) {
-    this.wss = new WebSocketServer({port});
-    this.session = new GameSession(mapPath);
+  constructor(port: number, mapPathOrOptions?: string | GameServerOptions, maybeOptions?: GameServerOptions) {
+    const options = typeof mapPathOrOptions === 'string'
+      ? maybeOptions
+      : mapPathOrOptions;
+    const mapPath = typeof mapPathOrOptions === 'string'
+      ? mapPathOrOptions
+      : options?.mapPath;
+
+    this.wss = options?.createWebSocketServer
+      ? options.createWebSocketServer(port)
+      : new WebSocketServer({port});
+    this.session = options?.session ?? new GameSession(mapPath);
 
     this.setupEventHandlers();
     console.log(`WebSocket server listening on port ${port}`);
@@ -84,5 +102,42 @@ export class GameServer {
   close(): void {
     this.session.stop();
     this.wss.close();
+  }
+
+  /**
+   * List built-in server bot profiles available for runtime spawning.
+   */
+  listAvailableBotProfiles(): string[] {
+    return listBuiltInBotProfiles();
+  }
+
+  /**
+   * Add a bot-controlled player to the active session.
+   */
+  addBot(profile: string): {ok: true; playerId: number} | {ok: false; reason: string} {
+    if (!this.listAvailableBotProfiles().includes(profile)) {
+      return {ok: false, reason: `Unknown bot profile: ${profile}`};
+    }
+
+    const botPlayerId = this.session.addBot(profile);
+    if (botPlayerId === null) {
+      return {ok: false, reason: 'Bot policy rejected add request (allowBots/maxBots).'};
+    }
+
+    return {ok: true, playerId: botPlayerId};
+  }
+
+  /**
+   * Remove a bot-controlled player from the active session.
+   */
+  removeBot(botPlayerId: number): boolean {
+    return this.session.removeBot(botPlayerId);
+  }
+
+  /**
+   * Return currently connected bot players.
+   */
+  listBots(): SessionBotSummary[] {
+    return this.session.listBots();
   }
 }
