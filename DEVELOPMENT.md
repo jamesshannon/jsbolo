@@ -454,6 +454,21 @@ ENABLE_BOT_CONTROL=false
 CONTROL_PORT=8081
 ```
 
+Bot policy is configured at server startup via environment variables:
+
+```bash
+# Enable/disable bots globally (default: true)
+ALLOW_BOTS=true
+
+# Max number of active bots (default: 4)
+MAX_BOTS=4
+
+# Bot alliance policy:
+# - none: bots use normal team assignment (default)
+# - all-bots: every bot joins one shared bot team
+BOT_ALLIANCE_MODE=all-bots
+```
+
 Endpoints:
 
 ```bash

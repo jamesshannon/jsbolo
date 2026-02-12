@@ -52,6 +52,48 @@ describe('GameSession bot lifecycle', () => {
     expect(session.getPlayerCount()).toBe(1);
   });
 
+  it('assigns all bots to one shared team when botAllianceMode is all-bots', () => {
+    const session = new GameSession(undefined, {
+      botPolicy: {
+        allowBots: true,
+        maxBots: 3,
+        botAllianceMode: 'all-bots',
+      },
+    });
+
+    const botA = session.addBot('idle');
+    const botB = session.addBot('patrol');
+    expect(botA).not.toBeNull();
+    expect(botB).not.toBeNull();
+
+    const players = (session as any).players as Map<number, any>;
+    const teamA = players.get(botA!)?.tank.team;
+    const teamB = players.get(botB!)?.tank.team;
+    expect(teamA).toBeTypeOf('number');
+    expect(teamA).toBe(teamB);
+    expect(session.areTeamsAllied(teamA, teamB)).toBe(true);
+  });
+
+  it('keeps default none mode assigning independent teams', () => {
+    const session = new GameSession(undefined, {
+      botPolicy: {
+        allowBots: true,
+        maxBots: 3,
+        botAllianceMode: 'none',
+      },
+    });
+
+    const botA = session.addBot('idle');
+    const botB = session.addBot('patrol');
+    expect(botA).not.toBeNull();
+    expect(botB).not.toBeNull();
+
+    const players = (session as any).players as Map<number, any>;
+    const teamA = players.get(botA!)?.tank.team;
+    const teamB = players.get(botB!)?.tank.team;
+    expect(teamA).not.toBe(teamB);
+  });
+
   it('disables bot runtime before removing a bot player', () => {
     const session = new GameSession(undefined, {
       botPolicy: {

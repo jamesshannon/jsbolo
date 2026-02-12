@@ -192,6 +192,7 @@ Add session options (server-owned):
 
 - `allowBots: boolean`
 - `maxBots: number`
+- `botAllianceMode: 'none' | 'all-bots'`
 - `botAssistMode: 'off' | 'standard' | 'advantage'`
 
 This mirrors classic intent of `allow_AI`/`assist_AI` while keeping naming clear.
@@ -227,7 +228,8 @@ Do not spam per-tick logs unless debug mode is enabled.
 ### Milestone 3: Policy and Fairness
 
 - Enforce `allowBots`/`botAssistMode` policy.
-- Define allowed observation scope (full map vs fog-limited).
+- Define allowed observation scope (default: local map-view window around bot, not global omniscience).
+- Support `botAllianceMode` policy (`none` vs single shared bot team).
 - Add tests preventing bots from bypassing normal player constraints.
 
 ### Milestone 4: Runtime Isolation Foundation

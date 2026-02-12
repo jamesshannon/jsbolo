@@ -31,6 +31,7 @@ import type {WebSocket} from 'ws';
 export interface BotPolicyOptions {
   allowBots: boolean;
   maxBots: number;
+  botAllianceMode: 'none' | 'all-bots';
 }
 
 export interface GameSessionOptions {
@@ -46,6 +47,7 @@ export interface SessionBotSummary {
 const DEFAULT_BOT_POLICY: BotPolicyOptions = {
   allowBots: true,
   maxBots: 4,
+  botAllianceMode: 'none',
 };
 
 export class GameSession {
@@ -66,6 +68,7 @@ export class GameSession {
   private readonly matchState = this.updatePipeline.getMatchState();
   private readonly botPolicy: BotPolicyOptions;
   private readonly botPlayerIds = new Set<number>();
+  private botAllianceTeam: number | null = null;
   private tick = 0;
   private running = false;
   private tickInterval?: NodeJS.Timeout;
@@ -139,6 +142,9 @@ export class GameSession {
     if (player?.controlType === 'bot') {
       this.botInputSystem.disableBotForPlayer(player);
       this.botPlayerIds.delete(playerId);
+      if (this.botPlayerIds.size === 0) {
+        this.botAllianceTeam = null;
+      }
     }
 
     const result = this.playerManager.removePlayer(playerId);
@@ -248,7 +254,22 @@ export class GameSession {
       return null;
     }
 
+    const allianceTeam =
+      this.botPolicy.botAllianceMode === 'all-bots'
+        ? this.getOrCreateBotAllianceTeam()
+        : null;
+    if (this.botPolicy.botAllianceMode === 'all-bots' && allianceTeam === null) {
+      return null;
+    }
+
     const botPlayerId = this.addPlayer(this.createBotSocket());
+    if (this.botPolicy.botAllianceMode === 'all-bots' && allianceTeam !== null) {
+      const botPlayer = this.players.get(botPlayerId);
+      if (botPlayer) {
+        botPlayer.tank.team = allianceTeam;
+      }
+    }
+
     const enabled = this.enableBotControl(botPlayerId, profile);
     if (!enabled) {
       this.removePlayer(botPlayerId);
@@ -276,6 +297,9 @@ export class GameSession {
     }
 
     this.removePlayer(botPlayerId);
+    if (this.botPlayerIds.size === 0) {
+      this.botAllianceTeam = null;
+    }
     return true;
   }
 
@@ -436,6 +460,34 @@ export class GameSession {
 
   getPlayerCount(): number {
     return this.playerManager.getPlayerCount();
+  }
+
+  /**
+   * Pick one stable team id for all bots in this session when `all-bots` mode is enabled.
+   *
+   * ASSUMPTION: prefer a currently-unused human team to avoid silently allying bots
+   * with an existing human. If all 16 teams are occupied by humans, reject bot spawn.
+   */
+  private getOrCreateBotAllianceTeam(): number | null {
+    if (this.botAllianceTeam !== null) {
+      return this.botAllianceTeam;
+    }
+
+    const humanTeams = new Set<number>();
+    for (const player of this.players.values()) {
+      if (player.controlType !== 'bot') {
+        humanTeams.add(player.tank.team);
+      }
+    }
+
+    for (let team = 15; team >= 0; team--) {
+      if (!humanTeams.has(team)) {
+        this.botAllianceTeam = team;
+        return team;
+      }
+    }
+
+    return null;
   }
 
   private createBotSocket(): WebSocket {

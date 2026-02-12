@@ -4,7 +4,7 @@ import {
   type BotObservation,
   type BotTankState,
 } from '@jsbolo/bots';
-import {type PlayerInput} from '@jsbolo/shared';
+import {TILE_SIZE_WORLD, type PlayerInput} from '@jsbolo/shared';
 import type {ServerTank} from '../simulation/tank.js';
 import type {SessionPlayer} from './session-player-manager.js';
 import type {BotRuntimeAdapter} from './bot-runtime-adapter.js';
@@ -14,6 +14,11 @@ interface BotInputContext {
   players: Map<number, SessionPlayer>;
   areTeamsAllied: (teamA: number, teamB: number) => boolean;
 }
+
+// ASSUMPTION: bot perception is limited to a local "map window" centered on the bot.
+// We mirror the classic default playfield footprint (about 20x15 tiles at 640x480).
+const BOT_VIEW_HALF_WIDTH_WORLD = TILE_SIZE_WORLD * 10;
+const BOT_VIEW_HALF_HEIGHT_WORLD = TILE_SIZE_WORLD * 7.5;
 
 /**
  * Bridges authoritative session state to runtime-neutral bot controllers.
@@ -81,6 +86,7 @@ export class BotInputSystem {
       const enemies = Array.from(tankStates.values())
         .filter(candidate =>
           candidate.id !== self.id &&
+          this.isInBotView(self, candidate) &&
           !context.areTeamsAllied(self.team, candidate.team)
         )
         .sort((a, b) => a.id - b.id);
@@ -140,5 +146,10 @@ export class BotInputSystem {
       reload: tank.reload,
       firingRange: tank.firingRange,
     };
+  }
+
+  private isInBotView(self: BotTankState, candidate: BotTankState): boolean {
+    return Math.abs(candidate.x - self.x) <= BOT_VIEW_HALF_WIDTH_WORLD &&
+      Math.abs(candidate.y - self.y) <= BOT_VIEW_HALF_HEIGHT_WORLD;
   }
 }

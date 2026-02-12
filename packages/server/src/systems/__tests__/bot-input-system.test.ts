@@ -54,6 +54,8 @@ describe('BotInputSystem', () => {
     const system = new BotInputSystem(runtime, () => {});
     const botPlayer = createPlayer(1, 0);
     const enemyPlayer = createPlayer(2, 1);
+    enemyPlayer.tank.x = botPlayer.tank.x + 512;
+    enemyPlayer.tank.y = botPlayer.tank.y + 512;
     const players = new Map<number, SessionPlayer>([
       [1, botPlayer],
       [2, enemyPlayer],
@@ -104,6 +106,10 @@ describe('BotInputSystem', () => {
     const botPlayer = createPlayer(1, 0);
     const allyPlayer = createPlayer(2, 1);
     const enemyPlayer = createPlayer(3, 2);
+    allyPlayer.tank.x = botPlayer.tank.x + 512;
+    allyPlayer.tank.y = botPlayer.tank.y;
+    enemyPlayer.tank.x = botPlayer.tank.x;
+    enemyPlayer.tank.y = botPlayer.tank.y + 512;
     const players = new Map<number, SessionPlayer>([
       [1, botPlayer],
       [2, allyPlayer],
@@ -120,6 +126,52 @@ describe('BotInputSystem', () => {
     const observation = tickBot.mock.calls[0]?.[1];
     expect(observation?.enemies).toHaveLength(1);
     expect(observation?.enemies[0]?.id).toBe(3);
+  });
+
+  it('filters enemies outside the bot map-view window', () => {
+    const tickBot = vi.fn().mockReturnValue({
+      accelerating: false,
+      braking: false,
+      turningClockwise: false,
+      turningCounterClockwise: false,
+      shooting: false,
+      rangeAdjustment: RangeAdjustment.NONE,
+    });
+
+    const runtime: BotRuntimeAdapter = {
+      registerBot: vi.fn(),
+      getRegisteredProfile: () => 'idle',
+      tickBot,
+      unregisterBot: vi.fn(),
+      shutdown: vi.fn(),
+    };
+
+    const system = new BotInputSystem(runtime, () => {});
+    const botPlayer = createPlayer(1, 0);
+    const nearbyEnemy = createPlayer(2, 1);
+    const farEnemy = createPlayer(3, 2);
+
+    botPlayer.tank.x = 1000;
+    botPlayer.tank.y = 1000;
+    nearbyEnemy.tank.x = 1000 + (8 * 256);
+    nearbyEnemy.tank.y = 1000 + (3 * 256);
+    farEnemy.tank.x = 1000 + (15 * 256);
+    farEnemy.tank.y = 1000;
+
+    system.enableBotForPlayer(botPlayer, 'idle');
+    system.injectBotInputs({
+      tick: 9,
+      players: new Map([
+        [1, botPlayer],
+        [2, nearbyEnemy],
+        [3, farEnemy],
+      ]),
+      areTeamsAllied: () => false,
+    });
+
+    const observation = tickBot.mock.calls[0]?.[1];
+    expect(observation?.enemies).toHaveLength(1);
+    expect(observation?.enemies[0]?.id).toBe(2);
   });
 
   it('queues build orders when bot emits one-shot build commands', () => {
