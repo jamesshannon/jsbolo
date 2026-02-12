@@ -32,6 +32,8 @@ export interface WelcomeMessage {
   tanks: Tank[];
   pillboxes: Pillbox[];
   bases: Base[];
+  matchEnded?: boolean;
+  winningTeams?: number[];
 }
 
 export interface Shell {
@@ -68,6 +70,8 @@ export interface UpdateMessage {
   bases?: Base[];
   terrainUpdates?: TerrainUpdate[];
   soundEvents?: SoundEvent[];
+  matchEnded?: boolean;
+  winningTeams?: number[];
 }
 
 // Encoding/Decoding helpers

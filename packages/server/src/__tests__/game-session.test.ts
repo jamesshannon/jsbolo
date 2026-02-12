@@ -10,7 +10,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { GameSession } from '../game-session.js';
-import { TerrainType } from '@jsbolo/shared';
+import { TerrainType, TANK_RESPAWN_TICKS } from '@jsbolo/shared';
 import type { WebSocket } from 'ws';
 
 // Mock WebSocket
@@ -116,6 +116,55 @@ describe('GameSession Integration', () => {
 
       expect(message.shells).toHaveLength(1);
       expect(message.shells[0].id).toBe(1);
+    });
+
+    it('should respawn destroyed tanks on tick schedule (no wall-clock timeout)', () => {
+      const ws1 = createMockWebSocket();
+      const ws2 = createMockWebSocket();
+      const playerId1 = session.addPlayer(ws1);
+      const playerId2 = session.addPlayer(ws2);
+
+      const players = (session as any).players;
+      const world = (session as any).world;
+      const victim = players.get(playerId1);
+      const attacker = players.get(playerId2);
+
+      victim.tank.armor = 1;
+      victim.tank.x = 50 * 256;
+      victim.tank.y = 50 * 256;
+      world.setTerrainAt(50, 50, TerrainType.ROAD);
+
+      const shells = (session as any).shells;
+      shells.set(1001, {
+        id: 1001,
+        x: victim.tank.x,
+        y: victim.tank.y,
+        direction: 0,
+        ownerTankId: attacker.tank.id,
+        alive: true,
+        range: 256,
+        distanceTraveled: 0,
+        shouldExplode: false,
+        update: () => {},
+        getTilePosition: () => ({ x: 50, y: 50 }),
+        killByCollision() {
+          this.alive = false;
+        },
+      });
+
+      (session as any).update();
+
+      expect(victim.tank.isDead()).toBe(true);
+      expect(victim.respawnAtTick).toBe((session as any).tick + TANK_RESPAWN_TICKS);
+
+      for (let i = 0; i < TANK_RESPAWN_TICKS - 1; i++) {
+        (session as any).update();
+      }
+      expect(victim.tank.isDead()).toBe(true);
+
+      (session as any).update();
+      expect(victim.tank.isDead()).toBe(false);
+      expect(victim.respawnAtTick).toBeUndefined();
     });
   });
 

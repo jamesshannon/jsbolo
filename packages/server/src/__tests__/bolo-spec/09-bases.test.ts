@@ -18,6 +18,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { ServerBase } from '../../simulation/base.js';
+import { GameSession } from '../../game-session.js';
 import {
   BASE_STARTING_ARMOR,
   BASE_STARTING_SHELLS,
@@ -123,35 +124,94 @@ describe('Bolo Manual Spec: 9. Bases', () => {
     });
 
     // "The base will also be automatically captured" when you drive onto it
-    it.skip('should auto-capture neutral base when tank drives onto it', () => {
-      // Auto-capture on drive-over not yet implemented
-      // Currently bases are only captured via shell hit
+    it('should auto-capture neutral base when tank drives onto it', () => {
+      const session = new GameSession();
+      const ws = { send: () => {}, readyState: 1 } as any;
+      const playerId = session.addPlayer(ws);
+
+      const player = (session as any).players.get(playerId);
+      const base = Array.from((session as any).bases.values())[0];
+      base.ownerTeam = NEUTRAL_TEAM;
+      base.armor = BASE_STARTING_ARMOR;
+
+      const basePos = base.getWorldPosition();
+      player.tank.x = basePos.x;
+      player.tank.y = basePos.y;
+
+      (session as any).update();
+      expect(base.ownerTeam).toBe(player.tank.team);
     });
 
     // "it can shoot your base and deplete the armour that it has.
     //  When the armour is all gone, there is nothing to stop the enemy
     //  tank from driving onto your base and capturing it."
-    it.skip('should allow enemy capture after armor depleted', () => {
-      // Armor-gated capture not yet implemented
+    it('should allow enemy capture after armor depleted', () => {
+      const session = new GameSession();
+      const ws1 = { send: () => {}, readyState: 1 } as any;
+      const ws2 = { send: () => {}, readyState: 1 } as any;
+      const p1 = session.addPlayer(ws1);
+      const p2 = session.addPlayer(ws2);
+      const player1 = (session as any).players.get(p1);
+      const player2 = (session as any).players.get(p2);
+      const base = Array.from((session as any).bases.values())[0];
+
+      base.ownerTeam = player1.tank.team;
+      base.armor = 0;
+
+      const basePos = base.getWorldPosition();
+      player2.tank.x = basePos.x;
+      player2.tank.y = basePos.y;
+
+      (session as any).update();
+      expect(base.ownerTeam).toBe(player2.tank.team);
     });
   });
 
   describe('9c. Self-Replenishment', () => {
     // "The base will slowly replenish its stocks automatically"
-    it.skip('should slowly regenerate armor over time', () => {
-      // Base self-replenishment not yet implemented
+    it('should slowly regenerate armor over time', () => {
+      const base = new ServerBase(50, 50);
+      base.armor = 80;
+
+      for (let i = 0; i < 50; i++) {
+        base.update();
+      }
+
+      expect(base.armor).toBe(81);
     });
 
-    it.skip('should slowly regenerate shells over time', () => {
-      // Base self-replenishment not yet implemented
+    it('should slowly regenerate shells over time', () => {
+      const base = new ServerBase(50, 50);
+      base.shells = 30;
+
+      for (let i = 0; i < 50; i++) {
+        base.update();
+      }
+
+      expect(base.shells).toBe(31);
     });
 
-    it.skip('should slowly regenerate mines over time', () => {
-      // Base self-replenishment not yet implemented
+    it('should slowly regenerate mines over time', () => {
+      const base = new ServerBase(50, 50);
+      base.mines = 20;
+
+      for (let i = 0; i < 50; i++) {
+        base.update();
+      }
+
+      expect(base.mines).toBe(21);
     });
 
-    it.skip('should not regenerate beyond starting values', () => {
-      // Cap at BASE_STARTING values
+    it('should not regenerate beyond starting values', () => {
+      const base = new ServerBase(50, 50);
+
+      for (let i = 0; i < 500; i++) {
+        base.update();
+      }
+
+      expect(base.armor).toBe(BASE_STARTING_ARMOR);
+      expect(base.shells).toBe(BASE_STARTING_SHELLS);
+      expect(base.mines).toBe(BASE_STARTING_MINES);
     });
   });
 });

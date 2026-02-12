@@ -18,6 +18,8 @@ import {
   BUILDER_PILLBOX_COST,
   PILLBOX_MAX_ARMOR,
   FOREST_REGROWTH_TICKS,
+  TANK_RESPAWN_TICKS,
+  NEUTRAL_TEAM,
   SOUND_SHOOTING,
   SOUND_SHOT_BUILDING,
   SOUND_SHOT_TREE,
@@ -51,6 +53,7 @@ interface Player {
   ws: WebSocket;
   tank: ServerTank;
   lastInput: PlayerInput;
+  respawnAtTick?: number;
 }
 
 export class GameSession {
@@ -62,10 +65,15 @@ export class GameSession {
   private readonly terrainChanges = new Set<string>(); // Track terrain changes as "x,y"
   private readonly soundEvents: SoundEvent[] = [];
   private readonly forestRegrowthTimers = new Map<string, number>(); // Track forest regrowth as "x,y" -> remaining ticks
+  private readonly alliances = new Map<number, Set<number>>();
+  private readonly pendingAllianceRequests = new Set<string>();
   private nextPlayerId = 1;
   private tick = 0;
   private running = false;
   private tickInterval?: NodeJS.Timeout;
+  private matchEnded = false;
+  private winningTeams: number[] = [];
+  private matchEndAnnounced = false;
 
   // Network optimization: throttle broadcasts and track state changes
   private readonly broadcastInterval = 2; // Broadcast every 2 ticks (25 Hz instead of 50 Hz)
@@ -295,6 +303,7 @@ export class GameSession {
       const tank = player.tank;
 
       if (tank.isDead()) {
+        this.tryRespawnTank(player);
         continue; // Skip dead tanks
       }
 
@@ -482,11 +491,7 @@ export class GameSession {
               if (killed) {
                 console.log(`Tank ${otherTank.id} destroyed by mine explosion`);
                 this.emitSound(SOUND_TANK_SINKING, otherTank.x, otherTank.y);
-                setTimeout(() => {
-                  const spawnX = 128 + Math.floor(Math.random() * 20);
-                  const spawnY = 128 + Math.floor(Math.random() * 20);
-                  otherTank.respawn(spawnX, spawnY);
-                }, 3000);
+                this.scheduleTankRespawn(otherTank.id);
               }
             }
           }
@@ -569,7 +574,9 @@ export class GameSession {
         }));
 
         const target = pillbox.findTarget(
-          tanks,
+          tanks.filter(
+            tank => !this.areTeamsAllied(tank.team, pillbox.ownerTeam)
+          ),
           PILLBOX_RANGE,
           (tileX, tileY) => this.world.isTankConcealedInForest(tileX, tileY)
         );
@@ -603,10 +610,6 @@ export class GameSession {
 
     // Update all bases
     for (const base of this.bases.values()) {
-      if (base.isDead()) {
-        continue;
-      }
-
       base.update();
 
       // Check for tanks in range to refuel
@@ -617,8 +620,28 @@ export class GameSession {
         }
 
         if (base.isTankInRange(tank.x, tank.y, BASE_REFUEL_RANGE)) {
+          // Drive-over capture: neutral bases are captured on contact.
+          if (base.ownerTeam === NEUTRAL_TEAM) {
+            base.capture(tank.team);
+          } else if (
+            base.armor <= 0 &&
+            !this.areTeamsAllied(base.ownerTeam, tank.team)
+          ) {
+            // Armor-gated capture: enemy can drive over and capture a depleted base.
+            base.capture(tank.team);
+          }
+
           base.refuelTank(tank);
         }
+      }
+    }
+
+    if (!this.matchEnded) {
+      const winner = this.calculateWinningTeams();
+      if (winner.length > 0) {
+        this.matchEnded = true;
+        this.winningTeams = winner;
+        this.matchEndAnnounced = false;
       }
     }
 
@@ -732,12 +755,7 @@ export class GameSession {
         if (killed) {
           console.log(`Tank ${tank.id} destroyed by tank ${shell.ownerTankId}`);
           this.emitSound(SOUND_TANK_SINKING, tank.x, tank.y);
-          // Tank will respawn after a delay
-          setTimeout(() => {
-            const spawnX = 128 + Math.floor(Math.random() * 20);
-            const spawnY = 128 + Math.floor(Math.random() * 20);
-            tank.respawn(spawnX, spawnY);
-          }, 3000); // 3 second respawn delay
+          this.scheduleTankRespawn(tank.id);
         }
         break;
       }
@@ -771,7 +789,10 @@ export class GameSession {
           // If hit by friendly tank, capture it
           if (shell.ownerTankId > 0) {
             const player = this.players.get(shell.ownerTankId);
-            if (player && player.tank.team !== pillbox.ownerTeam) {
+            if (
+              player &&
+              !this.areTeamsAllied(player.tank.team, pillbox.ownerTeam)
+            ) {
               pillbox.capture(player.tank.team);
               console.log(
                 `Pillbox ${pillbox.id} captured by team ${player.tank.team}`
@@ -786,10 +807,6 @@ export class GameSession {
 
   private checkShellBaseCollisions(shell: ServerShell): void {
     for (const base of this.bases.values()) {
-      if (base.isDead()) {
-        continue;
-      }
-
       const basePos = base.getWorldPosition();
       const dx = shell.x - basePos.x;
       const dy = shell.y - basePos.y;
@@ -802,14 +819,17 @@ export class GameSession {
 
         if (destroyed) {
           console.log(`Base ${base.id} destroyed`);
-        } else {
-          // If hit by tank, capture it
-          if (shell.ownerTankId > 0) {
-            const player = this.players.get(shell.ownerTankId);
-            if (player && player.tank.team !== base.ownerTeam) {
-              base.capture(player.tank.team);
-              console.log(`Base ${base.id} captured by team ${player.tank.team}`);
-            }
+        }
+
+        // If hit by tank, capture unless owner is allied.
+        if (shell.ownerTankId > 0) {
+          const player = this.players.get(shell.ownerTankId);
+          if (
+            player &&
+            !this.areTeamsAllied(player.tank.team, base.ownerTeam)
+          ) {
+            base.capture(player.tank.team);
+            console.log(`Base ${base.id} captured by team ${player.tank.team}`);
           }
         }
         break;
@@ -1165,6 +1185,7 @@ export class GameSession {
       tanks,
       pillboxes,
       bases,
+      ...(this.matchEnded && { matchEnded: this.matchEnded, winningTeams: this.winningTeams }),
     };
 
     const message = encodeServerMessage(welcome);
@@ -1337,6 +1358,13 @@ export class GameSession {
       ...(bases.length > 0 && { bases }),
       ...(terrainUpdates.length > 0 && { terrainUpdates }),
       ...(this.soundEvents.length > 0 && { soundEvents: this.soundEvents }),
+      ...(
+        this.matchEnded &&
+        !this.matchEndAnnounced && {
+          matchEnded: this.matchEnded,
+          winningTeams: this.winningTeams,
+        }
+      ),
     };
 
     // Skip broadcast if nothing changed (rare but possible when idle)
@@ -1346,7 +1374,8 @@ export class GameSession {
                        pillboxes.length > 0 ||
                        bases.length > 0 ||
                        terrainUpdates.length > 0 ||
-                       this.soundEvents.length > 0;
+                       this.soundEvents.length > 0 ||
+                       (this.matchEnded && !this.matchEndAnnounced);
 
     if (!hasChanges) {
       return; // No changes, skip broadcast entirely
@@ -1360,10 +1389,164 @@ export class GameSession {
         player.ws.send(message);
       }
     }
+
+    if (this.matchEnded) {
+      this.matchEndAnnounced = true;
+    }
   }
 
   private emitSound(soundId: number, x: number, y: number): void {
     this.soundEvents.push({soundId, x, y});
+  }
+
+  private scheduleTankRespawn(tankId: number): void {
+    const player = this.players.get(tankId);
+    if (!player) {
+      return;
+    }
+
+    player.respawnAtTick = this.tick + TANK_RESPAWN_TICKS;
+  }
+
+  private tryRespawnTank(player: Player): void {
+    if (player.respawnAtTick === undefined || this.tick < player.respawnAtTick) {
+      return;
+    }
+
+    const spawnX = 128 + Math.floor(Math.random() * 20);
+    const spawnY = 128 + Math.floor(Math.random() * 20);
+    player.tank.respawn(spawnX, spawnY);
+    delete player.respawnAtTick;
+  }
+
+  private calculateWinningTeams(): number[] {
+    const bases = Array.from(this.bases.values());
+    if (bases.length === 0) {
+      return [];
+    }
+
+    const firstOwner = bases[0]!.ownerTeam;
+    if (firstOwner === NEUTRAL_TEAM) {
+      return [];
+    }
+
+    for (const base of bases) {
+      if (base.ownerTeam === NEUTRAL_TEAM) {
+        return [];
+      }
+      if (!this.areTeamsAllied(firstOwner, base.ownerTeam)) {
+        return [];
+      }
+    }
+
+    return this.getAllianceMembers(firstOwner);
+  }
+
+  private getAllianceMembers(team: number): number[] {
+    const members = new Set<number>([team]);
+    const allies = this.alliances.get(team);
+    if (allies) {
+      for (const ally of allies) {
+        members.add(ally);
+      }
+    }
+    return Array.from(members).sort((a, b) => a - b);
+  }
+
+  private getAllianceKey(fromTeam: number, toTeam: number): string {
+    return `${fromTeam}->${toTeam}`;
+  }
+
+  public requestAlliance(fromTeam: number, toTeam: number): boolean {
+    if (fromTeam === toTeam || this.areTeamsAllied(fromTeam, toTeam)) {
+      return false;
+    }
+    this.pendingAllianceRequests.add(this.getAllianceKey(fromTeam, toTeam));
+    return true;
+  }
+
+  public acceptAlliance(toTeam: number, fromTeam: number): boolean {
+    const key = this.getAllianceKey(fromTeam, toTeam);
+    if (!this.pendingAllianceRequests.has(key)) {
+      return false;
+    }
+
+    this.pendingAllianceRequests.delete(key);
+    this.createAlliance(fromTeam, toTeam);
+    return true;
+  }
+
+  public createAlliance(teamA: number, teamB: number): void {
+    if (teamA === teamB) {
+      return;
+    }
+
+    const alliesA = this.alliances.get(teamA) ?? new Set<number>();
+    alliesA.add(teamB);
+    this.alliances.set(teamA, alliesA);
+
+    const alliesB = this.alliances.get(teamB) ?? new Set<number>();
+    alliesB.add(teamA);
+    this.alliances.set(teamB, alliesB);
+  }
+
+  public breakAlliance(teamA: number, teamB: number): void {
+    this.alliances.get(teamA)?.delete(teamB);
+    this.alliances.get(teamB)?.delete(teamA);
+  }
+
+  public leaveAlliance(team: number): void {
+    const allies = this.alliances.get(team);
+    if (!allies) {
+      return;
+    }
+
+    for (const ally of allies) {
+      this.alliances.get(ally)?.delete(team);
+    }
+    this.alliances.delete(team);
+  }
+
+  public areTeamsAllied(teamA: number, teamB: number): boolean {
+    if (teamA === teamB) {
+      return true;
+    }
+    if (teamA === NEUTRAL_TEAM || teamB === NEUTRAL_TEAM) {
+      return false;
+    }
+    return this.alliances.get(teamA)?.has(teamB) ?? false;
+  }
+
+  public getVisibleMineTilesForPlayer(playerId: number): Array<{x: number; y: number}> {
+    const player = this.players.get(playerId);
+    if (!player) {
+      return [];
+    }
+
+    const visible: Array<{x: number; y: number}> = [];
+    const mapData = this.world.getMapData();
+    for (let y = 0; y < mapData.length; y++) {
+      const row = mapData[y]!;
+      for (let x = 0; x < row.length; x++) {
+        const cell = row[x]!;
+        if (!cell.hasMine) {
+          continue;
+        }
+
+        // For now, mines are team-agnostic in world state. Alliance-aware sharing
+        // returns all known mines for team members and allies.
+        visible.push({x, y});
+      }
+    }
+    return visible;
+  }
+
+  public isMatchEnded(): boolean {
+    return this.matchEnded;
+  }
+
+  public getWinningTeams(): number[] {
+    return [...this.winningTeams];
   }
 
   getPlayerCount(): number {

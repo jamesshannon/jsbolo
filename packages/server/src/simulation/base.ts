@@ -23,6 +23,7 @@ export class ServerBase {
 
   private static nextId = 1;
   private refuelCooldown = 0; // Ticks between refueling
+  private replenishCooldown = 49; // Ticks between self-replenishment pulses
 
   constructor(tileX: number, tileY: number, ownerTeam = 255) {
     this.id = ServerBase.nextId++;
@@ -41,6 +42,17 @@ export class ServerBase {
     if (this.refuelCooldown > 0) {
       this.refuelCooldown--;
     }
+
+    // Bases slowly replenish their own stocks over time.
+    if (this.replenishCooldown > 0) {
+      this.replenishCooldown--;
+      return;
+    }
+
+    this.replenishCooldown = 49; // +1 stock every 50 ticks
+    this.armor = Math.min(BASE_STARTING_ARMOR, this.armor + 1);
+    this.shells = Math.min(BASE_STARTING_SHELLS, this.shells + 1);
+    this.mines = Math.min(BASE_STARTING_MINES, this.mines + 1);
   }
 
   /**
