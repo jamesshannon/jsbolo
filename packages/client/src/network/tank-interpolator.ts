@@ -14,8 +14,16 @@ interface TankSnapshotPair {
 export class TankInterpolator {
   private readonly snapshots = new Map<number, TankSnapshotPair>();
 
+  /**
+   * @param interpolationDelayMs How far behind real-time to render remote tanks.
+   * Rendering slightly behind reduces visible jitter from network variance.
+   */
   constructor(private readonly interpolationDelayMs: number = 100) {}
 
+  /**
+   * Add a snapshot for a tank.
+   * Out-of-order snapshots are ignored to preserve monotonic interpolation.
+   */
   pushSnapshot(tank: Tank, tick: number, receivedAtMs: number): void {
     const nextSnapshot: TankSnapshot = {
       tank: {...tank},
@@ -81,6 +89,10 @@ export class TankInterpolator {
     this.snapshots.clear();
   }
 
+  /**
+   * Drop interpolation state for entities removed from authoritative server state.
+   * Prevents stale motion data from lingering after disconnect/despawn events.
+   */
   removeTank(tankId: number): void {
     this.snapshots.delete(tankId);
   }

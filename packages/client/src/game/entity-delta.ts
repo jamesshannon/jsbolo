@@ -7,6 +7,14 @@ interface EntityCollections {
   bases: Map<number, Base>;
 }
 
+/**
+ * Apply explicit remove instructions from server delta updates.
+ *
+ * WHY EXPLICIT REMOVALS:
+ * - Delta updates only send changed entities.
+ * - Missing from delta does not imply deletion.
+ * - `removed*Ids` makes lifecycle transitions unambiguous on the client.
+ */
 export function applyRemovedEntityIds(
   update: UpdateMessage,
   collections: EntityCollections

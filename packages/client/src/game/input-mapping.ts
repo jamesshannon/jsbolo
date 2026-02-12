@@ -1,6 +1,9 @@
 import {RangeAdjustment, type PlayerInput} from '@shared';
 import type {InputState} from '../input/keyboard.js';
 
+/**
+ * Convert local input state to the wire-level player input payload.
+ */
 export function toNetworkInput(
   inputState: Readonly<InputState>,
   tick: number

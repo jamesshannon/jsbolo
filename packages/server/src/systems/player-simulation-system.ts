@@ -62,7 +62,19 @@ interface PlayerSimulationCallbacks {
   updateBuilder(tank: ServerTank, tick: number): void;
 }
 
+/**
+ * Owns per-player tick simulation orchestration.
+ *
+ * WHY THIS SYSTEM EXISTS:
+ * - `GameSession.update()` had a large mixed-responsibility player loop.
+ * - Extracting it keeps session orchestration thin and testable.
+ * - Gameplay semantics stay centralized while lower-level effects are callback-driven.
+ */
 export class PlayerSimulationSystem {
+  /**
+   * Simulate one tick for all players.
+   * Dead tanks are delegated to respawn handling; living tanks run movement/combat-support logic.
+   */
   updatePlayers(
     tick: number,
     context: PlayerSimulationContext,
@@ -78,6 +90,7 @@ export class PlayerSimulationSystem {
 
       let terrainSpeed = context.world.getTankSpeedAtPosition(tank.x, tank.y);
       if (tank.onBoat) {
+        // Decision: boats always run at full speed to avoid edge-sampling slowdowns.
         terrainSpeed = 1.0;
       }
 
@@ -91,6 +104,7 @@ export class PlayerSimulationSystem {
       const inputForTick: PlayerInput = player.pendingBuildOrder
         ? {...player.lastInput, buildOrder: player.pendingBuildOrder}
         : player.lastInput;
+      // Build orders are one-shot commands. Consume exactly once per server tick.
       player.pendingBuildOrder = undefined;
 
       tank.update(inputForTick, terrainSpeed, checkCollision);
@@ -133,6 +147,7 @@ export class PlayerSimulationSystem {
         return;
       }
 
+      // Decision: disembark leaves a BOAT tile on the water tile just vacated.
       tank.onBoat = false;
       const boatDirection = (tank.direction + 128) % 256;
       world.setTerrainAt(prevTile.x, prevTile.y, TerrainType.BOAT, boatDirection);
@@ -146,6 +161,7 @@ export class PlayerSimulationSystem {
     const currentTile = tank.getTilePosition();
     const currentTerrain = world.getTerrainAt(currentTile.x, currentTile.y);
     if (currentTerrain === TerrainType.BOAT) {
+      // Decision: boarding a boat restores that tile back to RIVER terrain.
       tank.onBoat = true;
       world.setTerrainAt(currentTile.x, currentTile.y, TerrainType.RIVER);
       callbacks.onTerrainChanged(currentTile.x, currentTile.y);
@@ -168,6 +184,7 @@ export class PlayerSimulationSystem {
       tank.waterTickCounter++;
       if (tank.waterTickCounter >= WATER_DRAIN_INTERVAL_TICKS) {
         tank.waterTickCounter = 0;
+        // Decision: water attrition drains shells first, then mines on same cadence.
         if (tank.shells > 0) {
           tank.shells = Math.max(0, tank.shells - WATER_SHELLS_DRAINED);
           callbacks.emitSound(SOUND_BUBBLES, tank.x, tank.y);
@@ -199,6 +216,7 @@ export class PlayerSimulationSystem {
         continue;
       }
       if (pillbox.tileX === tankTilePos.x && pillbox.tileY === tankTilePos.y) {
+        // Decision: drive-over pickup captures/repairs exactly one disabled pillbox per tick.
         tank.pickupPillbox(pillbox);
         console.log(
           `[PILLBOX] Tank ${tank.id} picked up pillbox ${pillbox.id}, repaired and captured for team ${tank.team}`
@@ -224,6 +242,7 @@ export class PlayerSimulationSystem {
       MINE_EXPLOSION_RADIUS_TILES
     );
 
+    // Terrain and regrowth side effects happen before damage/sound fan-out.
     for (const tile of affectedTiles) {
       callbacks.onTerrainChanged(tile.x, tile.y);
       if (tile.originalTerrain === TerrainType.FOREST) {
