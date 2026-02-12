@@ -19,6 +19,32 @@ export interface BotTankState {
   firingRange: number;
 }
 
+export interface BotBaseState {
+  id: number;
+  x: number;
+  y: number;
+  ownerTeam: number;
+  armor: number;
+  shells: number;
+  mines: number;
+}
+
+export interface BotPillboxState {
+  id: number;
+  x: number;
+  y: number;
+  ownerTeam: number;
+  armor: number;
+}
+
+export interface BotShellState {
+  id: number;
+  x: number;
+  y: number;
+  direction: number;
+  ownerTeam: number | null;
+}
+
 /**
  * Authoritative per-tick world view passed into a bot.
  */
@@ -26,6 +52,9 @@ export interface BotObservation {
   tick: number;
   self: BotTankState;
   enemies: readonly BotTankState[];
+  visibleBases?: readonly BotBaseState[];
+  visiblePillboxes?: readonly BotPillboxState[];
+  visibleShells?: readonly BotShellState[];
 }
 
 /**

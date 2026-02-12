@@ -471,8 +471,8 @@ BOT_ALLIANCE_MODE=all-bots
 # Optional startup spawn count (default: 0)
 BOT_COUNT=4
 
-# Optional startup profile for BOT_COUNT spawns (default: patrol)
-BOT_PROFILE=patrol
+# Optional startup profile for BOT_COUNT spawns (default: tactical)
+BOT_PROFILE=tactical
 ```
 
 Endpoints:
@@ -487,10 +487,10 @@ curl http://localhost:8081/bots/profiles
 # List active bots
 curl http://localhost:8081/bots
 
-# Add a bot (idle or patrol)
+# Add a bot (idle, patrol, or tactical)
 curl -X POST http://localhost:8081/bots \
   -H 'Content-Type: application/json' \
-  -d '{"profile":"idle"}'
+  -d '{"profile":"tactical"}'
 
 # Remove a bot by player id
 curl -X DELETE http://localhost:8081/bots/3

@@ -25,22 +25,22 @@ describe('bot startup config helpers', () => {
     expect(parsed).toEqual({});
   });
 
-  it('resolves startup bots from BOT_COUNT and default patrol profile', () => {
+  it('resolves startup bots from BOT_COUNT and default tactical profile', () => {
     const profiles = resolveStartupBotProfiles(
-      ['idle', 'patrol'],
+      ['idle', 'patrol', 'tactical'],
       {BOT_COUNT: '3'}
     );
 
-    expect(profiles).toEqual(['patrol', 'patrol', 'patrol']);
+    expect(profiles).toEqual(['tactical', 'tactical', 'tactical']);
   });
 
-  it('falls back to first available profile when BOT_PROFILE is unknown', () => {
+  it('falls back to tactical when BOT_PROFILE is unknown', () => {
     const profiles = resolveStartupBotProfiles(
-      ['idle', 'patrol'],
+      ['idle', 'patrol', 'tactical'],
       {BOT_COUNT: '2', BOT_PROFILE: 'unknown'}
     );
 
-    expect(profiles).toEqual(['idle', 'idle']);
+    expect(profiles).toEqual(['tactical', 'tactical']);
   });
 
   it('returns no startup bots when BOT_COUNT is unset or invalid', () => {

@@ -1,5 +1,8 @@
 import {RangeAdjustment, type BuildAction} from '@jsbolo/shared';
 import {describe, expect, it, vi} from 'vitest';
+import {ServerBase} from '../../simulation/base.js';
+import {ServerPillbox} from '../../simulation/pillbox.js';
+import {ServerShell} from '../../simulation/shell.js';
 import {ServerTank} from '../../simulation/tank.js';
 import {BotInputSystem} from '../bot-input-system.js';
 import type {BotRuntimeAdapter} from '../bot-runtime-adapter.js';
@@ -65,6 +68,9 @@ describe('BotInputSystem', () => {
     system.injectBotInputs({
       tick: 42,
       players,
+      shells: new Map(),
+      pillboxes: new Map(),
+      bases: new Map(),
       areTeamsAllied: () => false,
     });
 
@@ -82,6 +88,9 @@ describe('BotInputSystem', () => {
     expect(observation?.self.id).toBe(1);
     expect(observation?.enemies).toHaveLength(1);
     expect(observation?.enemies[0]?.id).toBe(2);
+    expect(observation?.visibleBases).toEqual([]);
+    expect(observation?.visiblePillboxes).toEqual([]);
+    expect(observation?.visibleShells).toEqual([]);
   });
 
   it('filters allied tanks from enemy observations', () => {
@@ -120,6 +129,9 @@ describe('BotInputSystem', () => {
     system.injectBotInputs({
       tick: 7,
       players,
+      shells: new Map(),
+      pillboxes: new Map(),
+      bases: new Map(),
       areTeamsAllied: (a, b) => (a === 0 && b === 1) || (a === 1 && b === 0),
     });
 
@@ -166,6 +178,9 @@ describe('BotInputSystem', () => {
         [2, nearbyEnemy],
         [3, farEnemy],
       ]),
+      shells: new Map(),
+      pillboxes: new Map(),
+      bases: new Map(),
       areTeamsAllied: () => false,
     });
 
@@ -204,6 +219,9 @@ describe('BotInputSystem', () => {
     system.injectBotInputs({
       tick: 12,
       players: new Map([[1, botPlayer]]),
+      shells: new Map(),
+      pillboxes: new Map(),
+      bases: new Map(),
       areTeamsAllied: () => false,
     });
 
@@ -213,5 +231,69 @@ describe('BotInputSystem', () => {
       targetY: 20,
     });
     expect(botPlayer.lastInput.tick).toBe(12);
+  });
+
+  it('includes nearby bases, pillboxes, and shells in observation', () => {
+    const tickBot = vi.fn().mockReturnValue({
+      accelerating: false,
+      braking: false,
+      turningClockwise: false,
+      turningCounterClockwise: false,
+      shooting: false,
+      rangeAdjustment: RangeAdjustment.NONE,
+    });
+
+    const runtime: BotRuntimeAdapter = {
+      registerBot: vi.fn(),
+      getRegisteredProfile: () => 'idle',
+      tickBot,
+      unregisterBot: vi.fn(),
+      shutdown: vi.fn(),
+    };
+
+    const system = new BotInputSystem(runtime, () => {});
+    const botPlayer = createPlayer(1, 0);
+    botPlayer.tank.x = 1000;
+    botPlayer.tank.y = 1000;
+    system.enableBotForPlayer(botPlayer, 'idle');
+
+    const nearBase = new ServerBase(4, 4, 255);
+    nearBase.id = 100;
+    const farBase = new ServerBase(90, 90, 1);
+    farBase.id = 101;
+
+    const nearPillbox = new ServerPillbox(5, 5, 1);
+    nearPillbox.id = 200;
+    const farPillbox = new ServerPillbox(120, 120, 1);
+    farPillbox.id = 201;
+
+    const nearShell = new ServerShell(1, 1000 + 128, 1000 + 128, 0, 7);
+    const farShell = new ServerShell(1, 1000 + (20 * 256), 1000, 0, 7);
+
+    system.injectBotInputs({
+      tick: 21,
+      players: new Map([[1, botPlayer]]),
+      shells: new Map([
+        [nearShell.id, nearShell],
+        [farShell.id, farShell],
+      ]),
+      pillboxes: new Map([
+        [nearPillbox.id, nearPillbox],
+        [farPillbox.id, farPillbox],
+      ]),
+      bases: new Map([
+        [nearBase.id, nearBase],
+        [farBase.id, farBase],
+      ]),
+      areTeamsAllied: () => false,
+    });
+
+    const observation = tickBot.mock.calls[0]?.[1];
+    expect(observation?.visibleBases).toHaveLength(1);
+    expect(observation?.visibleBases[0]?.id).toBe(100);
+    expect(observation?.visiblePillboxes).toHaveLength(1);
+    expect(observation?.visiblePillboxes[0]?.id).toBe(200);
+    expect(observation?.visibleShells).toHaveLength(1);
+    expect(observation?.visibleShells[0]?.id).toBe(nearShell.id);
   });
 });

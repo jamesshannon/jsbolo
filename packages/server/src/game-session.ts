@@ -175,6 +175,9 @@ export class GameSession {
     this.botInputSystem.injectBotInputs({
       tick: this.tick,
       players: this.players,
+      shells: this.shells,
+      pillboxes: this.pillboxes,
+      bases: this.bases,
       areTeamsAllied: (teamA, teamB) => this.areTeamsAllied(teamA, teamB),
     });
 

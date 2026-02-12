@@ -1,10 +1,12 @@
 import {IdleBot} from './controllers/idle-bot.js';
 import {PatrolBot} from './controllers/patrol-bot.js';
+import {TacticalBot} from './controllers/tactical-bot.js';
 import type {BotController} from './types.js';
 
 const BOT_FACTORIES: Record<string, () => BotController> = {
   idle: () => new IdleBot(),
   patrol: () => new PatrolBot(),
+  tactical: () => new TacticalBot(),
 };
 
 /**

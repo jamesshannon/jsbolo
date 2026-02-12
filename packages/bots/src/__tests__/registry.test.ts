@@ -3,15 +3,17 @@ import {createBotController, listBuiltInBotProfiles} from '../registry.js';
 
 describe('bot registry', () => {
   it('lists deterministic built-in profiles', () => {
-    expect(listBuiltInBotProfiles()).toEqual(['idle', 'patrol']);
+    expect(listBuiltInBotProfiles()).toEqual(['idle', 'patrol', 'tactical']);
   });
 
-  it('builds working idle and patrol controllers', () => {
+  it('builds working idle, patrol, and tactical controllers', () => {
     const idle = createBotController('idle');
     const patrol = createBotController('patrol');
+    const tactical = createBotController('tactical');
 
     expect(idle.profile).toBe('idle');
     expect(patrol.profile).toBe('patrol');
+    expect(tactical.profile).toBe('tactical');
 
     const idleCommand = idle.think({
       tick: 10,

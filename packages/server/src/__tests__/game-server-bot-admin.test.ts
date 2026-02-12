@@ -16,7 +16,7 @@ describe('GameServer bot admin surface', () => {
       createWebSocketServer: () => createMockWss() as any,
     });
 
-    expect(server.listAvailableBotProfiles()).toEqual(['idle', 'patrol']);
+    expect(server.listAvailableBotProfiles()).toEqual(['idle', 'patrol', 'tactical']);
   });
 
   it('adds and lists bots through server API', () => {

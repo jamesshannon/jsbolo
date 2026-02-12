@@ -35,7 +35,7 @@ export function parseBotPolicyFromEnv(
  *
  * Supported env:
  * - BOT_COUNT: integer >= 0
- * - BOT_PROFILE: one profile name used for all startup bots (default: patrol)
+ * - BOT_PROFILE: one profile name used for all startup bots (default: tactical)
  */
 export function resolveStartupBotProfiles(
   availableProfiles: readonly string[],
@@ -51,10 +51,10 @@ export function resolveStartupBotProfiles(
     return [];
   }
 
-  const requestedProfile = env['BOT_PROFILE'] ?? 'patrol';
+  const requestedProfile = env['BOT_PROFILE'] ?? 'tactical';
   const profile = availableProfiles.includes(requestedProfile)
     ? requestedProfile
-    : availableProfiles[0];
+    : (availableProfiles.includes('tactical') ? 'tactical' : availableProfiles[0]);
   if (!profile) {
     return [];
   }

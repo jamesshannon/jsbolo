@@ -1,10 +1,16 @@
 import {
   createNeutralBotCommand,
+  type BotBaseState,
   type BotCommand,
   type BotObservation,
+  type BotPillboxState,
+  type BotShellState,
   type BotTankState,
 } from '@jsbolo/bots';
 import {TILE_SIZE_WORLD, type PlayerInput} from '@jsbolo/shared';
+import type {ServerBase} from '../simulation/base.js';
+import type {ServerPillbox} from '../simulation/pillbox.js';
+import type {ServerShell} from '../simulation/shell.js';
 import type {ServerTank} from '../simulation/tank.js';
 import type {SessionPlayer} from './session-player-manager.js';
 import type {BotRuntimeAdapter} from './bot-runtime-adapter.js';
@@ -12,6 +18,9 @@ import type {BotRuntimeAdapter} from './bot-runtime-adapter.js';
 interface BotInputContext {
   tick: number;
   players: Map<number, SessionPlayer>;
+  shells: Map<number, ServerShell>;
+  pillboxes: Map<number, ServerPillbox>;
+  bases: Map<number, ServerBase>;
   areTeamsAllied: (teamA: number, teamB: number) => boolean;
 }
 
@@ -95,6 +104,14 @@ export class BotInputSystem {
         tick: context.tick,
         self,
         enemies,
+        visibleBases: this.collectVisibleBases(self, context.bases),
+        visiblePillboxes: this.collectVisiblePillboxes(self, context.pillboxes),
+        visibleShells: this.collectVisibleShells(
+          self,
+          context.shells,
+          tankStates,
+          context.pillboxes
+        ),
       };
 
       const command = this.getCommandSafely(player.botRuntimeId, observation);
@@ -149,7 +166,97 @@ export class BotInputSystem {
   }
 
   private isInBotView(self: BotTankState, candidate: BotTankState): boolean {
-    return Math.abs(candidate.x - self.x) <= BOT_VIEW_HALF_WIDTH_WORLD &&
-      Math.abs(candidate.y - self.y) <= BOT_VIEW_HALF_HEIGHT_WORLD;
+    return this.isWorldPointInView(self, candidate.x, candidate.y);
+  }
+
+  private collectVisibleBases(
+    self: BotTankState,
+    bases: Map<number, ServerBase>
+  ): BotBaseState[] {
+    const visibleBases: BotBaseState[] = [];
+    for (const base of bases.values()) {
+      const position = base.getWorldPosition();
+      if (!this.isWorldPointInView(self, position.x, position.y)) {
+        continue;
+      }
+      visibleBases.push({
+        id: base.id,
+        x: position.x,
+        y: position.y,
+        ownerTeam: base.ownerTeam,
+        armor: base.armor,
+        shells: base.shells,
+        mines: base.mines,
+      });
+    }
+    return visibleBases;
+  }
+
+  private collectVisiblePillboxes(
+    self: BotTankState,
+    pillboxes: Map<number, ServerPillbox>
+  ): BotPillboxState[] {
+    const visiblePillboxes: BotPillboxState[] = [];
+    for (const pillbox of pillboxes.values()) {
+      if (pillbox.inTank || pillbox.isDead()) {
+        continue;
+      }
+      const position = pillbox.getWorldPosition();
+      if (!this.isWorldPointInView(self, position.x, position.y)) {
+        continue;
+      }
+      visiblePillboxes.push({
+        id: pillbox.id,
+        x: position.x,
+        y: position.y,
+        ownerTeam: pillbox.ownerTeam,
+        armor: pillbox.armor,
+      });
+    }
+    return visiblePillboxes;
+  }
+
+  private collectVisibleShells(
+    self: BotTankState,
+    shells: Map<number, ServerShell>,
+    tankStates: Map<number, BotTankState>,
+    pillboxes: Map<number, ServerPillbox>
+  ): BotShellState[] {
+    const visibleShells: BotShellState[] = [];
+    for (const shell of shells.values()) {
+      if (!shell.alive) {
+        continue;
+      }
+      if (!this.isWorldPointInView(self, shell.x, shell.y)) {
+        continue;
+      }
+      visibleShells.push({
+        id: shell.id,
+        x: shell.x,
+        y: shell.y,
+        direction: shell.direction,
+        ownerTeam: this.resolveShellOwnerTeam(shell, tankStates, pillboxes),
+      });
+    }
+    return visibleShells;
+  }
+
+  private resolveShellOwnerTeam(
+    shell: ServerShell,
+    tankStates: Map<number, BotTankState>,
+    pillboxes: Map<number, ServerPillbox>
+  ): number | null {
+    if (shell.ownerTankId >= 0) {
+      return tankStates.get(shell.ownerTankId)?.team ?? null;
+    }
+
+    const pillboxId = -shell.ownerTankId;
+    const ownerTeam = pillboxes.get(pillboxId)?.ownerTeam;
+    return ownerTeam === undefined ? null : ownerTeam;
+  }
+
+  private isWorldPointInView(self: BotTankState, pointX: number, pointY: number): boolean {
+    return Math.abs(pointX - self.x) <= BOT_VIEW_HALF_WIDTH_WORLD &&
+      Math.abs(pointY - self.y) <= BOT_VIEW_HALF_HEIGHT_WORLD;
   }
 }
