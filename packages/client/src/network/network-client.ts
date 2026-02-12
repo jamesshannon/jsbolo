@@ -114,6 +114,13 @@ export class NetworkClient {
   }
 
   private handleUpdate(update: UpdateMessage): void {
+    // Defensively enforce monotonic server tick progression.
+    // WebSocket delivery is ordered per connection, but this guard prevents
+    // state rollback if stale payloads are replayed or mishandled upstream.
+    if (update.tick < this.state.currentTick) {
+      return;
+    }
+
     this.state.currentTick = update.tick;
 
     // Delta updates: merge changed entities instead of replacing all state
