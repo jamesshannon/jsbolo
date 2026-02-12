@@ -24,6 +24,7 @@ import {NetworkClient} from '../network/network-client.js';
 import {TankInterpolator} from '../network/tank-interpolator.js';
 import {DebugOverlay} from '../debug/debug-overlay.js';
 import {SoundManager} from '../audio/sound-manager.js';
+import {toNetworkInput} from './input-mapping.js';
 
 export class MultiplayerGame {
   private readonly input: KeyboardInput;
@@ -320,24 +321,8 @@ export class MultiplayerGame {
       console.log('Input state:', inputState);
     }
 
-    // Determine range adjustment
-    let rangeAdjustment = RangeAdjustment.NONE;
-    if (inputState.increaseRange) {
-      rangeAdjustment = RangeAdjustment.INCREASE;
-    } else if (inputState.decreaseRange) {
-      rangeAdjustment = RangeAdjustment.DECREASE;
-    }
-
     // Send input to server
-    this.network.sendInput({
-      tick: this.tick,
-      accelerating: inputState.accelerating,
-      braking: inputState.braking,
-      turningClockwise: inputState.turningRight,
-      turningCounterClockwise: inputState.turningLeft,
-      shooting: inputState.shooting,
-      rangeAdjustment,
-    });
+    this.network.sendInput(toNetworkInput(inputState, this.tick));
 
     // Center camera on our tank
     if (this.playerId !== null) {
