@@ -24,13 +24,13 @@ export class AutoTiler {
    * - Everything else (3 or 4 filled): (3, 1)
    */
   static getForestTile(neighbors: (TerrainType | null)[]): TileCoord {
-    const [N, _NE, E, _SE, S, _SW, W, _NW] = neighbors;
+    const [northNeighbor, , eastNeighbor, , southNeighbor, , westNeighbor] = neighbors;
 
     // Check only cardinal directions (ignore diagonals)
-    const north = N === TerrainType.FOREST;
-    const east = E === TerrainType.FOREST;
-    const south = S === TerrainType.FOREST;
-    const west = W === TerrainType.FOREST;
+    const north = northNeighbor === TerrainType.FOREST;
+    const east = eastNeighbor === TerrainType.FOREST;
+    const south = southNeighbor === TerrainType.FOREST;
+    const west = westNeighbor === TerrainType.FOREST;
 
     // Corners (2 adjacent filled) - Orona lines 328-331
     if (!north && !west && east && south) {
@@ -223,7 +223,8 @@ export class AutoTiler {
    * Placeholder for building auto-tiling (complex, 30+ variants).
    * For now, returns isolated building. Can be enhanced later.
    */
-  static getBuildingTile(_neighbors: (TerrainType | null)[]): TileCoord {
+  static getBuildingTile(neighbors: (TerrainType | null)[]): TileCoord {
+    void neighbors;
     // TODO: Implement full building auto-tiling (Orona lines 155-228)
     return {x: 6, y: 1}; // Isolated building
   }

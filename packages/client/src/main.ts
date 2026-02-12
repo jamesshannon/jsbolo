@@ -8,6 +8,12 @@ import {MultiplayerGame} from './game/multiplayer-game.js';
 const USE_MULTIPLAYER = true; // Set to false for single-player mode
 const SERVER_URL = 'ws://localhost:8080';
 
+declare global {
+  interface Window {
+    game?: Game | MultiplayerGame;
+  }
+}
+
 async function main(): Promise<void> {
   const canvas = document.getElementById('game-canvas') as HTMLCanvasElement;
   if (!canvas) {
@@ -26,7 +32,7 @@ async function main(): Promise<void> {
     const game = new MultiplayerGame(canvas, ctx);
 
     // Expose game to window for debugging
-    (window as any).game = game;
+    window.game = game;
 
     try {
       await game.init(SERVER_URL);

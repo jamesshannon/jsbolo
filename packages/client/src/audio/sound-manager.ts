@@ -89,9 +89,14 @@ export class SoundManager {
   async preloadSounds(): Promise<void> {
     console.log('Preloading sounds...');
     const loadPromises: Promise<void>[] = [];
+    const variants: Array<keyof SoundVariants> = ['self', 'near', 'far'];
 
-    for (const [soundId, variants] of Object.entries(this.soundMap)) {
-      for (const [variant, path] of Object.entries(variants)) {
+    for (const [soundId, soundVariants] of Object.entries(this.soundMap)) {
+      for (const variant of variants) {
+        const path = soundVariants[variant];
+        if (!path) {
+          continue;
+        }
         const key = `${soundId}_${variant}`;
         loadPromises.push(this.loadSound(key, path));
       }

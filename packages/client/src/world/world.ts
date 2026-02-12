@@ -105,8 +105,8 @@ export class World {
     ];
 
     return offsets.map(([dx, dy]) => {
-      const nx = tileX + dx!;
-      const ny = tileY + dy!;
+      const nx = tileX + dx;
+      const ny = tileY + dy;
 
       if (nx < 0 || nx >= MAP_SIZE_TILES || ny < 0 || ny >= MAP_SIZE_TILES) {
         return null; // Out of bounds

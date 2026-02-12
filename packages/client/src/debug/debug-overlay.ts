@@ -3,6 +3,8 @@
  * Toggle with F3 key to show/hide detailed game state
  */
 
+import {BuilderOrder, type Tank, type Shell, type Builder, type Pillbox, type Base} from '@shared';
+
 export class DebugOverlay {
   private enabled = false;
   private overlayElement: HTMLDivElement;
@@ -73,11 +75,11 @@ export class DebugOverlay {
    * Update debug overlay with current game state
    */
   update(data: {
-    tanks?: Map<number, any>;
-    pillboxes?: Map<number, any>;
-    bases?: Map<number, any>;
-    shells?: Map<number, any>;
-    builders?: Map<number, any>;
+    tanks?: Map<number, Tank>;
+    pillboxes?: Map<number, Pillbox>;
+    bases?: Map<number, Base>;
+    shells?: Map<number, Shell>;
+    builders?: Map<number, Builder>;
     myPlayerId?: number | null;
     tick?: number;
     fps?: number;
@@ -120,7 +122,7 @@ export class DebugOverlay {
 
     // Tank debug info
     if (data.tanks && data.tanks.size > 0) {
-      html += '<div style="margin-bottom: 5px;"><strong>TANKS (${data.tanks.size})</strong></div>';
+      html += `<div style="margin-bottom: 5px;"><strong>TANKS (${data.tanks.size})</strong></div>`;
       for (const [id, tank] of data.tanks) {
         const isMe = id === data.myPlayerId;
         html += `<div style="margin-left: 10px; ${isMe ? 'color: #0f0;' : ''}">`;
@@ -186,15 +188,9 @@ export class DebugOverlay {
     if (data.builders && data.builders.size > 0) {
       html += `<div style="margin-bottom: 5px;"><strong>BUILDERS (${data.builders.size})</strong></div>`;
       for (const [id, builder] of data.builders) {
-        const orderNames = [
-          'In Tank', 'Waiting', 'Returning', 'Parachuting',
-          '', '', '', '', '', '',
-          'Harvesting', 'Building Road', 'Repairing', 'Building Boat',
-          'Building Wall', 'Placing Pillbox', 'Laying Mine',
-        ];
         html += `<div style="margin-left: 10px;">`;
         html += `Builder ${id}<br>`;
-        html += `  Order: ${orderNames[builder.order] || builder.order}<br>`;
+        html += `  Order: ${this.getBuilderOrderName(builder.order)}<br>`;
         html += `  Trees: ${builder.trees}<br>`;
         html += `  Has Mine: ${builder.hasMine}<br>`;
         html += `</div>`;
@@ -207,5 +203,34 @@ export class DebugOverlay {
   destroy(): void {
     window.removeEventListener('keydown', this.handleKeyDown);
     this.overlayElement.remove();
+  }
+
+  private getBuilderOrderName(order: BuilderOrder): string {
+    switch (order) {
+      case BuilderOrder.IN_TANK:
+        return 'In Tank';
+      case BuilderOrder.WAITING:
+        return 'Waiting';
+      case BuilderOrder.RETURNING:
+        return 'Returning';
+      case BuilderOrder.PARACHUTING:
+        return 'Parachuting';
+      case BuilderOrder.HARVESTING:
+        return 'Harvesting';
+      case BuilderOrder.BUILDING_ROAD:
+        return 'Building Road';
+      case BuilderOrder.REPAIRING:
+        return 'Repairing';
+      case BuilderOrder.BUILDING_BOAT:
+        return 'Building Boat';
+      case BuilderOrder.BUILDING_WALL:
+        return 'Building Wall';
+      case BuilderOrder.PLACING_PILLBOX:
+        return 'Placing Pillbox';
+      case BuilderOrder.LAYING_MINE:
+        return 'Laying Mine';
+      default:
+        return 'Unknown';
+    }
   }
 }

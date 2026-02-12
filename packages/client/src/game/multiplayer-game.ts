@@ -7,6 +7,13 @@ import {
   TILE_SIZE_WORLD,
   PIXEL_SIZE_WORLD,
   RangeAdjustment,
+  TerrainType,
+  BuilderOrder,
+  type Tank,
+  type Shell,
+  type Builder,
+  type Pillbox,
+  type Base,
 } from '@shared';
 import {KeyboardInput} from '../input/keyboard.js';
 import {BuilderInput} from '../input/builder-input.js';
@@ -35,11 +42,11 @@ export class MultiplayerGame {
   // Network state
   private playerId: number | null = null;
   private mapName: string = 'Unknown';
-  private tanks = new Map<number, any>();
-  private shells = new Map<number, any>();
-  private builders = new Map<number, any>();
-  private pillboxes = new Map<number, any>();
-  private bases = new Map<number, any>();
+  private tanks = new Map<number, Tank>();
+  private shells = new Map<number, Shell>();
+  private builders = new Map<number, Builder>();
+  private pillboxes = new Map<number, Pillbox>();
+  private bases = new Map<number, Base>();
 
   // FPS tracking
   private fps = 0;
@@ -274,21 +281,8 @@ export class MultiplayerGame {
         const tileY = Math.floor(myTank.y / TILE_SIZE_WORLD);
         const cell = this.world.getCellAt(tileX, tileY);
         if (cell) {
-          const terrainNames: Record<number, string> = {
-            0: 'Building',
-            1: 'River',
-            2: 'Swamp',
-            3: 'Crater',
-            4: 'Road',
-            5: 'Forest',
-            6: 'Rubble',
-            7: 'Grass',
-            8: 'Shot Building',
-            9: 'Boat',
-            10: 'Deep Sea',
-          };
           terrainInfo = {
-            terrain: terrainNames[cell.terrain] || 'Unknown',
+            terrain: this.getTerrainName(cell.terrain),
             life: cell.terrainLife,
             hasMine: cell.hasMine,
           };
@@ -398,7 +392,7 @@ export class MultiplayerGame {
     }
   }
 
-  private updateHUD(tank: any): void {
+  private updateHUD(tank: Tank): void {
     const hudArmor = document.getElementById('hud-armor');
     const hudArmorBar = document.getElementById('hud-armor-bar');
     const hudShells = document.getElementById('hud-shells');
@@ -431,22 +425,66 @@ export class MultiplayerGame {
     if (hudBuilder && this.playerId !== null) {
       const myBuilder = this.builders.get(this.playerId);
       if (myBuilder) {
-        const orderNames = [
-          'In Tank',
-          'Waiting',
-          'Returning',
-          'Parachuting',
-          '', '', '', '', '', '',
-          'Harvesting',
-          'Building Road',
-          'Repairing',
-          'Building Boat',
-          'Building Wall',
-          'Placing Pillbox',
-          'Laying Mine',
-        ];
-        hudBuilder.textContent = orderNames[myBuilder.order] || 'Unknown';
+        hudBuilder.textContent = this.getBuilderOrderName(myBuilder.order);
       }
+    }
+  }
+
+  private getTerrainName(terrain: TerrainType): string {
+    switch (terrain) {
+      case TerrainType.BUILDING:
+        return 'Building';
+      case TerrainType.RIVER:
+        return 'River';
+      case TerrainType.SWAMP:
+        return 'Swamp';
+      case TerrainType.CRATER:
+        return 'Crater';
+      case TerrainType.ROAD:
+        return 'Road';
+      case TerrainType.FOREST:
+        return 'Forest';
+      case TerrainType.RUBBLE:
+        return 'Rubble';
+      case TerrainType.GRASS:
+        return 'Grass';
+      case TerrainType.SHOT_BUILDING:
+        return 'Shot Building';
+      case TerrainType.BOAT:
+        return 'Boat';
+      case TerrainType.DEEP_SEA:
+        return 'Deep Sea';
+      default:
+        return 'Unknown';
+    }
+  }
+
+  private getBuilderOrderName(order: BuilderOrder): string {
+    switch (order) {
+      case BuilderOrder.IN_TANK:
+        return 'In Tank';
+      case BuilderOrder.WAITING:
+        return 'Waiting';
+      case BuilderOrder.RETURNING:
+        return 'Returning';
+      case BuilderOrder.PARACHUTING:
+        return 'Parachuting';
+      case BuilderOrder.HARVESTING:
+        return 'Harvesting';
+      case BuilderOrder.BUILDING_ROAD:
+        return 'Building Road';
+      case BuilderOrder.REPAIRING:
+        return 'Repairing';
+      case BuilderOrder.BUILDING_BOAT:
+        return 'Building Boat';
+      case BuilderOrder.BUILDING_WALL:
+        return 'Building Wall';
+      case BuilderOrder.PLACING_PILLBOX:
+        return 'Placing Pillbox';
+      case BuilderOrder.LAYING_MINE:
+        return 'Laying Mine';
+      default:
+        return 'Unknown';
     }
   }
 

@@ -2,7 +2,16 @@
  * Main game renderer
  */
 
-import {TILE_SIZE_PIXELS, TerrainType} from '@shared';
+import {
+  TILE_SIZE_PIXELS,
+  TerrainType,
+  BuilderOrder,
+  type Tank as NetworkTank,
+  type Shell,
+  type Builder,
+  type Pillbox,
+  type Base,
+} from '@shared';
 import {SpriteSheet} from './sprite-sheet.js';
 import {Camera} from './camera.js';
 import {AutoTiler} from './auto-tiler.js';
@@ -59,11 +68,11 @@ export class Renderer {
    */
   renderMultiplayer(
     world: World,
-    tanks: Map<number, unknown>,
-    shells: Map<number, unknown>,
-    builders: Map<number, unknown>,
-    pillboxes: Map<number, unknown>,
-    bases: Map<number, unknown>,
+    tanks: Map<number, NetworkTank>,
+    shells: Map<number, Shell>,
+    builders: Map<number, Builder>,
+    pillboxes: Map<number, Pillbox>,
+    bases: Map<number, Base>,
     myPlayerId: number | null
   ): void {
     this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
@@ -187,8 +196,8 @@ export class Renderer {
   /**
    * Render tank from network state
    */
-  private renderNetworkTank(tankData: any, isLocalPlayer: boolean): void {
-    if (!tankData.x || !tankData.y) {
+  private renderNetworkTank(tankData: NetworkTank, isLocalPlayer: boolean): void {
+    if (tankData.x === undefined || tankData.y === undefined) {
       return;
     }
 
@@ -232,8 +241,8 @@ export class Renderer {
    *
    * @param tankData Tank data including position, direction, and firingRange
    */
-  private drawTargetingReticle(tankData: any): void {
-    if (!tankData.x || !tankData.y || tankData.firingRange === undefined) {
+  private drawTargetingReticle(tankData: NetworkTank): void {
+    if (tankData.x === undefined || tankData.y === undefined || tankData.firingRange === undefined) {
       return;
     }
 
@@ -284,8 +293,8 @@ export class Renderer {
   /**
    * Render shell/bullet
    */
-  private renderShell(shellData: any): void {
-    if (!shellData.x || !shellData.y) {
+  private renderShell(shellData: Shell): void {
+    if (shellData.x === undefined || shellData.y === undefined) {
       return;
     }
 
@@ -307,14 +316,14 @@ export class Renderer {
   /**
    * Render builder/LGM
    */
-  private renderBuilder(builderData: any): void {
-    if (!builderData.x || !builderData.y) {
+  private renderBuilder(builderData: Builder): void {
+    if (builderData.x === undefined || builderData.y === undefined) {
       return;
     }
 
     // Only render if not in tank
-    if (builderData.order === 0) {
-      return; // IN_TANK
+    if (builderData.order === BuilderOrder.IN_TANK) {
+      return;
     }
 
     // Convert from world coordinates to pixel coordinates
@@ -331,7 +340,11 @@ export class Renderer {
     this.ctx.fill();
 
     // Draw a line to target location if moving
-    if (builderData.order >= 1 && builderData.order <= 3) {
+    if (
+      builderData.order === BuilderOrder.WAITING ||
+      builderData.order === BuilderOrder.RETURNING ||
+      builderData.order === BuilderOrder.PARACHUTING
+    ) {
       // WAITING, RETURNING, PARACHUTING
       const targetPixelX = builderData.targetX / 8;
       const targetPixelY = builderData.targetY / 8;
@@ -353,7 +366,7 @@ export class Renderer {
   /**
    * Render pillbox
    */
-  private renderPillbox(pillboxData: any): void {
+  private renderPillbox(pillboxData: Pillbox): void {
     if (
       pillboxData.tileX === undefined ||
       pillboxData.tileY === undefined ||
@@ -385,7 +398,7 @@ export class Renderer {
         '#ff8800',
         '#8800ff',
       ];
-      color = teamColors[pillboxData.ownerTeam % teamColors.length] || '#ffffff';
+      color = teamColors[pillboxData.ownerTeam % teamColors.length] ?? '#ffffff';
     }
 
     // Draw larger pillbox body (20x20)
@@ -446,7 +459,7 @@ export class Renderer {
   /**
    * Render base (refueling station)
    */
-  private renderBase(baseData: any): void {
+  private renderBase(baseData: Base): void {
     if (baseData.tileX === undefined || baseData.tileY === undefined) {
       return;
     }
@@ -474,7 +487,7 @@ export class Renderer {
         '#ff8800',
         '#8800ff',
       ];
-      color = teamColors[baseData.ownerTeam % teamColors.length] || '#ffffff';
+      color = teamColors[baseData.ownerTeam % teamColors.length] ?? '#ffffff';
     }
 
     // Draw larger base body (28x28)
