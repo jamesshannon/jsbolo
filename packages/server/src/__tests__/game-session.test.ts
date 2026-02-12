@@ -166,6 +166,35 @@ describe('GameSession Integration', () => {
     });
   });
 
+  describe('Entity Lifecycle Deltas', () => {
+    it('should emit removed tank and builder IDs when a player disconnects', () => {
+      const ws1 = createMockWebSocket();
+      const ws2 = createMockWebSocket();
+
+      const playerId1 = session.addPlayer(ws1);
+      session.addPlayer(ws2);
+
+      const players = (session as any).players;
+      const departing = players.get(playerId1);
+      const departingTankId = departing.tank.id;
+      const departingBuilderId = departing.tank.builder.id;
+
+      // Prime previous-state hashes so removal appears as a delta.
+      (session as any).broadcastState();
+      (ws2.send as any).mockClear();
+
+      session.removePlayer(playerId1);
+      (session as any).broadcastState();
+
+      expect(ws2.send).toHaveBeenCalled();
+      const lastCall = (ws2.send as any).mock.calls.slice(-1)[0];
+      const message = JSON.parse(lastCall[0]);
+
+      expect(message.removedTankIds).toContain(departingTankId);
+      expect(message.removedBuilderIds).toContain(departingBuilderId);
+    });
+  });
+
   describe('Pillbox Capture Lifecycle', () => {
     const idleInput = {
       sequence: 0,

@@ -962,9 +962,12 @@ export class GameSession {
     const tanks = [];
     const builders = [];
     const changedTankIds = new Set<number>();
+    const currentTankIds = new Set<number>();
+    const currentBuilderIds = new Set<number>();
 
     for (const player of this.players.values()) {
       const tank = player.tank;
+      currentTankIds.add(tank.id);
       const currentHash = this.getTankStateHash(tank);
       const previousHash = this.previousState.tanks.get(tank.id);
 
@@ -992,6 +995,7 @@ export class GameSession {
 
       // Check builder changes
       const builder = tank.builder;
+      currentBuilderIds.add(builder.id);
       const builderHash = this.getBuilderStateHash(builder);
       const previousBuilderHash = this.previousState.builders.get(builder.id);
 
@@ -1014,6 +1018,22 @@ export class GameSession {
       }
     }
 
+    const removedTankIds: number[] = [];
+    for (const previousTankId of this.previousState.tanks.keys()) {
+      if (!currentTankIds.has(previousTankId)) {
+        removedTankIds.push(previousTankId);
+        this.previousState.tanks.delete(previousTankId);
+      }
+    }
+
+    const removedBuilderIds: number[] = [];
+    for (const previousBuilderId of this.previousState.builders.keys()) {
+      if (!currentBuilderIds.has(previousBuilderId)) {
+        removedBuilderIds.push(previousBuilderId);
+        this.previousState.builders.delete(previousBuilderId);
+      }
+    }
+
     // Shells: Always include all shells since they move every tick
     // Also track which shells existed for removed shell detection
     const shells = [];
@@ -1032,7 +1052,9 @@ export class GameSession {
 
     // Pillboxes: Only send if changed
     const pillboxes = [];
+    const currentPillboxIds = new Set<number>();
     for (const pillbox of this.pillboxes.values()) {
+      currentPillboxIds.add(pillbox.id);
       const currentHash = this.getPillboxStateHash(pillbox);
       const previousHash = this.previousState.pillboxes.get(pillbox.id);
 
@@ -1048,10 +1070,19 @@ export class GameSession {
         this.previousState.pillboxes.set(pillbox.id, currentHash);
       }
     }
+    const removedPillboxIds: number[] = [];
+    for (const previousPillboxId of this.previousState.pillboxes.keys()) {
+      if (!currentPillboxIds.has(previousPillboxId)) {
+        removedPillboxIds.push(previousPillboxId);
+        this.previousState.pillboxes.delete(previousPillboxId);
+      }
+    }
 
     // Bases: Only send if changed
     const bases = [];
+    const currentBaseIds = new Set<number>();
     for (const base of this.bases.values()) {
+      currentBaseIds.add(base.id);
       const currentHash = this.getBaseStateHash(base);
       const previousHash = this.previousState.bases.get(base.id);
 
@@ -1066,6 +1097,13 @@ export class GameSession {
           ownerTeam: base.ownerTeam,
         });
         this.previousState.bases.set(base.id, currentHash);
+      }
+    }
+    const removedBaseIds: number[] = [];
+    for (const previousBaseId of this.previousState.bases.keys()) {
+      if (!currentBaseIds.has(previousBaseId)) {
+        removedBaseIds.push(previousBaseId);
+        this.previousState.bases.delete(previousBaseId);
       }
     }
 
@@ -1101,6 +1139,10 @@ export class GameSession {
       ...(builders.length > 0 && { builders }),
       ...(pillboxes.length > 0 && { pillboxes }),
       ...(bases.length > 0 && { bases }),
+      ...(removedTankIds.length > 0 && { removedTankIds }),
+      ...(removedBuilderIds.length > 0 && { removedBuilderIds }),
+      ...(removedPillboxIds.length > 0 && { removedPillboxIds }),
+      ...(removedBaseIds.length > 0 && { removedBaseIds }),
       ...(terrainUpdates.length > 0 && { terrainUpdates }),
       ...(this.soundEvents.length > 0 && { soundEvents: this.soundEvents }),
       ...(
@@ -1118,6 +1160,10 @@ export class GameSession {
                        builders.length > 0 ||
                        pillboxes.length > 0 ||
                        bases.length > 0 ||
+                       removedTankIds.length > 0 ||
+                       removedBuilderIds.length > 0 ||
+                       removedPillboxIds.length > 0 ||
+                       removedBaseIds.length > 0 ||
                        terrainUpdates.length > 0 ||
                        this.soundEvents.length > 0 ||
                        (this.matchState.isMatchEnded() && !this.matchEndAnnounced);

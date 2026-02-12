@@ -25,6 +25,7 @@ import {TankInterpolator} from '../network/tank-interpolator.js';
 import {DebugOverlay} from '../debug/debug-overlay.js';
 import {SoundManager} from '../audio/sound-manager.js';
 import {toNetworkInput} from './input-mapping.js';
+import {applyRemovedEntityIds} from './entity-delta.js';
 
 export class MultiplayerGame {
   private readonly input: KeyboardInput;
@@ -200,6 +201,12 @@ export class MultiplayerGame {
           }
         }
       }
+      applyRemovedEntityIds(update, {
+        tanks: this.tanks,
+        builders: this.builders,
+        pillboxes: this.pillboxes,
+        bases: this.bases,
+      });
       if (update.terrainUpdates) {
         for (const terrainUpdate of update.terrainUpdates) {
           // DEBUG: Log terrain updates received

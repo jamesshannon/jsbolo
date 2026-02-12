@@ -68,6 +68,10 @@ export interface UpdateMessage {
   builders?: Builder[];
   pillboxes?: Pillbox[];
   bases?: Base[];
+  removedTankIds?: number[];
+  removedBuilderIds?: number[];
+  removedPillboxIds?: number[];
+  removedBaseIds?: number[];
   terrainUpdates?: TerrainUpdate[];
   soundEvents?: SoundEvent[];
   matchEnded?: boolean;
