@@ -30,6 +30,7 @@ import {applyNetworkEntityUpdate} from './network-entity-state.js';
 import {applyNetworkWorldEffects} from './network-world-effects.js';
 import {applyNetworkWelcomeState} from './network-welcome-state.js';
 import {deriveStructureHudMessages} from './hud-events.js';
+import {deriveTankHudMarkers} from './hud-tank-status.js';
 
 export class MultiplayerGame {
   private readonly input: KeyboardInput;
@@ -377,6 +378,8 @@ export class MultiplayerGame {
     const hudNearestBaseArmor = document.getElementById('hud-nearest-base-armor');
     const hudNearestBaseShells = document.getElementById('hud-nearest-base-shells');
     const hudNearestBaseMines = document.getElementById('hud-nearest-base-mines');
+    const hudTankList = document.getElementById('hud-tank-list');
+    const hudTankSummary = document.getElementById('hud-tank-summary');
 
     if (hudArmor) {
       hudArmor.textContent = `${tank.armor}/40`;
@@ -463,6 +466,27 @@ export class MultiplayerGame {
         hudNearestBaseArmor.textContent = `${nearestBase.armor}`;
         hudNearestBaseShells.textContent = `${nearestBase.shells}`;
         hudNearestBaseMines.textContent = `${nearestBase.mines}`;
+      }
+    }
+
+    if (hudTankList || hudTankSummary) {
+      const tankMarkers = deriveTankHudMarkers({
+        tanks: this.tanks.values(),
+        myPlayerId: this.playerId,
+        myTeam: tank.team,
+      });
+      const friendlyCount = tankMarkers.filter(marker => marker.relation === 'friendly').length;
+      const hostileCount = tankMarkers.filter(marker => marker.relation === 'hostile').length;
+
+      if (hudTankSummary) {
+        hudTankSummary.textContent = `${friendlyCount} friendly / ${hostileCount} hostile`;
+      }
+
+      if (hudTankList) {
+        const markerNodes = tankMarkers.map(marker =>
+          `<span class="hud-chip ${marker.relation}" title="P${marker.playerId}"></span>`
+        );
+        hudTankList.innerHTML = markerNodes.join('');
       }
     }
   }

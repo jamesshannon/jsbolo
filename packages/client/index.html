@@ -189,12 +189,18 @@
       }
 
       #hud-pillbox-list,
-      #hud-base-list {
+      #hud-base-list,
+      #hud-tank-list {
         display: flex;
         flex-wrap: wrap;
         gap: 3px;
         min-height: 72px;
         align-content: flex-start;
+      }
+
+      #hud-tank-list {
+        min-height: 0;
+        margin-top: 4px;
       }
 
       .hud-chip {
@@ -218,6 +224,26 @@
       .hud-chip.enemy {
         background: #de2f2f;
         border-color: #ff8a8a;
+      }
+
+      .hud-chip.self {
+        background: #0a0a0a;
+        border-color: #d8d8d8;
+      }
+
+      .hud-chip.friendly {
+        background: #26d93b;
+        border-color: #8eff95;
+      }
+
+      .hud-chip.hostile {
+        background: #de2f2f;
+        border-color: #ff8a8a;
+      }
+
+      .hud-chip.neutral {
+        background: #5e5e5e;
+        border-color: #9a9a9a;
       }
 
       #player-stats {
@@ -353,6 +379,11 @@
               <span class="label">Base</span>
               <span class="value" id="hud-nearest-base-owner">None</span>
             </div>
+            <div class="panel-row">
+              <span class="label">Tanks</span>
+              <span class="value" id="hud-tank-summary">0 friendly / 0 hostile</span>
+            </div>
+            <div id="hud-tank-list"></div>
           </section>
 
           <section class="status-panel">
