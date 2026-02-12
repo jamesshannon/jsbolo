@@ -13,11 +13,6 @@ import {
   WATER_DRAIN_INTERVAL_TICKS,
   WATER_SHELLS_DRAINED,
   WATER_MINES_DRAINED,
-  BUILDER_WALL_COST,
-  BUILDER_BOAT_COST,
-  BUILDER_PILLBOX_COST,
-  PILLBOX_MAX_ARMOR,
-  FOREST_REGROWTH_TICKS,
   TANK_RESPAWN_TICKS,
   NEUTRAL_TEAM,
   SOUND_SHOOTING,
@@ -26,12 +21,8 @@ import {
   SOUND_HIT_TANK,
   SOUND_TANK_SINKING,
   SOUND_MINE_EXPLOSION,
-  SOUND_FARMING_TREE,
-  SOUND_MAN_BUILDING,
-  SOUND_MAN_LAY_MINE,
   SOUND_MAN_DYING,
   SOUND_BUBBLES,
-  BuilderOrder,
   TerrainType,
   type PlayerInput,
   encodeServerMessage,
@@ -50,6 +41,7 @@ import {CombatSystem} from './systems/combat-system.js';
 import {MatchStateSystem} from './systems/match-state-system.js';
 import {RespawnSystem} from './systems/respawn-system.js';
 import {TerrainEffectsSystem} from './systems/terrain-effects-system.js';
+import {BuilderSystem} from './systems/builder-system.js';
 import type {WebSocket} from 'ws';
 
 interface Player {
@@ -72,6 +64,7 @@ export class GameSession {
   private readonly terrainEffects = new TerrainEffectsSystem();
   private readonly respawnSystem = new RespawnSystem();
   private readonly matchState = new MatchStateSystem();
+  private readonly builderSystem = new BuilderSystem();
   private nextPlayerId = 1;
   private tick = 0;
   private running = false;
@@ -441,7 +434,24 @@ export class GameSession {
         // Update builder movement and state
         tank.builder.update(tank.x, tank.y);
         // Handle builder work tasks
-        this.updateBuilder(tank);
+        this.builderSystem.update(
+          tank,
+          this.tick,
+          {
+            world: this.world,
+            pillboxes: this.pillboxes.values(),
+          },
+          {
+            emitSound: (soundId, x, y) => this.emitSound(soundId, x, y),
+            onTerrainChanged: (tileX, tileY) =>
+              this.terrainChanges.add(`${tileX},${tileY}`),
+            onTrackForestRegrowth: (tileX, tileY) =>
+              this.terrainEffects.trackForestRegrowth(`${tileX},${tileY}`),
+            onPlaceMine: (team, tileX, tileY) =>
+              this.placeMineForTeam(team, tileX, tileY),
+            onCreatePillbox: (pillbox) => this.pillboxes.set(pillbox.id, pillbox),
+          }
+        );
       }
 
       // Check for pillbox pickup (tank drives over disabled pillbox)
@@ -833,205 +843,6 @@ export class GameSession {
         this.emitSound(SOUND_MAN_DYING, builder.x, builder.y);
         console.log(`Builder ${builder.id} killed by shell from tank ${shell.ownerTankId}`);
         break;
-      }
-    }
-  }
-
-  private updateBuilder(tank: ServerTank): void {
-    const builder = tank.builder;
-
-    if (builder.isWorking()) {
-      const builderTile = builder.getTilePosition();
-      const terrain = this.world.getTerrainAt(builderTile.x, builderTile.y);
-      console.log(`[BUILDER] Builder ${builder.id} working at (${builderTile.x}, ${builderTile.y}), order=${builder.order}, terrain=${terrain}`);
-
-      // Handle different builder orders
-      switch (builder.order) {
-        case BuilderOrder.HARVESTING:
-          if (builder.canHarvest(terrain)) {
-            // Every 10 ticks, harvest a tree and clear the terrain
-            if (this.tick % 10 === 0) {
-              builder.harvestTree();
-              this.world.setTerrainAt(builderTile.x, builderTile.y, 7); // GRASS (7, not 0!)
-              tank.trees = builder.trees; // Sync with tank
-              this.emitSound(SOUND_FARMING_TREE, builder.x, builder.y);
-              // Broadcast terrain change to clients
-              const tileKey = `${builderTile.x},${builderTile.y}`;
-              this.terrainChanges.add(tileKey);
-              // Start regrowth timer for this tile
-              this.terrainEffects.trackForestRegrowth(tileKey);
-              console.log(`[REGROWTH] Started regrowth timer for (${builderTile.x}, ${builderTile.y}) with ${FOREST_REGROWTH_TICKS} ticks`);
-            }
-          } else {
-            // Done harvesting or invalid terrain
-            console.log(`[BUILDER] Cannot harvest at (${builderTile.x}, ${builderTile.y}): terrain=${terrain} (need 5), trees=${builder.trees} (max 40)`);
-            builder.recallToTank(tank.x, tank.y);
-          }
-          break;
-
-        case BuilderOrder.BUILDING_ROAD:
-          if (builder.canBuildWall(BUILDER_WALL_COST) && terrain === TerrainType.GRASS) {
-            if (this.tick % 10 === 0) {
-              builder.useTrees(BUILDER_WALL_COST);
-              this.world.setTerrainAt(builderTile.x, builderTile.y, TerrainType.ROAD);
-              this.terrainChanges.add(`${builderTile.x},${builderTile.y}`);
-              tank.trees = builder.trees;
-              builder.recallToTank(tank.x, tank.y);
-              this.emitSound(SOUND_MAN_BUILDING, builder.x, builder.y);
-            }
-          } else {
-            builder.recallToTank(tank.x, tank.y);
-          }
-          break;
-
-        case BuilderOrder.BUILDING_WALL:
-          if (builder.canBuildWall(BUILDER_WALL_COST) && terrain === TerrainType.GRASS) {
-            if (this.tick % 10 === 0) {
-              builder.useTrees(BUILDER_WALL_COST);
-              this.world.setTerrainAt(builderTile.x, builderTile.y, TerrainType.BUILDING);
-              this.terrainChanges.add(`${builderTile.x},${builderTile.y}`);
-              tank.trees = builder.trees;
-              builder.recallToTank(tank.x, tank.y);
-              this.emitSound(SOUND_MAN_BUILDING, builder.x, builder.y);
-            }
-          } else {
-            builder.recallToTank(tank.x, tank.y);
-          }
-          break;
-
-        case BuilderOrder.BUILDING_BOAT:
-          if (builder.canBuildWall(BUILDER_BOAT_COST) && terrain === TerrainType.RIVER) {
-            if (this.tick % 20 === 0) {
-              // Boats take longer and cost 5 trees
-              builder.useTrees(BUILDER_BOAT_COST);
-              this.world.setTerrainAt(builderTile.x, builderTile.y, TerrainType.BOAT);
-              this.terrainChanges.add(`${builderTile.x},${builderTile.y}`);
-              tank.trees = builder.trees;
-              builder.recallToTank(tank.x, tank.y);
-              this.emitSound(SOUND_MAN_BUILDING, builder.x, builder.y);
-            }
-          } else {
-            builder.recallToTank(tank.x, tank.y);
-          }
-          break;
-
-        case BuilderOrder.LAYING_MINE:
-          if (builder.hasMine && !this.world.hasMineAt(builderTile.x, builderTile.y)) {
-            if (this.tick % 10 === 0) {
-              this.placeMineForTeam(tank.team, builderTile.x, builderTile.y);
-              builder.hasMine = false;
-              tank.mines = Math.max(0, tank.mines - 1);
-              builder.recallToTank(tank.x, tank.y);
-              this.emitSound(SOUND_MAN_LAY_MINE, builder.x, builder.y);
-            }
-          } else {
-            builder.recallToTank(tank.x, tank.y);
-          }
-          break;
-
-        case BuilderOrder.PLACING_PILLBOX: {
-          // Check if terrain is valid for pillbox placement
-          const canPlacePillbox = (t: TerrainType): boolean => {
-            // Cannot place on deep sea, boats, or forest
-            return (
-              t !== TerrainType.DEEP_SEA &&
-              t !== TerrainType.BOAT &&
-              t !== TerrainType.FOREST
-            );
-          };
-
-          if (builder.hasPillbox && canPlacePillbox(terrain)) {
-            // Placing picked-up pillbox is FREE (no tree cost)
-            if (this.tick % 10 === 0) {
-              const pillbox = tank.dropPillbox();
-              if (pillbox) {
-                // Place pillbox at builder location
-                pillbox.tileX = builderTile.x;
-                pillbox.tileY = builderTile.y;
-                builder.hasPillbox = false;
-                builder.recallToTank(tank.x, tank.y);
-                this.emitSound(SOUND_MAN_BUILDING, builder.x, builder.y);
-                console.log(
-                  `[PILLBOX] Placed pillbox ${pillbox.id} at (${builderTile.x}, ${builderTile.y})`
-                );
-              }
-            }
-          } else if (
-            builder.canBuildWall(BUILDER_PILLBOX_COST) &&
-            canPlacePillbox(terrain)
-          ) {
-            // Building new pillbox costs 1 tree
-            if (this.tick % 10 === 0) {
-              builder.useTrees(BUILDER_PILLBOX_COST); // 1 tree
-              const newPillbox = new ServerPillbox(
-                builderTile.x,
-                builderTile.y,
-                tank.team
-              );
-              this.pillboxes.set(newPillbox.id, newPillbox);
-              tank.trees = builder.trees; // Sync
-              builder.recallToTank(tank.x, tank.y);
-              this.emitSound(SOUND_MAN_BUILDING, builder.x, builder.y);
-              console.log(
-                `[PILLBOX] Built new pillbox at (${builderTile.x}, ${builderTile.y}) for team ${tank.team}`
-              );
-            }
-          } else {
-            // Invalid terrain or insufficient resources
-            console.log(
-              `[PILLBOX] Cannot place pillbox at (${builderTile.x}, ${builderTile.y}): terrain=${terrain}, hasPillbox=${builder.hasPillbox}, trees=${builder.trees}`
-            );
-            builder.recallToTank(tank.x, tank.y);
-          }
-          break;
-        }
-
-        case BuilderOrder.REPAIRING: {
-          // Check if there's a pillbox at this location
-          const pillboxAtLocation = Array.from(this.pillboxes.values()).find(
-            pb =>
-              pb.tileX === builderTile.x &&
-              pb.tileY === builderTile.y &&
-              !pb.inTank
-          );
-
-          if (pillboxAtLocation && pillboxAtLocation.armor < PILLBOX_MAX_ARMOR) {
-            // Calculate tree cost based on damage
-            const damageRatio =
-              (PILLBOX_MAX_ARMOR - pillboxAtLocation.armor) / PILLBOX_MAX_ARMOR;
-            const repairCost = damageRatio * BUILDER_PILLBOX_COST; // Up to 1 tree
-
-            if (builder.canBuildWall(repairCost)) {
-              if (this.tick % 10 === 0) {
-                builder.useTrees(repairCost);
-                pillboxAtLocation.armor = PILLBOX_MAX_ARMOR; // Repair to full
-                tank.trees = builder.trees; // Sync
-                builder.recallToTank(tank.x, tank.y);
-                this.emitSound(SOUND_MAN_BUILDING, builder.x, builder.y);
-                console.log(
-                  `[PILLBOX] Repaired pillbox ${pillboxAtLocation.id} for ${repairCost.toFixed(2)} trees (ownership unchanged, still team ${pillboxAtLocation.ownerTeam})`
-                );
-              }
-            } else {
-              // Insufficient trees
-              console.log(
-                `[PILLBOX] Cannot repair: need ${repairCost.toFixed(2)} trees, have ${builder.trees}`
-              );
-              builder.recallToTank(tank.x, tank.y);
-            }
-          } else {
-            // No damaged pillbox at location, or already at full armor
-            console.log(
-              `[PILLBOX] No damaged pillbox to repair at (${builderTile.x}, ${builderTile.y})`
-            );
-            builder.recallToTank(tank.x, tank.y);
-          }
-          break;
-        }
-
-        default:
-          // Other orders not yet implemented
-          break;
       }
     }
   }
