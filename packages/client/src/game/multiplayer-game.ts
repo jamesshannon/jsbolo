@@ -29,6 +29,7 @@ import {toNetworkInput} from './input-mapping.js';
 import {applyNetworkEntityUpdate} from './network-entity-state.js';
 import {applyNetworkWorldEffects} from './network-world-effects.js';
 import {applyNetworkWelcomeState} from './network-welcome-state.js';
+import {deriveStructureHudMessages} from './hud-events.js';
 
 export class MultiplayerGame {
   private readonly input: KeyboardInput;
@@ -61,6 +62,10 @@ export class MultiplayerGame {
   private frameCount = 0;
   private lastFpsUpdate = 0;
   private pillboxButtonUsesRepair = false;
+  private readonly tickerQueue: string[] = [];
+  private tickerActiveUntilMs = 0;
+  private currentTickerText = 'Ready.';
+  private lastKnownBuildAction = BuildAction.NONE;
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -77,6 +82,7 @@ export class MultiplayerGame {
     this.debugOverlay = new DebugOverlay();
     this.soundManager = new SoundManager();
     this.bindBuilderHudButtons();
+    this.setTickerText('Ready.');
 
     // Setup builder command handler
     this.builderInput.setBuildCommandHandler((action, worldTileX, worldTileY) => {
@@ -117,6 +123,8 @@ export class MultiplayerGame {
 
     this.network.onUpdate(update => {
       const now = performance.now();
+      const previousPillboxes = new Map(this.pillboxes);
+      const previousBases = new Map(this.bases);
       applyNetworkEntityUpdate(
         update,
         {
@@ -148,6 +156,17 @@ export class MultiplayerGame {
         tanks: this.tanks,
         soundPlayback: this.soundManager,
       });
+
+      const structureMessages = deriveStructureHudMessages({
+        previousPillboxes,
+        previousBases,
+        ...(update.pillboxes !== undefined && {updatedPillboxes: update.pillboxes}),
+        ...(update.bases !== undefined && {updatedBases: update.bases}),
+        myTeam: this.getMyTeam(),
+      });
+      for (const message of structureMessages) {
+        this.enqueueHudMessage(message);
+      }
     });
   }
 
@@ -230,6 +249,8 @@ export class MultiplayerGame {
       mapName: this.mapName,
       terrainInfo,
     });
+
+    this.updateHudTicker(currentTime);
   }
 
   private update(): void {
@@ -388,11 +409,20 @@ export class MultiplayerGame {
     if (hudDeaths) {
       hudDeaths.textContent = '0';
     }
+    const buildAction = this.builderInput.getPendingAction();
     if (hudBuilderMode) {
-      hudBuilderMode.textContent = this.getBuildActionLabel(this.builderInput.getPendingAction());
+      hudBuilderMode.textContent = this.getBuildActionLabel(buildAction);
     }
     if (hudBuilderModeSide) {
-      hudBuilderModeSide.textContent = this.getBuildActionLabel(this.builderInput.getPendingAction());
+      hudBuilderModeSide.textContent = this.getBuildActionLabel(buildAction);
+    }
+    if (this.lastKnownBuildAction !== buildAction) {
+      this.lastKnownBuildAction = buildAction;
+      this.enqueueHudMessage(
+        buildAction === BuildAction.NONE
+          ? 'Builder recalled.'
+          : `Builder mode: ${this.getBuildActionLabel(buildAction)}.`
+      );
     }
     this.refreshBuilderHudButtonState();
 
@@ -463,6 +493,55 @@ export class MultiplayerGame {
     }
 
     return nearest;
+  }
+
+  private getMyTeam(): number | null {
+    if (this.playerId === null) {
+      return null;
+    }
+    const tank = this.tanks.get(this.playerId);
+    return tank?.team ?? null;
+  }
+
+  private enqueueHudMessage(message: string): void {
+    const trimmedMessage = message.trim();
+    if (!trimmedMessage) {
+      return;
+    }
+
+    const lastQueued = this.tickerQueue[this.tickerQueue.length - 1];
+    if (lastQueued === trimmedMessage || this.currentTickerText === trimmedMessage) {
+      return;
+    }
+
+    this.tickerQueue.push(trimmedMessage);
+    this.updateHudTicker(performance.now());
+  }
+
+  private updateHudTicker(nowMs: number): void {
+    if (nowMs < this.tickerActiveUntilMs) {
+      return;
+    }
+
+    const nextMessage = this.tickerQueue.shift();
+    if (nextMessage) {
+      this.setTickerText(nextMessage);
+      this.tickerActiveUntilMs = nowMs + 3200;
+      return;
+    }
+
+    if (this.currentTickerText !== 'Ready.') {
+      this.setTickerText('Ready.');
+    }
+  }
+
+  private setTickerText(text: string): void {
+    const tickerElement = document.getElementById('hud-ticker-text');
+    if (!tickerElement) {
+      return;
+    }
+    tickerElement.textContent = text;
+    this.currentTickerText = text;
   }
 
   private bindBuilderHudButtons(): void {
