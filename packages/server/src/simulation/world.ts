@@ -131,7 +131,7 @@ export class ServerWorld {
     // Buildings (0, 8) are handled by collision detection, not terrain speed
     // If we return 0 here, tanks get stuck when touching buildings
     // Instead, treat them as passable for speed calculation (collision will block actual movement)
-    if (terrain === 0 || terrain === 8) {
+    if (terrain === TerrainType.BUILDING || terrain === TerrainType.SHOT_BUILDING) {
       return 1.0;  // Don't slow down when near buildings - collision handles blocking
     }
 
@@ -230,8 +230,8 @@ export class ServerWorld {
 
     // Impassable terrain types (without boat/special conditions)
     switch (terrain) {
-      case 0:  // BUILDING (walls)
-      case 8:  // SHOT_BUILDING (damaged walls)
+      case TerrainType.BUILDING:
+      case TerrainType.SHOT_BUILDING:
         return false;
       default:
         return true;
@@ -619,20 +619,32 @@ export class ServerWorld {
    * Helper for debug logging
    */
   private getTerrainName(terrain: TerrainType): string {
-    const names = {
-      0: 'BUILDING',
-      1: 'RIVER',
-      2: 'SWAMP',
-      3: 'CRATER',
-      4: 'ROAD',
-      5: 'FOREST',
-      6: 'RUBBLE',
-      7: 'GRASS',
-      8: 'SHOT_BUILDING',
-      9: 'BOAT',
-      10: 'DEEP_SEA',
-    };
-    return names[terrain] || 'UNKNOWN';
+    switch (terrain) {
+      case TerrainType.BUILDING:
+        return 'BUILDING';
+      case TerrainType.RIVER:
+        return 'RIVER';
+      case TerrainType.SWAMP:
+        return 'SWAMP';
+      case TerrainType.CRATER:
+        return 'CRATER';
+      case TerrainType.ROAD:
+        return 'ROAD';
+      case TerrainType.FOREST:
+        return 'FOREST';
+      case TerrainType.RUBBLE:
+        return 'RUBBLE';
+      case TerrainType.GRASS:
+        return 'GRASS';
+      case TerrainType.SHOT_BUILDING:
+        return 'SHOT_BUILDING';
+      case TerrainType.BOAT:
+        return 'BOAT';
+      case TerrainType.DEEP_SEA:
+        return 'DEEP_SEA';
+      default:
+        return 'UNKNOWN';
+    }
   }
 
   /**

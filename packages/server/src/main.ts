@@ -9,12 +9,12 @@ import {GameServer} from './game-server.js';
 const PORT = process.env['PORT'] ? parseInt(process.env['PORT'], 10) : 8080;
 
 // Get directory of current module (for resolving map path)
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const moduleFileName = fileURLToPath(import.meta.url);
+const moduleDirName = path.dirname(moduleFileName);
 
 // Default map path (Everard Island)
 // To use procedural map instead, comment out this line
-const DEFAULT_MAP = path.join(__dirname, '../maps/everard_island.map');
+const DEFAULT_MAP = path.join(moduleDirName, '../maps/everard_island.map');
 
 function main(): void {
   console.log('Starting JSBolo server...');

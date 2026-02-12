@@ -13,6 +13,8 @@ import {
   TANK_STARTING_TREES,
   TILE_SIZE_WORLD,
   PILLBOX_STARTING_ARMOR,
+  BuildAction,
+  RangeAdjustment,
   type PlayerInput,
 } from '@jsbolo/shared';
 import {ServerBuilder} from './builder.js';
@@ -79,10 +81,10 @@ export class ServerTank {
     }
 
     // Handle range adjustment
-    if (input.rangeAdjustment === 1) {
+    if (input.rangeAdjustment === RangeAdjustment.INCREASE) {
       // INCREASE (max range in Bolo is 9 tiles)
       this.firingRange = Math.min(9, this.firingRange + 0.5);
-    } else if (input.rangeAdjustment === 2) {
+    } else if (input.rangeAdjustment === RangeAdjustment.DECREASE) {
       // DECREASE (min range is 1 tile)
       this.firingRange = Math.max(1, this.firingRange - 0.5);
     }
@@ -92,8 +94,7 @@ export class ServerTank {
       console.log(`[BUILD ORDER] Tank ${this.id} sending builder to (${input.buildOrder.targetX}, ${input.buildOrder.targetY}) with action ${input.buildOrder.action}`);
 
       // Special handling for pillbox placement - transfer pillbox to builder
-      if (input.buildOrder.action === 6 && this.carriedPillbox) {
-        // BuildAction.PILLBOX = 6
+      if (input.buildOrder.action === BuildAction.PILLBOX && this.carriedPillbox) {
         this.builder.hasPillbox = true;
       }
 
@@ -158,7 +159,7 @@ export class ServerTank {
     // Use finer turn increments with acceleration
     // First 10 ticks: turn 2 units per tick (slow, precise)
     // After 10 ticks: turn 4 units per tick (faster sustained turning)
-    let turnAmount = this.turnTicks < 10 ? 2 : 4;
+    const turnAmount = this.turnTicks < 10 ? 2 : 4;
 
     if (input.turningCounterClockwise && !input.turningClockwise) {
       this.turnTicks++;

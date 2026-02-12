@@ -68,7 +68,7 @@ export class GameSession {
   private tickInterval?: NodeJS.Timeout;
 
   // Network optimization: throttle broadcasts and track state changes
-  private readonly BROADCAST_INTERVAL = 2; // Broadcast every 2 ticks (25 Hz instead of 50 Hz)
+  private readonly broadcastInterval = 2; // Broadcast every 2 ticks (25 Hz instead of 50 Hz)
   private previousState = {
     tanks: new Map<number, string>(), // tankId -> state hash
     shells: new Set<number>(), // Track which shells existed last broadcast
@@ -239,7 +239,7 @@ export class GameSession {
     // Auto-place tank on boat if spawning in water (deep sea or river)
     // ASSUMPTION: Boat is "carried" by tank - no BOAT tile created at spawn
     // BOAT tiles only exist when tank disembarks onto land from water
-    if (terrain === 10 || terrain === 1) {  // DEEP_SEA = 10, RIVER = 1
+    if (terrain === TerrainType.DEEP_SEA || terrain === TerrainType.RIVER) {
       tank.onBoat = true;
       console.log(`  -> Tank spawned on boat in water at (${spawnX}, ${spawnY}), no BOAT tile created`);
     }
@@ -333,7 +333,8 @@ export class GameSession {
 
         // Check if tank moved to a new tile
         if (newTile.x !== prevTile.x || newTile.y !== prevTile.y) {
-          const isWaterTerrain = (t: number) => t === 10 || t === 1 || t === 9; // DEEP_SEA, RIVER, BOAT
+          const isWaterTerrain = (t: TerrainType): boolean =>
+            t === TerrainType.DEEP_SEA || t === TerrainType.RIVER || t === TerrainType.BOAT;
 
           if (isWaterTerrain(newTerrain)) {
             // Tank still in water - boat is "carried" by the tank
@@ -345,7 +346,12 @@ export class GameSession {
             // Boat faces opposite direction so tank can re-board by backing up
             // (Assumption: this is always RIVER since you can't disembark from deep sea)
             const boatDirection = (tank.direction + 128) % 256;
-            this.world.setTerrainAt(prevTile.x, prevTile.y, 9, boatDirection); // BOAT
+            this.world.setTerrainAt(
+              prevTile.x,
+              prevTile.y,
+              TerrainType.BOAT,
+              boatDirection
+            );
             this.terrainChanges.add(`${prevTile.x},${prevTile.y}`);
             console.log(`Tank ${tank.id} disembarked at (${newTile.x}, ${newTile.y}), left boat facing ${boatDirection} at (${prevTile.x}, ${prevTile.y})`);
           }
@@ -356,10 +362,10 @@ export class GameSession {
         const currentTerrain = this.world.getTerrainAt(currentTile.x, currentTile.y);
 
         // If tank is on a BOAT tile, board it and restore terrain
-        if (currentTerrain === 9) { // BOAT
+        if (currentTerrain === TerrainType.BOAT) {
           tank.onBoat = true;
           // Remove BOAT tile and restore to RIVER (see assumption above)
-          this.world.setTerrainAt(currentTile.x, currentTile.y, 1); // RIVER
+          this.world.setTerrainAt(currentTile.x, currentTile.y, TerrainType.RIVER);
           this.terrainChanges.add(`${currentTile.x},${currentTile.y}`);
           console.log(`Tank ${tank.id} boarded boat at (${currentTile.x}, ${currentTile.y}), restored RIVER terrain`);
         }
@@ -637,7 +643,7 @@ export class GameSession {
     this.updateForestRegrowth();
 
     // Broadcast state to all players (throttled to reduce CPU usage)
-    if (this.tick % this.BROADCAST_INTERVAL === 0) {
+    if (this.tick % this.broadcastInterval === 0) {
       this.broadcastState();
     }
   }
@@ -869,11 +875,10 @@ export class GameSession {
           break;
 
         case BuilderOrder.BUILDING_ROAD:
-          if (builder.canBuildWall(BUILDER_WALL_COST) && terrain === 7) {
-            // GRASS (7, not 0!)
+          if (builder.canBuildWall(BUILDER_WALL_COST) && terrain === TerrainType.GRASS) {
             if (this.tick % 10 === 0) {
               builder.useTrees(BUILDER_WALL_COST);
-              this.world.setTerrainAt(builderTile.x, builderTile.y, 4); // ROAD
+              this.world.setTerrainAt(builderTile.x, builderTile.y, TerrainType.ROAD);
               this.terrainChanges.add(`${builderTile.x},${builderTile.y}`);
               tank.trees = builder.trees;
               builder.recallToTank(tank.x, tank.y);
@@ -885,11 +890,10 @@ export class GameSession {
           break;
 
         case BuilderOrder.BUILDING_WALL:
-          if (builder.canBuildWall(BUILDER_WALL_COST) && terrain === 7) {
-            // GRASS (7, not 0!)
+          if (builder.canBuildWall(BUILDER_WALL_COST) && terrain === TerrainType.GRASS) {
             if (this.tick % 10 === 0) {
               builder.useTrees(BUILDER_WALL_COST);
-              this.world.setTerrainAt(builderTile.x, builderTile.y, 0); // BUILDING (0, not 6!)
+              this.world.setTerrainAt(builderTile.x, builderTile.y, TerrainType.BUILDING);
               this.terrainChanges.add(`${builderTile.x},${builderTile.y}`);
               tank.trees = builder.trees;
               builder.recallToTank(tank.x, tank.y);
@@ -901,12 +905,11 @@ export class GameSession {
           break;
 
         case BuilderOrder.BUILDING_BOAT:
-          if (builder.canBuildWall(BUILDER_BOAT_COST) && terrain === 1) {
-            // RIVER (1, not 3!)
+          if (builder.canBuildWall(BUILDER_BOAT_COST) && terrain === TerrainType.RIVER) {
             if (this.tick % 20 === 0) {
               // Boats take longer and cost 5 trees
               builder.useTrees(BUILDER_BOAT_COST);
-              this.world.setTerrainAt(builderTile.x, builderTile.y, 9); // BOAT
+              this.world.setTerrainAt(builderTile.x, builderTile.y, TerrainType.BOAT);
               this.terrainChanges.add(`${builderTile.x},${builderTile.y}`);
               tank.trees = builder.trees;
               builder.recallToTank(tank.x, tank.y);
@@ -933,7 +936,7 @@ export class GameSession {
 
         case BuilderOrder.PLACING_PILLBOX: {
           // Check if terrain is valid for pillbox placement
-          const canPlacePillbox = (t: number): boolean => {
+          const canPlacePillbox = (t: TerrainType): boolean => {
             // Cannot place on deep sea, boats, or forest
             return (
               t !== TerrainType.DEEP_SEA &&

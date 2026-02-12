@@ -6,7 +6,7 @@ import {
   TILE_SIZE_WORLD,
   BuilderOrder,
   TerrainType,
-  type BuildAction,
+  BuildAction,
 } from '@jsbolo/shared';
 
 export class ServerBuilder {
@@ -112,25 +112,25 @@ export class ServerBuilder {
 
     // Set order based on action
     switch (action) {
-      case 1: // FOREST
+      case BuildAction.FOREST:
         this.order = BuilderOrder.HARVESTING;
         break;
-      case 2: // ROAD
+      case BuildAction.ROAD:
         this.order = BuilderOrder.BUILDING_ROAD;
         break;
-      case 3: // REPAIR
+      case BuildAction.REPAIR:
         this.order = BuilderOrder.REPAIRING;
         break;
-      case 4: // BOAT
+      case BuildAction.BOAT:
         this.order = BuilderOrder.BUILDING_BOAT;
         break;
-      case 5: // BUILDING (wall)
+      case BuildAction.BUILDING:
         this.order = BuilderOrder.BUILDING_WALL;
         break;
-      case 6: // PILLBOX
+      case BuildAction.PILLBOX:
         this.order = BuilderOrder.PLACING_PILLBOX;
         break;
-      case 7: // MINE
+      case BuildAction.MINE:
         this.order = BuilderOrder.LAYING_MINE;
         // Builder takes a mine from tank
         if (tankMines && tankMines > 0) {

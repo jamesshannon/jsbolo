@@ -10,7 +10,7 @@
     "start": "node dist/main.js",
     "clean": "rm -rf dist",
     "type-check": "tsc --noEmit",
-    "lint": "eslint src",
+    "lint": "eslint \"src/**/*.ts\" --ignore-pattern \"src/**/*.test.ts\" --ignore-pattern \"src/**/__tests__/**\"",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
