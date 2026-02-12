@@ -65,6 +65,15 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Guard shared src against stale emitted artifacts
+        run: |
+          STALE_FILES="$(find packages/shared/src -type f \( -name '*.js' -o -name '*.js.map' -o -name '*.d.ts' -o -name '*.d.ts.map' \) ! -path 'packages/shared/src/generated/*')"
+          if [ -n "$STALE_FILES" ]; then
+            echo "Found stale emitted artifacts under packages/shared/src:"
+            echo "$STALE_FILES"
+            exit 1
+          fi
+
       - name: Build shared and server
         run: |
           pnpm --filter "@jsbolo/shared" build
@@ -77,3 +86,141 @@ jobs:
       - name: Import server entry module
         run: |
           node -e "import('./packages/server/dist/main.js').then(()=>{console.log('server entry import ok'); process.exit(0);}).catch((error)=>{console.error(error); process.exit(1);})"
+
+      - name: Protobuf client-server handshake smoke
+        run: |
+          node --input-type=module -e "
+          import { GameServer } from './packages/server/dist/game-server.js';
+          import {
+            encodeClientMessage,
+            decodeServerMessage,
+          } from './packages/shared/dist/network-protocol.js';
+
+          function waitForOpen(ws, timeoutMs) {
+            return new Promise((resolve, reject) => {
+              const timeout = setTimeout(() => {
+                cleanup();
+                reject(new Error('Timed out waiting for WebSocket open'));
+              }, timeoutMs);
+              const onOpen = () => {
+                cleanup();
+                resolve();
+              };
+              const onError = (error) => {
+                cleanup();
+                reject(error);
+              };
+              const cleanup = () => {
+                clearTimeout(timeout);
+                ws.removeEventListener('open', onOpen);
+                ws.removeEventListener('error', onError);
+              };
+              ws.addEventListener('open', onOpen);
+              ws.addEventListener('error', onError);
+            });
+          }
+
+          function waitForDecoded(ws, timeoutMs) {
+            return new Promise((resolve, reject) => {
+              const timeout = setTimeout(() => {
+                cleanup();
+                reject(new Error('Timed out waiting for server message'));
+              }, timeoutMs);
+              const onMessage = async (event) => {
+                try {
+                  const payload = Buffer.from(await event.data.arrayBuffer());
+                  const decoded = decodeServerMessage(payload);
+                  cleanup();
+                  resolve(decoded);
+                } catch (error) {
+                  cleanup();
+                  reject(error);
+                }
+              };
+              const onError = (error) => {
+                cleanup();
+                reject(error);
+              };
+              const cleanup = () => {
+                clearTimeout(timeout);
+                ws.removeEventListener('message', onMessage);
+                ws.removeEventListener('error', onError);
+              };
+              ws.addEventListener('message', onMessage);
+              ws.addEventListener('error', onError);
+            });
+          }
+
+          function waitForServerListening(server, timeoutMs) {
+            return new Promise((resolve, reject) => {
+              const wss = server.wss;
+              if (wss.address()) {
+                resolve();
+                return;
+              }
+              const timeout = setTimeout(() => {
+                cleanup();
+                reject(new Error('Timed out waiting for server listen'));
+              }, timeoutMs);
+              const onListening = () => {
+                cleanup();
+                resolve();
+              };
+              const onError = (error) => {
+                cleanup();
+                reject(error);
+              };
+              const cleanup = () => {
+                clearTimeout(timeout);
+                wss.off('listening', onListening);
+                wss.off('error', onError);
+              };
+              wss.on('listening', onListening);
+              wss.on('error', onError);
+            });
+          }
+
+          const server = new GameServer(0);
+          let ws;
+          try {
+            await waitForServerListening(server, 2000);
+            const address = server.wss.address();
+            const port = typeof address === 'object' && address ? address.port : 0;
+            if (!port) {
+              throw new Error('Failed to resolve runtime-smoke server port');
+            }
+
+            ws = new WebSocket('ws://127.0.0.1:' + port);
+            await waitForOpen(ws, 2000);
+
+            const welcome = await waitForDecoded(ws, 3000);
+            if (welcome.type !== 'welcome') {
+              throw new Error('Expected welcome message, got ' + welcome.type);
+            }
+
+            ws.send(encodeClientMessage({
+              type: 'input',
+              input: {
+                sequence: 1,
+                tick: 1,
+                accelerating: true,
+                braking: false,
+                turningClockwise: false,
+                turningCounterClockwise: false,
+                shooting: false,
+                rangeAdjustment: 0,
+              },
+            }));
+
+            const update = await waitForDecoded(ws, 3000);
+            if (update.type !== 'update') {
+              throw new Error('Expected update message, got ' + update.type);
+            }
+            console.log('protobuf handshake smoke ok');
+          } finally {
+            if (ws) {
+              ws.close();
+            }
+            server.close();
+          }
+          "
