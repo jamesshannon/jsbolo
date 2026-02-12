@@ -65,7 +65,6 @@ export class MultiplayerGame {
   private readonly tickerQueue: string[] = [];
   private tickerActiveUntilMs = 0;
   private currentTickerText = 'Ready.';
-  private lastKnownBuildAction = BuildAction.NONE;
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -415,14 +414,6 @@ export class MultiplayerGame {
     }
     if (hudBuilderModeSide) {
       hudBuilderModeSide.textContent = this.getBuildActionLabel(buildAction);
-    }
-    if (this.lastKnownBuildAction !== buildAction) {
-      this.lastKnownBuildAction = buildAction;
-      this.enqueueHudMessage(
-        buildAction === BuildAction.NONE
-          ? 'Builder recalled.'
-          : `Builder mode: ${this.getBuildActionLabel(buildAction)}.`
-      );
     }
     this.refreshBuilderHudButtonState();
 
