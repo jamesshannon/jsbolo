@@ -27,6 +27,7 @@ import {SoundManager} from '../audio/sound-manager.js';
 import {toNetworkInput} from './input-mapping.js';
 import {applyNetworkEntityUpdate} from './network-entity-state.js';
 import {applyNetworkWorldEffects} from './network-world-effects.js';
+import {applyNetworkWelcomeState} from './network-welcome-state.js';
 
 export class MultiplayerGame {
   private readonly input: KeyboardInput;
@@ -94,70 +95,18 @@ export class MultiplayerGame {
     });
 
     this.network.onWelcome(welcome => {
-      this.playerId = welcome.playerId ?? null;
-      this.mapName = welcome.mapName || 'Unknown';
-      console.log('Assigned player ID:', this.playerId);
-      console.log('Map name:', this.mapName);
-
-      // Load terrain data from server
-      if (welcome.map) {
-        console.log(`Loading map: ${welcome.map.width}x${welcome.map.height}, ${welcome.map.terrain.length} terrain tiles`);
-
-        // Sample first few tiles to verify data
-        console.log('First 10 terrain tiles:', welcome.map.terrain.slice(0, 10));
-
-        // Sample row 241 to compare with server
-        const row241Start = 241 * 256;
-        console.log('Row 241 first 10 tiles:', welcome.map.terrain.slice(row241Start, row241Start + 10));
-
-        // Count terrain types in received data
-        const clientHistogram = new Map<number, number>();
-        for (const t of welcome.map.terrain) {
-          clientHistogram.set(t, (clientHistogram.get(t) || 0) + 1);
-        }
-        console.log('Client received terrain histogram:', Object.fromEntries(clientHistogram));
-
-        let tilesUpdated = 0;
-        for (let y = 0; y < welcome.map.height; y++) {
-          for (let x = 0; x < welcome.map.width; x++) {
-            const index = y * welcome.map.width + x;
-            this.world.updateCell(x, y, {
-              terrain: welcome.map.terrain[index]!,
-              terrainLife: welcome.map.terrainLife[index]!,
-            });
-            tilesUpdated++;
-          }
-        }
-        console.log(`Terrain data loaded from server: ${tilesUpdated} tiles updated`);
-
-        // Sample some tiles to verify they were set
-        const sampleTile = this.world.getCellAt(125, 152);
-        console.log('Sample tile at (125, 152):', sampleTile);
-      }
-
-      // Load initial entity state
-      if (welcome.tanks) {
-        const now = performance.now();
-        for (const tank of welcome.tanks) {
-          this.tanks.set(tank.id, tank);
-          this.tankInterpolator.pushSnapshot(tank, welcome.currentTick, now);
-        }
-        console.log(`Loaded ${welcome.tanks.length} tanks from welcome message`);
-      }
-
-      if (welcome.pillboxes) {
-        for (const pillbox of welcome.pillboxes) {
-          this.pillboxes.set(pillbox.id, pillbox);
-        }
-        console.log(`Loaded ${welcome.pillboxes.length} pillboxes from welcome message`);
-      }
-
-      if (welcome.bases) {
-        for (const base of welcome.bases) {
-          this.bases.set(base.id, base);
-        }
-        console.log(`Loaded ${welcome.bases.length} bases from welcome message`);
-      }
+      const welcomeState = applyNetworkWelcomeState(welcome, {
+        world: this.world,
+        tanks: this.tanks,
+        shells: this.shells,
+        builders: this.builders,
+        pillboxes: this.pillboxes,
+        bases: this.bases,
+        tankInterpolator: this.tankInterpolator,
+        nowMs: performance.now(),
+      });
+      this.playerId = welcomeState.playerId;
+      this.mapName = welcomeState.mapName;
     });
 
     this.network.onUpdate(update => {
