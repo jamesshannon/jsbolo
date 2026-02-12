@@ -5,7 +5,7 @@
     "outDir": "./dist",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "paths": {
-      "@shared": ["../shared/src"],
+      "@shared": ["../shared/src/index.ts"],
       "@shared/*": ["../shared/src/*"]
     }
   },
