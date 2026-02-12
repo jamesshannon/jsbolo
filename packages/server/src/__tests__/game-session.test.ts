@@ -10,7 +10,13 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { GameSession } from '../game-session.js';
-import { BuildAction, BuilderOrder, TerrainType, TANK_RESPAWN_TICKS } from '@jsbolo/shared';
+import {
+  BuildAction,
+  BuilderOrder,
+  TerrainType,
+  TANK_RESPAWN_TICKS,
+  decodeServerMessage,
+} from '@jsbolo/shared';
 import type { WebSocket } from 'ws';
 
 // Mock WebSocket
@@ -80,7 +86,7 @@ describe('GameSession Integration', () => {
       expect(ws.send).toHaveBeenCalled();
 
       const lastCall = (ws.send as any).mock.calls.slice(-1)[0];
-      const message = JSON.parse(lastCall[0]);
+      const message = decodeServerMessage(lastCall[0]);
 
       // CRITICAL: shells array must be present even if empty
       expect(message).toHaveProperty('shells');
@@ -112,7 +118,7 @@ describe('GameSession Integration', () => {
       (session as any).broadcastState();
 
       const lastCall = (ws.send as any).mock.calls.slice(-1)[0];
-      const message = JSON.parse(lastCall[0]);
+      const message = decodeServerMessage(lastCall[0]);
 
       expect(message.shells).toHaveLength(1);
       expect(message.shells[0].id).toBe(1);
@@ -188,7 +194,7 @@ describe('GameSession Integration', () => {
 
       expect(ws2.send).toHaveBeenCalled();
       const lastCall = (ws2.send as any).mock.calls.slice(-1)[0];
-      const message = JSON.parse(lastCall[0]);
+      const message = decodeServerMessage(lastCall[0]);
 
       expect(message.removedTankIds).toContain(departingTankId);
       expect(message.removedBuilderIds).toContain(departingBuilderId);
@@ -332,7 +338,7 @@ describe('GameSession Integration', () => {
 
       expect(ws.send).toHaveBeenCalledTimes(1);
       const lastCall = (ws.send as any).mock.calls.slice(-1)[0];
-      const message = JSON.parse(lastCall[0]);
+      const message = decodeServerMessage(lastCall[0]);
 
       expect(message.type).toBe('update');
       expect(message.soundEvents).toBeDefined();
@@ -536,7 +542,7 @@ describe('GameSession Integration', () => {
       expect(ws.send).toHaveBeenCalled();
 
       const firstCall = (ws.send as any).mock.calls[0];
-      const message = JSON.parse(firstCall[0]);
+      const message = decodeServerMessage(firstCall[0]);
 
       expect(message.type).toBe('welcome');
       expect(message.playerId).toBeDefined();
@@ -558,7 +564,7 @@ describe('GameSession Integration', () => {
       expect(ws.send).toHaveBeenCalled();
 
       const lastCall = (ws.send as any).mock.calls.slice(-1)[0];
-      const message = JSON.parse(lastCall[0]);
+      const message = decodeServerMessage(lastCall[0]);
 
       expect(message.type).toBe('update');
       expect(message.tick).toBeDefined();

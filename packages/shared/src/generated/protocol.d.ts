@@ -3,6 +3,149 @@ import Long = require("long");
 /** Namespace jsbolo. */
 export namespace jsbolo {
 
+    /** RangeAdjustment enum. */
+    enum RangeAdjustment {
+        RANGE_ADJUSTMENT_NONE = 0,
+        RANGE_ADJUSTMENT_INCREASE = 1,
+        RANGE_ADJUSTMENT_DECREASE = 2
+    }
+
+    /** BuildAction enum. */
+    enum BuildAction {
+        BUILD_ACTION_NONE = 0,
+        BUILD_ACTION_FOREST = 1,
+        BUILD_ACTION_ROAD = 2,
+        BUILD_ACTION_REPAIR = 3,
+        BUILD_ACTION_BOAT = 4,
+        BUILD_ACTION_BUILDING = 5,
+        BUILD_ACTION_PILLBOX = 6,
+        BUILD_ACTION_MINE = 7
+    }
+
+    /** BuilderOrder enum. */
+    enum BuilderOrder {
+        BUILDER_ORDER_IN_TANK = 0,
+        BUILDER_ORDER_WAITING = 1,
+        BUILDER_ORDER_RETURNING = 2,
+        BUILDER_ORDER_PARACHUTING = 3,
+        BUILDER_ORDER_HARVESTING = 10,
+        BUILDER_ORDER_BUILDING_ROAD = 11,
+        BUILDER_ORDER_REPAIRING = 12,
+        BUILDER_ORDER_BUILDING_BOAT = 13,
+        BUILDER_ORDER_BUILDING_WALL = 14,
+        BUILDER_ORDER_PLACING_PILLBOX = 15,
+        BUILDER_ORDER_LAYING_MINE = 16
+    }
+
+    /** Properties of a BuildOrder. */
+    interface IBuildOrder {
+
+        /** BuildOrder action */
+        action?: (jsbolo.BuildAction|null);
+
+        /** BuildOrder targetX */
+        targetX?: (number|null);
+
+        /** BuildOrder targetY */
+        targetY?: (number|null);
+    }
+
+    /** Represents a BuildOrder. */
+    class BuildOrder implements IBuildOrder {
+
+        /**
+         * Constructs a new BuildOrder.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: jsbolo.IBuildOrder);
+
+        /** BuildOrder action. */
+        public action: jsbolo.BuildAction;
+
+        /** BuildOrder targetX. */
+        public targetX: number;
+
+        /** BuildOrder targetY. */
+        public targetY: number;
+
+        /**
+         * Creates a new BuildOrder instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns BuildOrder instance
+         */
+        public static create(properties?: jsbolo.IBuildOrder): jsbolo.BuildOrder;
+
+        /**
+         * Encodes the specified BuildOrder message. Does not implicitly {@link jsbolo.BuildOrder.verify|verify} messages.
+         * @param message BuildOrder message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: jsbolo.IBuildOrder, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified BuildOrder message, length delimited. Does not implicitly {@link jsbolo.BuildOrder.verify|verify} messages.
+         * @param message BuildOrder message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: jsbolo.IBuildOrder, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a BuildOrder message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns BuildOrder
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): jsbolo.BuildOrder;
+
+        /**
+         * Decodes a BuildOrder message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns BuildOrder
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): jsbolo.BuildOrder;
+
+        /**
+         * Verifies a BuildOrder message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a BuildOrder message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns BuildOrder
+         */
+        public static fromObject(object: { [k: string]: any }): jsbolo.BuildOrder;
+
+        /**
+         * Creates a plain object from a BuildOrder message. Also converts values to other types if specified.
+         * @param message BuildOrder
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: jsbolo.BuildOrder, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this BuildOrder to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for BuildOrder
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
     /** Properties of a PlayerInput. */
     interface IPlayerInput {
 
@@ -148,1479 +291,1068 @@ export namespace jsbolo {
         public static getTypeUrl(typeUrlPrefix?: string): string;
     }
 
-    /** Properties of a BuildOrder. */
-    interface IBuildOrder {
+    /** Properties of a Tank. */
+    interface ITank {
 
-        /** BuildOrder action */
-        action?: (jsbolo.BuildOrder.Action|null);
-
-        /** BuildOrder targetX */
-        targetX?: (number|null);
-
-        /** BuildOrder targetY */
-        targetY?: (number|null);
-    }
-
-    /** Represents a BuildOrder. */
-    class BuildOrder implements IBuildOrder {
-
-        /**
-         * Constructs a new BuildOrder.
-         * @param [properties] Properties to set
-         */
-        constructor(properties?: jsbolo.IBuildOrder);
-
-        /** BuildOrder action. */
-        public action: jsbolo.BuildOrder.Action;
-
-        /** BuildOrder targetX. */
-        public targetX: number;
-
-        /** BuildOrder targetY. */
-        public targetY: number;
-
-        /**
-         * Creates a new BuildOrder instance using the specified properties.
-         * @param [properties] Properties to set
-         * @returns BuildOrder instance
-         */
-        public static create(properties?: jsbolo.IBuildOrder): jsbolo.BuildOrder;
-
-        /**
-         * Encodes the specified BuildOrder message. Does not implicitly {@link jsbolo.BuildOrder.verify|verify} messages.
-         * @param message BuildOrder message or plain object to encode
-         * @param [writer] Writer to encode to
-         * @returns Writer
-         */
-        public static encode(message: jsbolo.IBuildOrder, writer?: $protobuf.Writer): $protobuf.Writer;
-
-        /**
-         * Encodes the specified BuildOrder message, length delimited. Does not implicitly {@link jsbolo.BuildOrder.verify|verify} messages.
-         * @param message BuildOrder message or plain object to encode
-         * @param [writer] Writer to encode to
-         * @returns Writer
-         */
-        public static encodeDelimited(message: jsbolo.IBuildOrder, writer?: $protobuf.Writer): $protobuf.Writer;
-
-        /**
-         * Decodes a BuildOrder message from the specified reader or buffer.
-         * @param reader Reader or buffer to decode from
-         * @param [length] Message length if known beforehand
-         * @returns BuildOrder
-         * @throws {Error} If the payload is not a reader or valid buffer
-         * @throws {$protobuf.util.ProtocolError} If required fields are missing
-         */
-        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): jsbolo.BuildOrder;
-
-        /**
-         * Decodes a BuildOrder message from the specified reader or buffer, length delimited.
-         * @param reader Reader or buffer to decode from
-         * @returns BuildOrder
-         * @throws {Error} If the payload is not a reader or valid buffer
-         * @throws {$protobuf.util.ProtocolError} If required fields are missing
-         */
-        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): jsbolo.BuildOrder;
-
-        /**
-         * Verifies a BuildOrder message.
-         * @param message Plain object to verify
-         * @returns `null` if valid, otherwise the reason why it is not
-         */
-        public static verify(message: { [k: string]: any }): (string|null);
-
-        /**
-         * Creates a BuildOrder message from a plain object. Also converts values to their respective internal types.
-         * @param object Plain object
-         * @returns BuildOrder
-         */
-        public static fromObject(object: { [k: string]: any }): jsbolo.BuildOrder;
-
-        /**
-         * Creates a plain object from a BuildOrder message. Also converts values to other types if specified.
-         * @param message BuildOrder
-         * @param [options] Conversion options
-         * @returns Plain object
-         */
-        public static toObject(message: jsbolo.BuildOrder, options?: $protobuf.IConversionOptions): { [k: string]: any };
-
-        /**
-         * Converts this BuildOrder to JSON.
-         * @returns JSON object
-         */
-        public toJSON(): { [k: string]: any };
-
-        /**
-         * Gets the default type url for BuildOrder
-         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
-         * @returns The default type url
-         */
-        public static getTypeUrl(typeUrlPrefix?: string): string;
-    }
-
-    namespace BuildOrder {
-
-        /** Action enum. */
-        enum Action {
-            NONE = 0,
-            FOREST = 1,
-            ROAD = 2,
-            REPAIR = 3,
-            BOAT = 4,
-            BUILDING = 5,
-            PILLBOX = 6,
-            MINE = 7
-        }
-    }
-
-    /** RangeAdjustment enum. */
-    enum RangeAdjustment {
-        NONE = 0,
-        INCREASE = 1,
-        DECREASE = 2
-    }
-
-    /** Properties of a ServerUpdate. */
-    interface IServerUpdate {
-
-        /** ServerUpdate tick */
-        tick?: (number|null);
-
-        /** ServerUpdate tanks */
-        tanks?: (jsbolo.ITankState[]|null);
-
-        /** ServerUpdate builders */
-        builders?: (jsbolo.IBuilderState[]|null);
-
-        /** ServerUpdate shells */
-        shells?: (jsbolo.IShellState[]|null);
-
-        /** ServerUpdate explosions */
-        explosions?: (jsbolo.IExplosionState[]|null);
-
-        /** ServerUpdate terrainChanges */
-        terrainChanges?: (jsbolo.ITerrainChange[]|null);
-
-        /** ServerUpdate pillboxes */
-        pillboxes?: (jsbolo.IPillboxState[]|null);
-
-        /** ServerUpdate bases */
-        bases?: (jsbolo.IBaseState[]|null);
-    }
-
-    /** Represents a ServerUpdate. */
-    class ServerUpdate implements IServerUpdate {
-
-        /**
-         * Constructs a new ServerUpdate.
-         * @param [properties] Properties to set
-         */
-        constructor(properties?: jsbolo.IServerUpdate);
-
-        /** ServerUpdate tick. */
-        public tick: number;
-
-        /** ServerUpdate tanks. */
-        public tanks: jsbolo.ITankState[];
-
-        /** ServerUpdate builders. */
-        public builders: jsbolo.IBuilderState[];
-
-        /** ServerUpdate shells. */
-        public shells: jsbolo.IShellState[];
-
-        /** ServerUpdate explosions. */
-        public explosions: jsbolo.IExplosionState[];
-
-        /** ServerUpdate terrainChanges. */
-        public terrainChanges: jsbolo.ITerrainChange[];
-
-        /** ServerUpdate pillboxes. */
-        public pillboxes: jsbolo.IPillboxState[];
-
-        /** ServerUpdate bases. */
-        public bases: jsbolo.IBaseState[];
-
-        /**
-         * Creates a new ServerUpdate instance using the specified properties.
-         * @param [properties] Properties to set
-         * @returns ServerUpdate instance
-         */
-        public static create(properties?: jsbolo.IServerUpdate): jsbolo.ServerUpdate;
-
-        /**
-         * Encodes the specified ServerUpdate message. Does not implicitly {@link jsbolo.ServerUpdate.verify|verify} messages.
-         * @param message ServerUpdate message or plain object to encode
-         * @param [writer] Writer to encode to
-         * @returns Writer
-         */
-        public static encode(message: jsbolo.IServerUpdate, writer?: $protobuf.Writer): $protobuf.Writer;
-
-        /**
-         * Encodes the specified ServerUpdate message, length delimited. Does not implicitly {@link jsbolo.ServerUpdate.verify|verify} messages.
-         * @param message ServerUpdate message or plain object to encode
-         * @param [writer] Writer to encode to
-         * @returns Writer
-         */
-        public static encodeDelimited(message: jsbolo.IServerUpdate, writer?: $protobuf.Writer): $protobuf.Writer;
-
-        /**
-         * Decodes a ServerUpdate message from the specified reader or buffer.
-         * @param reader Reader or buffer to decode from
-         * @param [length] Message length if known beforehand
-         * @returns ServerUpdate
-         * @throws {Error} If the payload is not a reader or valid buffer
-         * @throws {$protobuf.util.ProtocolError} If required fields are missing
-         */
-        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): jsbolo.ServerUpdate;
-
-        /**
-         * Decodes a ServerUpdate message from the specified reader or buffer, length delimited.
-         * @param reader Reader or buffer to decode from
-         * @returns ServerUpdate
-         * @throws {Error} If the payload is not a reader or valid buffer
-         * @throws {$protobuf.util.ProtocolError} If required fields are missing
-         */
-        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): jsbolo.ServerUpdate;
-
-        /**
-         * Verifies a ServerUpdate message.
-         * @param message Plain object to verify
-         * @returns `null` if valid, otherwise the reason why it is not
-         */
-        public static verify(message: { [k: string]: any }): (string|null);
-
-        /**
-         * Creates a ServerUpdate message from a plain object. Also converts values to their respective internal types.
-         * @param object Plain object
-         * @returns ServerUpdate
-         */
-        public static fromObject(object: { [k: string]: any }): jsbolo.ServerUpdate;
-
-        /**
-         * Creates a plain object from a ServerUpdate message. Also converts values to other types if specified.
-         * @param message ServerUpdate
-         * @param [options] Conversion options
-         * @returns Plain object
-         */
-        public static toObject(message: jsbolo.ServerUpdate, options?: $protobuf.IConversionOptions): { [k: string]: any };
-
-        /**
-         * Converts this ServerUpdate to JSON.
-         * @returns JSON object
-         */
-        public toJSON(): { [k: string]: any };
-
-        /**
-         * Gets the default type url for ServerUpdate
-         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
-         * @returns The default type url
-         */
-        public static getTypeUrl(typeUrlPrefix?: string): string;
-    }
-
-    /** Properties of a TankState. */
-    interface ITankState {
-
-        /** TankState id */
+        /** Tank id */
         id?: (number|null);
 
-        /** TankState x */
+        /** Tank x */
         x?: (number|null);
 
-        /** TankState y */
+        /** Tank y */
         y?: (number|null);
 
-        /** TankState direction */
+        /** Tank direction */
         direction?: (number|null);
 
-        /** TankState speed */
+        /** Tank speed */
         speed?: (number|null);
 
-        /** TankState armor */
+        /** Tank armor */
         armor?: (number|null);
 
-        /** TankState shells */
+        /** Tank shells */
         shells?: (number|null);
 
-        /** TankState mines */
+        /** Tank mines */
         mines?: (number|null);
 
-        /** TankState trees */
+        /** Tank trees */
         trees?: (number|null);
 
-        /** TankState team */
+        /** Tank team */
         team?: (number|null);
 
-        /** TankState onBoat */
+        /** Tank onBoat */
         onBoat?: (boolean|null);
 
-        /** TankState reload */
+        /** Tank reload */
         reload?: (number|null);
 
-        /** TankState firingRange */
+        /** Tank firingRange */
         firingRange?: (number|null);
+
+        /** Tank carriedPillbox */
+        carriedPillbox?: (number|null);
     }
 
-    /** Represents a TankState. */
-    class TankState implements ITankState {
+    /** Represents a Tank. */
+    class Tank implements ITank {
 
         /**
-         * Constructs a new TankState.
+         * Constructs a new Tank.
          * @param [properties] Properties to set
          */
-        constructor(properties?: jsbolo.ITankState);
+        constructor(properties?: jsbolo.ITank);
 
-        /** TankState id. */
+        /** Tank id. */
         public id: number;
 
-        /** TankState x. */
+        /** Tank x. */
         public x: number;
 
-        /** TankState y. */
+        /** Tank y. */
         public y: number;
 
-        /** TankState direction. */
+        /** Tank direction. */
         public direction: number;
 
-        /** TankState speed. */
+        /** Tank speed. */
         public speed: number;
 
-        /** TankState armor. */
+        /** Tank armor. */
         public armor: number;
 
-        /** TankState shells. */
+        /** Tank shells. */
         public shells: number;
 
-        /** TankState mines. */
+        /** Tank mines. */
         public mines: number;
 
-        /** TankState trees. */
+        /** Tank trees. */
         public trees: number;
 
-        /** TankState team. */
+        /** Tank team. */
         public team: number;
 
-        /** TankState onBoat. */
+        /** Tank onBoat. */
         public onBoat: boolean;
 
-        /** TankState reload. */
+        /** Tank reload. */
         public reload: number;
 
-        /** TankState firingRange. */
+        /** Tank firingRange. */
         public firingRange: number;
 
+        /** Tank carriedPillbox. */
+        public carriedPillbox?: (number|null);
+
         /**
-         * Creates a new TankState instance using the specified properties.
+         * Creates a new Tank instance using the specified properties.
          * @param [properties] Properties to set
-         * @returns TankState instance
+         * @returns Tank instance
          */
-        public static create(properties?: jsbolo.ITankState): jsbolo.TankState;
+        public static create(properties?: jsbolo.ITank): jsbolo.Tank;
 
         /**
-         * Encodes the specified TankState message. Does not implicitly {@link jsbolo.TankState.verify|verify} messages.
-         * @param message TankState message or plain object to encode
+         * Encodes the specified Tank message. Does not implicitly {@link jsbolo.Tank.verify|verify} messages.
+         * @param message Tank message or plain object to encode
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encode(message: jsbolo.ITankState, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encode(message: jsbolo.ITank, writer?: $protobuf.Writer): $protobuf.Writer;
 
         /**
-         * Encodes the specified TankState message, length delimited. Does not implicitly {@link jsbolo.TankState.verify|verify} messages.
-         * @param message TankState message or plain object to encode
+         * Encodes the specified Tank message, length delimited. Does not implicitly {@link jsbolo.Tank.verify|verify} messages.
+         * @param message Tank message or plain object to encode
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encodeDelimited(message: jsbolo.ITankState, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encodeDelimited(message: jsbolo.ITank, writer?: $protobuf.Writer): $protobuf.Writer;
 
         /**
-         * Decodes a TankState message from the specified reader or buffer.
+         * Decodes a Tank message from the specified reader or buffer.
          * @param reader Reader or buffer to decode from
          * @param [length] Message length if known beforehand
-         * @returns TankState
+         * @returns Tank
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): jsbolo.TankState;
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): jsbolo.Tank;
 
         /**
-         * Decodes a TankState message from the specified reader or buffer, length delimited.
+         * Decodes a Tank message from the specified reader or buffer, length delimited.
          * @param reader Reader or buffer to decode from
-         * @returns TankState
+         * @returns Tank
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): jsbolo.TankState;
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): jsbolo.Tank;
 
         /**
-         * Verifies a TankState message.
+         * Verifies a Tank message.
          * @param message Plain object to verify
          * @returns `null` if valid, otherwise the reason why it is not
          */
         public static verify(message: { [k: string]: any }): (string|null);
 
         /**
-         * Creates a TankState message from a plain object. Also converts values to their respective internal types.
+         * Creates a Tank message from a plain object. Also converts values to their respective internal types.
          * @param object Plain object
-         * @returns TankState
+         * @returns Tank
          */
-        public static fromObject(object: { [k: string]: any }): jsbolo.TankState;
+        public static fromObject(object: { [k: string]: any }): jsbolo.Tank;
 
         /**
-         * Creates a plain object from a TankState message. Also converts values to other types if specified.
-         * @param message TankState
+         * Creates a plain object from a Tank message. Also converts values to other types if specified.
+         * @param message Tank
          * @param [options] Conversion options
          * @returns Plain object
          */
-        public static toObject(message: jsbolo.TankState, options?: $protobuf.IConversionOptions): { [k: string]: any };
+        public static toObject(message: jsbolo.Tank, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
         /**
-         * Converts this TankState to JSON.
+         * Converts this Tank to JSON.
          * @returns JSON object
          */
         public toJSON(): { [k: string]: any };
 
         /**
-         * Gets the default type url for TankState
+         * Gets the default type url for Tank
          * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
          * @returns The default type url
          */
         public static getTypeUrl(typeUrlPrefix?: string): string;
     }
 
-    /** Properties of a BuilderState. */
-    interface IBuilderState {
+    /** Properties of a Builder. */
+    interface IBuilder {
 
-        /** BuilderState id */
+        /** Builder id */
         id?: (number|null);
 
-        /** BuilderState ownerTankId */
+        /** Builder ownerTankId */
         ownerTankId?: (number|null);
 
-        /** BuilderState x */
+        /** Builder x */
         x?: (number|null);
 
-        /** BuilderState y */
+        /** Builder y */
         y?: (number|null);
 
-        /** BuilderState targetX */
+        /** Builder targetX */
         targetX?: (number|null);
 
-        /** BuilderState targetY */
+        /** Builder targetY */
         targetY?: (number|null);
 
-        /** BuilderState order */
+        /** Builder order */
         order?: (jsbolo.BuilderOrder|null);
 
-        /** BuilderState trees */
+        /** Builder trees */
         trees?: (number|null);
 
-        /** BuilderState hasMine */
+        /** Builder hasMine */
         hasMine?: (boolean|null);
 
-        /** BuilderState team */
+        /** Builder hasPillbox */
+        hasPillbox?: (boolean|null);
+
+        /** Builder team */
         team?: (number|null);
+
+        /** Builder respawnCounter */
+        respawnCounter?: (number|null);
     }
 
-    /** Represents a BuilderState. */
-    class BuilderState implements IBuilderState {
+    /** Represents a Builder. */
+    class Builder implements IBuilder {
 
         /**
-         * Constructs a new BuilderState.
+         * Constructs a new Builder.
          * @param [properties] Properties to set
          */
-        constructor(properties?: jsbolo.IBuilderState);
+        constructor(properties?: jsbolo.IBuilder);
 
-        /** BuilderState id. */
+        /** Builder id. */
         public id: number;
 
-        /** BuilderState ownerTankId. */
+        /** Builder ownerTankId. */
         public ownerTankId: number;
 
-        /** BuilderState x. */
+        /** Builder x. */
         public x: number;
 
-        /** BuilderState y. */
+        /** Builder y. */
         public y: number;
 
-        /** BuilderState targetX. */
+        /** Builder targetX. */
         public targetX: number;
 
-        /** BuilderState targetY. */
+        /** Builder targetY. */
         public targetY: number;
 
-        /** BuilderState order. */
+        /** Builder order. */
         public order: jsbolo.BuilderOrder;
 
-        /** BuilderState trees. */
+        /** Builder trees. */
         public trees: number;
 
-        /** BuilderState hasMine. */
+        /** Builder hasMine. */
         public hasMine: boolean;
 
-        /** BuilderState team. */
+        /** Builder hasPillbox. */
+        public hasPillbox: boolean;
+
+        /** Builder team. */
         public team: number;
 
+        /** Builder respawnCounter. */
+        public respawnCounter: number;
+
         /**
-         * Creates a new BuilderState instance using the specified properties.
+         * Creates a new Builder instance using the specified properties.
          * @param [properties] Properties to set
-         * @returns BuilderState instance
+         * @returns Builder instance
          */
-        public static create(properties?: jsbolo.IBuilderState): jsbolo.BuilderState;
+        public static create(properties?: jsbolo.IBuilder): jsbolo.Builder;
 
         /**
-         * Encodes the specified BuilderState message. Does not implicitly {@link jsbolo.BuilderState.verify|verify} messages.
-         * @param message BuilderState message or plain object to encode
+         * Encodes the specified Builder message. Does not implicitly {@link jsbolo.Builder.verify|verify} messages.
+         * @param message Builder message or plain object to encode
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encode(message: jsbolo.IBuilderState, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encode(message: jsbolo.IBuilder, writer?: $protobuf.Writer): $protobuf.Writer;
 
         /**
-         * Encodes the specified BuilderState message, length delimited. Does not implicitly {@link jsbolo.BuilderState.verify|verify} messages.
-         * @param message BuilderState message or plain object to encode
+         * Encodes the specified Builder message, length delimited. Does not implicitly {@link jsbolo.Builder.verify|verify} messages.
+         * @param message Builder message or plain object to encode
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encodeDelimited(message: jsbolo.IBuilderState, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encodeDelimited(message: jsbolo.IBuilder, writer?: $protobuf.Writer): $protobuf.Writer;
 
         /**
-         * Decodes a BuilderState message from the specified reader or buffer.
+         * Decodes a Builder message from the specified reader or buffer.
          * @param reader Reader or buffer to decode from
          * @param [length] Message length if known beforehand
-         * @returns BuilderState
+         * @returns Builder
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): jsbolo.BuilderState;
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): jsbolo.Builder;
 
         /**
-         * Decodes a BuilderState message from the specified reader or buffer, length delimited.
+         * Decodes a Builder message from the specified reader or buffer, length delimited.
          * @param reader Reader or buffer to decode from
-         * @returns BuilderState
+         * @returns Builder
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): jsbolo.BuilderState;
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): jsbolo.Builder;
 
         /**
-         * Verifies a BuilderState message.
+         * Verifies a Builder message.
          * @param message Plain object to verify
          * @returns `null` if valid, otherwise the reason why it is not
          */
         public static verify(message: { [k: string]: any }): (string|null);
 
         /**
-         * Creates a BuilderState message from a plain object. Also converts values to their respective internal types.
+         * Creates a Builder message from a plain object. Also converts values to their respective internal types.
          * @param object Plain object
-         * @returns BuilderState
+         * @returns Builder
          */
-        public static fromObject(object: { [k: string]: any }): jsbolo.BuilderState;
+        public static fromObject(object: { [k: string]: any }): jsbolo.Builder;
 
         /**
-         * Creates a plain object from a BuilderState message. Also converts values to other types if specified.
-         * @param message BuilderState
+         * Creates a plain object from a Builder message. Also converts values to other types if specified.
+         * @param message Builder
          * @param [options] Conversion options
          * @returns Plain object
          */
-        public static toObject(message: jsbolo.BuilderState, options?: $protobuf.IConversionOptions): { [k: string]: any };
+        public static toObject(message: jsbolo.Builder, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
         /**
-         * Converts this BuilderState to JSON.
+         * Converts this Builder to JSON.
          * @returns JSON object
          */
         public toJSON(): { [k: string]: any };
 
         /**
-         * Gets the default type url for BuilderState
+         * Gets the default type url for Builder
          * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
          * @returns The default type url
          */
         public static getTypeUrl(typeUrlPrefix?: string): string;
     }
 
-    /** BuilderOrder enum. */
-    enum BuilderOrder {
-        IN_TANK = 0,
-        WAITING = 1,
-        RETURNING = 2,
-        PARACHUTING = 3,
-        HARVESTING = 10,
-        BUILDING_ROAD = 11,
-        REPAIRING = 12,
-        BUILDING_BOAT = 13,
-        BUILDING_WALL = 14,
-        PLACING_PILLBOX = 15,
-        LAYING_MINE = 16
-    }
+    /** Properties of a Shell. */
+    interface IShell {
 
-    /** Properties of a ShellState. */
-    interface IShellState {
-
-        /** ShellState id */
+        /** Shell id */
         id?: (number|null);
 
-        /** ShellState x */
+        /** Shell x */
         x?: (number|null);
 
-        /** ShellState y */
+        /** Shell y */
         y?: (number|null);
 
-        /** ShellState direction */
+        /** Shell direction */
         direction?: (number|null);
 
-        /** ShellState ownerTankId */
+        /** Shell ownerTankId */
         ownerTankId?: (number|null);
     }
 
-    /** Represents a ShellState. */
-    class ShellState implements IShellState {
+    /** Represents a Shell. */
+    class Shell implements IShell {
 
         /**
-         * Constructs a new ShellState.
+         * Constructs a new Shell.
          * @param [properties] Properties to set
          */
-        constructor(properties?: jsbolo.IShellState);
+        constructor(properties?: jsbolo.IShell);
 
-        /** ShellState id. */
+        /** Shell id. */
         public id: number;
 
-        /** ShellState x. */
+        /** Shell x. */
         public x: number;
 
-        /** ShellState y. */
+        /** Shell y. */
         public y: number;
 
-        /** ShellState direction. */
+        /** Shell direction. */
         public direction: number;
 
-        /** ShellState ownerTankId. */
+        /** Shell ownerTankId. */
         public ownerTankId: number;
 
         /**
-         * Creates a new ShellState instance using the specified properties.
+         * Creates a new Shell instance using the specified properties.
          * @param [properties] Properties to set
-         * @returns ShellState instance
+         * @returns Shell instance
          */
-        public static create(properties?: jsbolo.IShellState): jsbolo.ShellState;
+        public static create(properties?: jsbolo.IShell): jsbolo.Shell;
 
         /**
-         * Encodes the specified ShellState message. Does not implicitly {@link jsbolo.ShellState.verify|verify} messages.
-         * @param message ShellState message or plain object to encode
+         * Encodes the specified Shell message. Does not implicitly {@link jsbolo.Shell.verify|verify} messages.
+         * @param message Shell message or plain object to encode
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encode(message: jsbolo.IShellState, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encode(message: jsbolo.IShell, writer?: $protobuf.Writer): $protobuf.Writer;
 
         /**
-         * Encodes the specified ShellState message, length delimited. Does not implicitly {@link jsbolo.ShellState.verify|verify} messages.
-         * @param message ShellState message or plain object to encode
+         * Encodes the specified Shell message, length delimited. Does not implicitly {@link jsbolo.Shell.verify|verify} messages.
+         * @param message Shell message or plain object to encode
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encodeDelimited(message: jsbolo.IShellState, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encodeDelimited(message: jsbolo.IShell, writer?: $protobuf.Writer): $protobuf.Writer;
 
         /**
-         * Decodes a ShellState message from the specified reader or buffer.
+         * Decodes a Shell message from the specified reader or buffer.
          * @param reader Reader or buffer to decode from
          * @param [length] Message length if known beforehand
-         * @returns ShellState
+         * @returns Shell
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): jsbolo.ShellState;
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): jsbolo.Shell;
 
         /**
-         * Decodes a ShellState message from the specified reader or buffer, length delimited.
+         * Decodes a Shell message from the specified reader or buffer, length delimited.
          * @param reader Reader or buffer to decode from
-         * @returns ShellState
+         * @returns Shell
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): jsbolo.ShellState;
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): jsbolo.Shell;
 
         /**
-         * Verifies a ShellState message.
+         * Verifies a Shell message.
          * @param message Plain object to verify
          * @returns `null` if valid, otherwise the reason why it is not
          */
         public static verify(message: { [k: string]: any }): (string|null);
 
         /**
-         * Creates a ShellState message from a plain object. Also converts values to their respective internal types.
+         * Creates a Shell message from a plain object. Also converts values to their respective internal types.
          * @param object Plain object
-         * @returns ShellState
+         * @returns Shell
          */
-        public static fromObject(object: { [k: string]: any }): jsbolo.ShellState;
+        public static fromObject(object: { [k: string]: any }): jsbolo.Shell;
 
         /**
-         * Creates a plain object from a ShellState message. Also converts values to other types if specified.
-         * @param message ShellState
+         * Creates a plain object from a Shell message. Also converts values to other types if specified.
+         * @param message Shell
          * @param [options] Conversion options
          * @returns Plain object
          */
-        public static toObject(message: jsbolo.ShellState, options?: $protobuf.IConversionOptions): { [k: string]: any };
+        public static toObject(message: jsbolo.Shell, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
         /**
-         * Converts this ShellState to JSON.
+         * Converts this Shell to JSON.
          * @returns JSON object
          */
         public toJSON(): { [k: string]: any };
 
         /**
-         * Gets the default type url for ShellState
+         * Gets the default type url for Shell
          * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
          * @returns The default type url
          */
         public static getTypeUrl(typeUrlPrefix?: string): string;
     }
 
-    /** Properties of an ExplosionState. */
-    interface IExplosionState {
+    /** Properties of a Pillbox. */
+    interface IPillbox {
 
-        /** ExplosionState id */
+        /** Pillbox id */
         id?: (number|null);
 
-        /** ExplosionState x */
-        x?: (number|null);
-
-        /** ExplosionState y */
-        y?: (number|null);
-
-        /** ExplosionState type */
-        type?: (jsbolo.ExplosionType|null);
-
-        /** ExplosionState frame */
-        frame?: (number|null);
-    }
-
-    /** Represents an ExplosionState. */
-    class ExplosionState implements IExplosionState {
-
-        /**
-         * Constructs a new ExplosionState.
-         * @param [properties] Properties to set
-         */
-        constructor(properties?: jsbolo.IExplosionState);
-
-        /** ExplosionState id. */
-        public id: number;
-
-        /** ExplosionState x. */
-        public x: number;
-
-        /** ExplosionState y. */
-        public y: number;
-
-        /** ExplosionState type. */
-        public type: jsbolo.ExplosionType;
-
-        /** ExplosionState frame. */
-        public frame: number;
-
-        /**
-         * Creates a new ExplosionState instance using the specified properties.
-         * @param [properties] Properties to set
-         * @returns ExplosionState instance
-         */
-        public static create(properties?: jsbolo.IExplosionState): jsbolo.ExplosionState;
-
-        /**
-         * Encodes the specified ExplosionState message. Does not implicitly {@link jsbolo.ExplosionState.verify|verify} messages.
-         * @param message ExplosionState message or plain object to encode
-         * @param [writer] Writer to encode to
-         * @returns Writer
-         */
-        public static encode(message: jsbolo.IExplosionState, writer?: $protobuf.Writer): $protobuf.Writer;
-
-        /**
-         * Encodes the specified ExplosionState message, length delimited. Does not implicitly {@link jsbolo.ExplosionState.verify|verify} messages.
-         * @param message ExplosionState message or plain object to encode
-         * @param [writer] Writer to encode to
-         * @returns Writer
-         */
-        public static encodeDelimited(message: jsbolo.IExplosionState, writer?: $protobuf.Writer): $protobuf.Writer;
-
-        /**
-         * Decodes an ExplosionState message from the specified reader or buffer.
-         * @param reader Reader or buffer to decode from
-         * @param [length] Message length if known beforehand
-         * @returns ExplosionState
-         * @throws {Error} If the payload is not a reader or valid buffer
-         * @throws {$protobuf.util.ProtocolError} If required fields are missing
-         */
-        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): jsbolo.ExplosionState;
-
-        /**
-         * Decodes an ExplosionState message from the specified reader or buffer, length delimited.
-         * @param reader Reader or buffer to decode from
-         * @returns ExplosionState
-         * @throws {Error} If the payload is not a reader or valid buffer
-         * @throws {$protobuf.util.ProtocolError} If required fields are missing
-         */
-        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): jsbolo.ExplosionState;
-
-        /**
-         * Verifies an ExplosionState message.
-         * @param message Plain object to verify
-         * @returns `null` if valid, otherwise the reason why it is not
-         */
-        public static verify(message: { [k: string]: any }): (string|null);
-
-        /**
-         * Creates an ExplosionState message from a plain object. Also converts values to their respective internal types.
-         * @param object Plain object
-         * @returns ExplosionState
-         */
-        public static fromObject(object: { [k: string]: any }): jsbolo.ExplosionState;
-
-        /**
-         * Creates a plain object from an ExplosionState message. Also converts values to other types if specified.
-         * @param message ExplosionState
-         * @param [options] Conversion options
-         * @returns Plain object
-         */
-        public static toObject(message: jsbolo.ExplosionState, options?: $protobuf.IConversionOptions): { [k: string]: any };
-
-        /**
-         * Converts this ExplosionState to JSON.
-         * @returns JSON object
-         */
-        public toJSON(): { [k: string]: any };
-
-        /**
-         * Gets the default type url for ExplosionState
-         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
-         * @returns The default type url
-         */
-        public static getTypeUrl(typeUrlPrefix?: string): string;
-    }
-
-    /** ExplosionType enum. */
-    enum ExplosionType {
-        SMALL = 0,
-        LARGE = 1,
-        MINE = 2
-    }
-
-    /** Properties of a TerrainChange. */
-    interface ITerrainChange {
-
-        /** TerrainChange tileX */
+        /** Pillbox tileX */
         tileX?: (number|null);
 
-        /** TerrainChange tileY */
+        /** Pillbox tileY */
         tileY?: (number|null);
 
-        /** TerrainChange terrainType */
-        terrainType?: (number|null);
-
-        /** TerrainChange hasMine */
-        hasMine?: (boolean|null);
-    }
-
-    /** Represents a TerrainChange. */
-    class TerrainChange implements ITerrainChange {
-
-        /**
-         * Constructs a new TerrainChange.
-         * @param [properties] Properties to set
-         */
-        constructor(properties?: jsbolo.ITerrainChange);
-
-        /** TerrainChange tileX. */
-        public tileX: number;
-
-        /** TerrainChange tileY. */
-        public tileY: number;
-
-        /** TerrainChange terrainType. */
-        public terrainType: number;
-
-        /** TerrainChange hasMine. */
-        public hasMine: boolean;
-
-        /**
-         * Creates a new TerrainChange instance using the specified properties.
-         * @param [properties] Properties to set
-         * @returns TerrainChange instance
-         */
-        public static create(properties?: jsbolo.ITerrainChange): jsbolo.TerrainChange;
-
-        /**
-         * Encodes the specified TerrainChange message. Does not implicitly {@link jsbolo.TerrainChange.verify|verify} messages.
-         * @param message TerrainChange message or plain object to encode
-         * @param [writer] Writer to encode to
-         * @returns Writer
-         */
-        public static encode(message: jsbolo.ITerrainChange, writer?: $protobuf.Writer): $protobuf.Writer;
-
-        /**
-         * Encodes the specified TerrainChange message, length delimited. Does not implicitly {@link jsbolo.TerrainChange.verify|verify} messages.
-         * @param message TerrainChange message or plain object to encode
-         * @param [writer] Writer to encode to
-         * @returns Writer
-         */
-        public static encodeDelimited(message: jsbolo.ITerrainChange, writer?: $protobuf.Writer): $protobuf.Writer;
-
-        /**
-         * Decodes a TerrainChange message from the specified reader or buffer.
-         * @param reader Reader or buffer to decode from
-         * @param [length] Message length if known beforehand
-         * @returns TerrainChange
-         * @throws {Error} If the payload is not a reader or valid buffer
-         * @throws {$protobuf.util.ProtocolError} If required fields are missing
-         */
-        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): jsbolo.TerrainChange;
-
-        /**
-         * Decodes a TerrainChange message from the specified reader or buffer, length delimited.
-         * @param reader Reader or buffer to decode from
-         * @returns TerrainChange
-         * @throws {Error} If the payload is not a reader or valid buffer
-         * @throws {$protobuf.util.ProtocolError} If required fields are missing
-         */
-        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): jsbolo.TerrainChange;
-
-        /**
-         * Verifies a TerrainChange message.
-         * @param message Plain object to verify
-         * @returns `null` if valid, otherwise the reason why it is not
-         */
-        public static verify(message: { [k: string]: any }): (string|null);
-
-        /**
-         * Creates a TerrainChange message from a plain object. Also converts values to their respective internal types.
-         * @param object Plain object
-         * @returns TerrainChange
-         */
-        public static fromObject(object: { [k: string]: any }): jsbolo.TerrainChange;
-
-        /**
-         * Creates a plain object from a TerrainChange message. Also converts values to other types if specified.
-         * @param message TerrainChange
-         * @param [options] Conversion options
-         * @returns Plain object
-         */
-        public static toObject(message: jsbolo.TerrainChange, options?: $protobuf.IConversionOptions): { [k: string]: any };
-
-        /**
-         * Converts this TerrainChange to JSON.
-         * @returns JSON object
-         */
-        public toJSON(): { [k: string]: any };
-
-        /**
-         * Gets the default type url for TerrainChange
-         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
-         * @returns The default type url
-         */
-        public static getTypeUrl(typeUrlPrefix?: string): string;
-    }
-
-    /** Properties of a PillboxState. */
-    interface IPillboxState {
-
-        /** PillboxState id */
-        id?: (number|null);
-
-        /** PillboxState tileX */
-        tileX?: (number|null);
-
-        /** PillboxState tileY */
-        tileY?: (number|null);
-
-        /** PillboxState armor */
+        /** Pillbox armor */
         armor?: (number|null);
 
-        /** PillboxState ownerTeam */
+        /** Pillbox ownerTeam */
         ownerTeam?: (number|null);
 
-        /** PillboxState inTank */
+        /** Pillbox inTank */
         inTank?: (boolean|null);
     }
 
-    /** Represents a PillboxState. */
-    class PillboxState implements IPillboxState {
+    /** Represents a Pillbox. */
+    class Pillbox implements IPillbox {
 
         /**
-         * Constructs a new PillboxState.
+         * Constructs a new Pillbox.
          * @param [properties] Properties to set
          */
-        constructor(properties?: jsbolo.IPillboxState);
+        constructor(properties?: jsbolo.IPillbox);
 
-        /** PillboxState id. */
+        /** Pillbox id. */
         public id: number;
 
-        /** PillboxState tileX. */
+        /** Pillbox tileX. */
         public tileX: number;
 
-        /** PillboxState tileY. */
+        /** Pillbox tileY. */
         public tileY: number;
 
-        /** PillboxState armor. */
+        /** Pillbox armor. */
         public armor: number;
 
-        /** PillboxState ownerTeam. */
+        /** Pillbox ownerTeam. */
         public ownerTeam: number;
 
-        /** PillboxState inTank. */
+        /** Pillbox inTank. */
         public inTank: boolean;
 
         /**
-         * Creates a new PillboxState instance using the specified properties.
+         * Creates a new Pillbox instance using the specified properties.
          * @param [properties] Properties to set
-         * @returns PillboxState instance
+         * @returns Pillbox instance
          */
-        public static create(properties?: jsbolo.IPillboxState): jsbolo.PillboxState;
+        public static create(properties?: jsbolo.IPillbox): jsbolo.Pillbox;
 
         /**
-         * Encodes the specified PillboxState message. Does not implicitly {@link jsbolo.PillboxState.verify|verify} messages.
-         * @param message PillboxState message or plain object to encode
+         * Encodes the specified Pillbox message. Does not implicitly {@link jsbolo.Pillbox.verify|verify} messages.
+         * @param message Pillbox message or plain object to encode
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encode(message: jsbolo.IPillboxState, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encode(message: jsbolo.IPillbox, writer?: $protobuf.Writer): $protobuf.Writer;
 
         /**
-         * Encodes the specified PillboxState message, length delimited. Does not implicitly {@link jsbolo.PillboxState.verify|verify} messages.
-         * @param message PillboxState message or plain object to encode
+         * Encodes the specified Pillbox message, length delimited. Does not implicitly {@link jsbolo.Pillbox.verify|verify} messages.
+         * @param message Pillbox message or plain object to encode
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encodeDelimited(message: jsbolo.IPillboxState, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encodeDelimited(message: jsbolo.IPillbox, writer?: $protobuf.Writer): $protobuf.Writer;
 
         /**
-         * Decodes a PillboxState message from the specified reader or buffer.
+         * Decodes a Pillbox message from the specified reader or buffer.
          * @param reader Reader or buffer to decode from
          * @param [length] Message length if known beforehand
-         * @returns PillboxState
+         * @returns Pillbox
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): jsbolo.PillboxState;
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): jsbolo.Pillbox;
 
         /**
-         * Decodes a PillboxState message from the specified reader or buffer, length delimited.
+         * Decodes a Pillbox message from the specified reader or buffer, length delimited.
          * @param reader Reader or buffer to decode from
-         * @returns PillboxState
+         * @returns Pillbox
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): jsbolo.PillboxState;
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): jsbolo.Pillbox;
 
         /**
-         * Verifies a PillboxState message.
+         * Verifies a Pillbox message.
          * @param message Plain object to verify
          * @returns `null` if valid, otherwise the reason why it is not
          */
         public static verify(message: { [k: string]: any }): (string|null);
 
         /**
-         * Creates a PillboxState message from a plain object. Also converts values to their respective internal types.
+         * Creates a Pillbox message from a plain object. Also converts values to their respective internal types.
          * @param object Plain object
-         * @returns PillboxState
+         * @returns Pillbox
          */
-        public static fromObject(object: { [k: string]: any }): jsbolo.PillboxState;
+        public static fromObject(object: { [k: string]: any }): jsbolo.Pillbox;
 
         /**
-         * Creates a plain object from a PillboxState message. Also converts values to other types if specified.
-         * @param message PillboxState
+         * Creates a plain object from a Pillbox message. Also converts values to other types if specified.
+         * @param message Pillbox
          * @param [options] Conversion options
          * @returns Plain object
          */
-        public static toObject(message: jsbolo.PillboxState, options?: $protobuf.IConversionOptions): { [k: string]: any };
+        public static toObject(message: jsbolo.Pillbox, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
         /**
-         * Converts this PillboxState to JSON.
+         * Converts this Pillbox to JSON.
          * @returns JSON object
          */
         public toJSON(): { [k: string]: any };
 
         /**
-         * Gets the default type url for PillboxState
+         * Gets the default type url for Pillbox
          * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
          * @returns The default type url
          */
         public static getTypeUrl(typeUrlPrefix?: string): string;
     }
 
-    /** Properties of a BaseState. */
-    interface IBaseState {
+    /** Properties of a Base. */
+    interface IBase {
 
-        /** BaseState id */
+        /** Base id */
         id?: (number|null);
 
-        /** BaseState tileX */
+        /** Base tileX */
         tileX?: (number|null);
 
-        /** BaseState tileY */
+        /** Base tileY */
         tileY?: (number|null);
 
-        /** BaseState armor */
+        /** Base armor */
         armor?: (number|null);
 
-        /** BaseState shells */
+        /** Base shells */
         shells?: (number|null);
 
-        /** BaseState mines */
+        /** Base mines */
         mines?: (number|null);
 
-        /** BaseState ownerTeam */
+        /** Base ownerTeam */
         ownerTeam?: (number|null);
     }
 
-    /** Represents a BaseState. */
-    class BaseState implements IBaseState {
+    /** Represents a Base. */
+    class Base implements IBase {
 
         /**
-         * Constructs a new BaseState.
+         * Constructs a new Base.
          * @param [properties] Properties to set
          */
-        constructor(properties?: jsbolo.IBaseState);
+        constructor(properties?: jsbolo.IBase);
 
-        /** BaseState id. */
+        /** Base id. */
         public id: number;
 
-        /** BaseState tileX. */
+        /** Base tileX. */
         public tileX: number;
 
-        /** BaseState tileY. */
+        /** Base tileY. */
         public tileY: number;
 
-        /** BaseState armor. */
+        /** Base armor. */
         public armor: number;
 
-        /** BaseState shells. */
+        /** Base shells. */
         public shells: number;
 
-        /** BaseState mines. */
+        /** Base mines. */
         public mines: number;
 
-        /** BaseState ownerTeam. */
+        /** Base ownerTeam. */
         public ownerTeam: number;
 
         /**
-         * Creates a new BaseState instance using the specified properties.
+         * Creates a new Base instance using the specified properties.
          * @param [properties] Properties to set
-         * @returns BaseState instance
+         * @returns Base instance
          */
-        public static create(properties?: jsbolo.IBaseState): jsbolo.BaseState;
+        public static create(properties?: jsbolo.IBase): jsbolo.Base;
 
         /**
-         * Encodes the specified BaseState message. Does not implicitly {@link jsbolo.BaseState.verify|verify} messages.
-         * @param message BaseState message or plain object to encode
+         * Encodes the specified Base message. Does not implicitly {@link jsbolo.Base.verify|verify} messages.
+         * @param message Base message or plain object to encode
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encode(message: jsbolo.IBaseState, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encode(message: jsbolo.IBase, writer?: $protobuf.Writer): $protobuf.Writer;
 
         /**
-         * Encodes the specified BaseState message, length delimited. Does not implicitly {@link jsbolo.BaseState.verify|verify} messages.
-         * @param message BaseState message or plain object to encode
+         * Encodes the specified Base message, length delimited. Does not implicitly {@link jsbolo.Base.verify|verify} messages.
+         * @param message Base message or plain object to encode
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encodeDelimited(message: jsbolo.IBaseState, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encodeDelimited(message: jsbolo.IBase, writer?: $protobuf.Writer): $protobuf.Writer;
 
         /**
-         * Decodes a BaseState message from the specified reader or buffer.
+         * Decodes a Base message from the specified reader or buffer.
          * @param reader Reader or buffer to decode from
          * @param [length] Message length if known beforehand
-         * @returns BaseState
+         * @returns Base
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): jsbolo.BaseState;
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): jsbolo.Base;
 
         /**
-         * Decodes a BaseState message from the specified reader or buffer, length delimited.
+         * Decodes a Base message from the specified reader or buffer, length delimited.
          * @param reader Reader or buffer to decode from
-         * @returns BaseState
+         * @returns Base
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): jsbolo.BaseState;
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): jsbolo.Base;
 
         /**
-         * Verifies a BaseState message.
+         * Verifies a Base message.
          * @param message Plain object to verify
          * @returns `null` if valid, otherwise the reason why it is not
          */
         public static verify(message: { [k: string]: any }): (string|null);
 
         /**
-         * Creates a BaseState message from a plain object. Also converts values to their respective internal types.
+         * Creates a Base message from a plain object. Also converts values to their respective internal types.
          * @param object Plain object
-         * @returns BaseState
+         * @returns Base
          */
-        public static fromObject(object: { [k: string]: any }): jsbolo.BaseState;
+        public static fromObject(object: { [k: string]: any }): jsbolo.Base;
 
         /**
-         * Creates a plain object from a BaseState message. Also converts values to other types if specified.
-         * @param message BaseState
+         * Creates a plain object from a Base message. Also converts values to other types if specified.
+         * @param message Base
          * @param [options] Conversion options
          * @returns Plain object
          */
-        public static toObject(message: jsbolo.BaseState, options?: $protobuf.IConversionOptions): { [k: string]: any };
+        public static toObject(message: jsbolo.Base, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
         /**
-         * Converts this BaseState to JSON.
+         * Converts this Base to JSON.
          * @returns JSON object
          */
         public toJSON(): { [k: string]: any };
 
         /**
-         * Gets the default type url for BaseState
+         * Gets the default type url for Base
          * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
          * @returns The default type url
          */
         public static getTypeUrl(typeUrlPrefix?: string): string;
     }
 
-    /** Properties of a CreateEntity. */
-    interface ICreateEntity {
+    /** Properties of a TerrainUpdate. */
+    interface ITerrainUpdate {
 
-        /** CreateEntity tank */
-        tank?: (jsbolo.ITankState|null);
+        /** TerrainUpdate x */
+        x?: (number|null);
 
-        /** CreateEntity builder */
-        builder?: (jsbolo.IBuilderState|null);
+        /** TerrainUpdate y */
+        y?: (number|null);
 
-        /** CreateEntity shell */
-        shell?: (jsbolo.IShellState|null);
+        /** TerrainUpdate terrain */
+        terrain?: (number|null);
 
-        /** CreateEntity explosion */
-        explosion?: (jsbolo.IExplosionState|null);
+        /** TerrainUpdate terrainLife */
+        terrainLife?: (number|null);
 
-        /** CreateEntity pillbox */
-        pillbox?: (jsbolo.IPillboxState|null);
-
-        /** CreateEntity base */
-        base?: (jsbolo.IBaseState|null);
+        /** TerrainUpdate direction */
+        direction?: (number|null);
     }
 
-    /** Represents a CreateEntity. */
-    class CreateEntity implements ICreateEntity {
+    /** Represents a TerrainUpdate. */
+    class TerrainUpdate implements ITerrainUpdate {
 
         /**
-         * Constructs a new CreateEntity.
+         * Constructs a new TerrainUpdate.
          * @param [properties] Properties to set
          */
-        constructor(properties?: jsbolo.ICreateEntity);
+        constructor(properties?: jsbolo.ITerrainUpdate);
 
-        /** CreateEntity tank. */
-        public tank?: (jsbolo.ITankState|null);
+        /** TerrainUpdate x. */
+        public x: number;
 
-        /** CreateEntity builder. */
-        public builder?: (jsbolo.IBuilderState|null);
+        /** TerrainUpdate y. */
+        public y: number;
 
-        /** CreateEntity shell. */
-        public shell?: (jsbolo.IShellState|null);
+        /** TerrainUpdate terrain. */
+        public terrain: number;
 
-        /** CreateEntity explosion. */
-        public explosion?: (jsbolo.IExplosionState|null);
+        /** TerrainUpdate terrainLife. */
+        public terrainLife: number;
 
-        /** CreateEntity pillbox. */
-        public pillbox?: (jsbolo.IPillboxState|null);
-
-        /** CreateEntity base. */
-        public base?: (jsbolo.IBaseState|null);
-
-        /** CreateEntity entity. */
-        public entity?: ("tank"|"builder"|"shell"|"explosion"|"pillbox"|"base");
+        /** TerrainUpdate direction. */
+        public direction?: (number|null);
 
         /**
-         * Creates a new CreateEntity instance using the specified properties.
+         * Creates a new TerrainUpdate instance using the specified properties.
          * @param [properties] Properties to set
-         * @returns CreateEntity instance
+         * @returns TerrainUpdate instance
          */
-        public static create(properties?: jsbolo.ICreateEntity): jsbolo.CreateEntity;
+        public static create(properties?: jsbolo.ITerrainUpdate): jsbolo.TerrainUpdate;
 
         /**
-         * Encodes the specified CreateEntity message. Does not implicitly {@link jsbolo.CreateEntity.verify|verify} messages.
-         * @param message CreateEntity message or plain object to encode
+         * Encodes the specified TerrainUpdate message. Does not implicitly {@link jsbolo.TerrainUpdate.verify|verify} messages.
+         * @param message TerrainUpdate message or plain object to encode
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encode(message: jsbolo.ICreateEntity, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encode(message: jsbolo.ITerrainUpdate, writer?: $protobuf.Writer): $protobuf.Writer;
 
         /**
-         * Encodes the specified CreateEntity message, length delimited. Does not implicitly {@link jsbolo.CreateEntity.verify|verify} messages.
-         * @param message CreateEntity message or plain object to encode
+         * Encodes the specified TerrainUpdate message, length delimited. Does not implicitly {@link jsbolo.TerrainUpdate.verify|verify} messages.
+         * @param message TerrainUpdate message or plain object to encode
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encodeDelimited(message: jsbolo.ICreateEntity, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encodeDelimited(message: jsbolo.ITerrainUpdate, writer?: $protobuf.Writer): $protobuf.Writer;
 
         /**
-         * Decodes a CreateEntity message from the specified reader or buffer.
+         * Decodes a TerrainUpdate message from the specified reader or buffer.
          * @param reader Reader or buffer to decode from
          * @param [length] Message length if known beforehand
-         * @returns CreateEntity
+         * @returns TerrainUpdate
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): jsbolo.CreateEntity;
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): jsbolo.TerrainUpdate;
 
         /**
-         * Decodes a CreateEntity message from the specified reader or buffer, length delimited.
+         * Decodes a TerrainUpdate message from the specified reader or buffer, length delimited.
          * @param reader Reader or buffer to decode from
-         * @returns CreateEntity
+         * @returns TerrainUpdate
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): jsbolo.CreateEntity;
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): jsbolo.TerrainUpdate;
 
         /**
-         * Verifies a CreateEntity message.
+         * Verifies a TerrainUpdate message.
          * @param message Plain object to verify
          * @returns `null` if valid, otherwise the reason why it is not
          */
         public static verify(message: { [k: string]: any }): (string|null);
 
         /**
-         * Creates a CreateEntity message from a plain object. Also converts values to their respective internal types.
+         * Creates a TerrainUpdate message from a plain object. Also converts values to their respective internal types.
          * @param object Plain object
-         * @returns CreateEntity
+         * @returns TerrainUpdate
          */
-        public static fromObject(object: { [k: string]: any }): jsbolo.CreateEntity;
+        public static fromObject(object: { [k: string]: any }): jsbolo.TerrainUpdate;
 
         /**
-         * Creates a plain object from a CreateEntity message. Also converts values to other types if specified.
-         * @param message CreateEntity
+         * Creates a plain object from a TerrainUpdate message. Also converts values to other types if specified.
+         * @param message TerrainUpdate
          * @param [options] Conversion options
          * @returns Plain object
          */
-        public static toObject(message: jsbolo.CreateEntity, options?: $protobuf.IConversionOptions): { [k: string]: any };
+        public static toObject(message: jsbolo.TerrainUpdate, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
         /**
-         * Converts this CreateEntity to JSON.
+         * Converts this TerrainUpdate to JSON.
          * @returns JSON object
          */
         public toJSON(): { [k: string]: any };
 
         /**
-         * Gets the default type url for CreateEntity
+         * Gets the default type url for TerrainUpdate
          * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
          * @returns The default type url
          */
         public static getTypeUrl(typeUrlPrefix?: string): string;
     }
 
-    /** Properties of a DestroyEntity. */
-    interface IDestroyEntity {
+    /** Properties of a SoundEvent. */
+    interface ISoundEvent {
 
-        /** DestroyEntity type */
-        type?: (jsbolo.DestroyEntity.EntityType|null);
+        /** SoundEvent soundId */
+        soundId?: (number|null);
 
-        /** DestroyEntity id */
-        id?: (number|null);
+        /** SoundEvent x */
+        x?: (number|null);
+
+        /** SoundEvent y */
+        y?: (number|null);
     }
 
-    /** Represents a DestroyEntity. */
-    class DestroyEntity implements IDestroyEntity {
+    /** Represents a SoundEvent. */
+    class SoundEvent implements ISoundEvent {
 
         /**
-         * Constructs a new DestroyEntity.
+         * Constructs a new SoundEvent.
          * @param [properties] Properties to set
          */
-        constructor(properties?: jsbolo.IDestroyEntity);
+        constructor(properties?: jsbolo.ISoundEvent);
 
-        /** DestroyEntity type. */
-        public type: jsbolo.DestroyEntity.EntityType;
+        /** SoundEvent soundId. */
+        public soundId: number;
 
-        /** DestroyEntity id. */
-        public id: number;
+        /** SoundEvent x. */
+        public x: number;
+
+        /** SoundEvent y. */
+        public y: number;
 
         /**
-         * Creates a new DestroyEntity instance using the specified properties.
+         * Creates a new SoundEvent instance using the specified properties.
          * @param [properties] Properties to set
-         * @returns DestroyEntity instance
+         * @returns SoundEvent instance
          */
-        public static create(properties?: jsbolo.IDestroyEntity): jsbolo.DestroyEntity;
+        public static create(properties?: jsbolo.ISoundEvent): jsbolo.SoundEvent;
 
         /**
-         * Encodes the specified DestroyEntity message. Does not implicitly {@link jsbolo.DestroyEntity.verify|verify} messages.
-         * @param message DestroyEntity message or plain object to encode
+         * Encodes the specified SoundEvent message. Does not implicitly {@link jsbolo.SoundEvent.verify|verify} messages.
+         * @param message SoundEvent message or plain object to encode
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encode(message: jsbolo.IDestroyEntity, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encode(message: jsbolo.ISoundEvent, writer?: $protobuf.Writer): $protobuf.Writer;
 
         /**
-         * Encodes the specified DestroyEntity message, length delimited. Does not implicitly {@link jsbolo.DestroyEntity.verify|verify} messages.
-         * @param message DestroyEntity message or plain object to encode
+         * Encodes the specified SoundEvent message, length delimited. Does not implicitly {@link jsbolo.SoundEvent.verify|verify} messages.
+         * @param message SoundEvent message or plain object to encode
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encodeDelimited(message: jsbolo.IDestroyEntity, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encodeDelimited(message: jsbolo.ISoundEvent, writer?: $protobuf.Writer): $protobuf.Writer;
 
         /**
-         * Decodes a DestroyEntity message from the specified reader or buffer.
+         * Decodes a SoundEvent message from the specified reader or buffer.
          * @param reader Reader or buffer to decode from
          * @param [length] Message length if known beforehand
-         * @returns DestroyEntity
+         * @returns SoundEvent
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): jsbolo.DestroyEntity;
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): jsbolo.SoundEvent;
 
         /**
-         * Decodes a DestroyEntity message from the specified reader or buffer, length delimited.
+         * Decodes a SoundEvent message from the specified reader or buffer, length delimited.
          * @param reader Reader or buffer to decode from
-         * @returns DestroyEntity
+         * @returns SoundEvent
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): jsbolo.DestroyEntity;
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): jsbolo.SoundEvent;
 
         /**
-         * Verifies a DestroyEntity message.
+         * Verifies a SoundEvent message.
          * @param message Plain object to verify
          * @returns `null` if valid, otherwise the reason why it is not
          */
         public static verify(message: { [k: string]: any }): (string|null);
 
         /**
-         * Creates a DestroyEntity message from a plain object. Also converts values to their respective internal types.
+         * Creates a SoundEvent message from a plain object. Also converts values to their respective internal types.
          * @param object Plain object
-         * @returns DestroyEntity
+         * @returns SoundEvent
          */
-        public static fromObject(object: { [k: string]: any }): jsbolo.DestroyEntity;
+        public static fromObject(object: { [k: string]: any }): jsbolo.SoundEvent;
 
         /**
-         * Creates a plain object from a DestroyEntity message. Also converts values to other types if specified.
-         * @param message DestroyEntity
+         * Creates a plain object from a SoundEvent message. Also converts values to other types if specified.
+         * @param message SoundEvent
          * @param [options] Conversion options
          * @returns Plain object
          */
-        public static toObject(message: jsbolo.DestroyEntity, options?: $protobuf.IConversionOptions): { [k: string]: any };
+        public static toObject(message: jsbolo.SoundEvent, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
         /**
-         * Converts this DestroyEntity to JSON.
+         * Converts this SoundEvent to JSON.
          * @returns JSON object
          */
         public toJSON(): { [k: string]: any };
 
         /**
-         * Gets the default type url for DestroyEntity
+         * Gets the default type url for SoundEvent
          * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
          * @returns The default type url
          */
         public static getTypeUrl(typeUrlPrefix?: string): string;
     }
 
-    namespace DestroyEntity {
+    /** Properties of a WelcomeMap. */
+    interface IWelcomeMap {
 
-        /** EntityType enum. */
-        enum EntityType {
-            TANK = 0,
-            BUILDER = 1,
-            SHELL = 2,
-            EXPLOSION = 3,
-            PILLBOX = 4,
-            BASE = 5
-        }
+        /** WelcomeMap width */
+        width?: (number|null);
+
+        /** WelcomeMap height */
+        height?: (number|null);
+
+        /** WelcomeMap terrain */
+        terrain?: (number[]|null);
+
+        /** WelcomeMap terrainLife */
+        terrainLife?: (number[]|null);
+    }
+
+    /** Represents a WelcomeMap. */
+    class WelcomeMap implements IWelcomeMap {
+
+        /**
+         * Constructs a new WelcomeMap.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: jsbolo.IWelcomeMap);
+
+        /** WelcomeMap width. */
+        public width: number;
+
+        /** WelcomeMap height. */
+        public height: number;
+
+        /** WelcomeMap terrain. */
+        public terrain: number[];
+
+        /** WelcomeMap terrainLife. */
+        public terrainLife: number[];
+
+        /**
+         * Creates a new WelcomeMap instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns WelcomeMap instance
+         */
+        public static create(properties?: jsbolo.IWelcomeMap): jsbolo.WelcomeMap;
+
+        /**
+         * Encodes the specified WelcomeMap message. Does not implicitly {@link jsbolo.WelcomeMap.verify|verify} messages.
+         * @param message WelcomeMap message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: jsbolo.IWelcomeMap, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified WelcomeMap message, length delimited. Does not implicitly {@link jsbolo.WelcomeMap.verify|verify} messages.
+         * @param message WelcomeMap message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: jsbolo.IWelcomeMap, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a WelcomeMap message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns WelcomeMap
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): jsbolo.WelcomeMap;
+
+        /**
+         * Decodes a WelcomeMap message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns WelcomeMap
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): jsbolo.WelcomeMap;
+
+        /**
+         * Verifies a WelcomeMap message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a WelcomeMap message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns WelcomeMap
+         */
+        public static fromObject(object: { [k: string]: any }): jsbolo.WelcomeMap;
+
+        /**
+         * Creates a plain object from a WelcomeMap message. Also converts values to other types if specified.
+         * @param message WelcomeMap
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: jsbolo.WelcomeMap, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this WelcomeMap to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for WelcomeMap
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
     }
 
     /** Properties of a WelcomeMessage. */
@@ -1635,8 +1367,26 @@ export namespace jsbolo {
         /** WelcomeMessage currentTick */
         currentTick?: (number|null);
 
+        /** WelcomeMessage mapName */
+        mapName?: (string|null);
+
         /** WelcomeMessage map */
-        map?: (jsbolo.IMapData|null);
+        map?: (jsbolo.IWelcomeMap|null);
+
+        /** WelcomeMessage tanks */
+        tanks?: (jsbolo.ITank[]|null);
+
+        /** WelcomeMessage pillboxes */
+        pillboxes?: (jsbolo.IPillbox[]|null);
+
+        /** WelcomeMessage bases */
+        bases?: (jsbolo.IBase[]|null);
+
+        /** WelcomeMessage matchEnded */
+        matchEnded?: (boolean|null);
+
+        /** WelcomeMessage winningTeams */
+        winningTeams?: (number[]|null);
     }
 
     /** Represents a WelcomeMessage. */
@@ -1657,8 +1407,26 @@ export namespace jsbolo {
         /** WelcomeMessage currentTick. */
         public currentTick: number;
 
+        /** WelcomeMessage mapName. */
+        public mapName: string;
+
         /** WelcomeMessage map. */
-        public map?: (jsbolo.IMapData|null);
+        public map?: (jsbolo.IWelcomeMap|null);
+
+        /** WelcomeMessage tanks. */
+        public tanks: jsbolo.ITank[];
+
+        /** WelcomeMessage pillboxes. */
+        public pillboxes: jsbolo.IPillbox[];
+
+        /** WelcomeMessage bases. */
+        public bases: jsbolo.IBase[];
+
+        /** WelcomeMessage matchEnded. */
+        public matchEnded?: (boolean|null);
+
+        /** WelcomeMessage winningTeams. */
+        public winningTeams: number[];
 
         /**
          * Creates a new WelcomeMessage instance using the specified properties.
@@ -1738,121 +1506,175 @@ export namespace jsbolo {
         public static getTypeUrl(typeUrlPrefix?: string): string;
     }
 
-    /** Properties of a MapData. */
-    interface IMapData {
+    /** Properties of an UpdateMessage. */
+    interface IUpdateMessage {
 
-        /** MapData width */
-        width?: (number|null);
+        /** UpdateMessage tick */
+        tick?: (number|null);
 
-        /** MapData height */
-        height?: (number|null);
+        /** UpdateMessage tanks */
+        tanks?: (jsbolo.ITank[]|null);
 
-        /** MapData terrain */
-        terrain?: (Uint8Array|null);
+        /** UpdateMessage shells */
+        shells?: (jsbolo.IShell[]|null);
 
-        /** MapData pillboxes */
-        pillboxes?: (jsbolo.IPillboxState[]|null);
+        /** UpdateMessage builders */
+        builders?: (jsbolo.IBuilder[]|null);
 
-        /** MapData bases */
-        bases?: (jsbolo.IBaseState[]|null);
+        /** UpdateMessage pillboxes */
+        pillboxes?: (jsbolo.IPillbox[]|null);
+
+        /** UpdateMessage bases */
+        bases?: (jsbolo.IBase[]|null);
+
+        /** UpdateMessage removedTankIds */
+        removedTankIds?: (number[]|null);
+
+        /** UpdateMessage removedBuilderIds */
+        removedBuilderIds?: (number[]|null);
+
+        /** UpdateMessage removedPillboxIds */
+        removedPillboxIds?: (number[]|null);
+
+        /** UpdateMessage removedBaseIds */
+        removedBaseIds?: (number[]|null);
+
+        /** UpdateMessage terrainUpdates */
+        terrainUpdates?: (jsbolo.ITerrainUpdate[]|null);
+
+        /** UpdateMessage soundEvents */
+        soundEvents?: (jsbolo.ISoundEvent[]|null);
+
+        /** UpdateMessage matchEnded */
+        matchEnded?: (boolean|null);
+
+        /** UpdateMessage winningTeams */
+        winningTeams?: (number[]|null);
     }
 
-    /** Represents a MapData. */
-    class MapData implements IMapData {
+    /** Represents an UpdateMessage. */
+    class UpdateMessage implements IUpdateMessage {
 
         /**
-         * Constructs a new MapData.
+         * Constructs a new UpdateMessage.
          * @param [properties] Properties to set
          */
-        constructor(properties?: jsbolo.IMapData);
+        constructor(properties?: jsbolo.IUpdateMessage);
 
-        /** MapData width. */
-        public width: number;
+        /** UpdateMessage tick. */
+        public tick: number;
 
-        /** MapData height. */
-        public height: number;
+        /** UpdateMessage tanks. */
+        public tanks: jsbolo.ITank[];
 
-        /** MapData terrain. */
-        public terrain: Uint8Array;
+        /** UpdateMessage shells. */
+        public shells: jsbolo.IShell[];
 
-        /** MapData pillboxes. */
-        public pillboxes: jsbolo.IPillboxState[];
+        /** UpdateMessage builders. */
+        public builders: jsbolo.IBuilder[];
 
-        /** MapData bases. */
-        public bases: jsbolo.IBaseState[];
+        /** UpdateMessage pillboxes. */
+        public pillboxes: jsbolo.IPillbox[];
+
+        /** UpdateMessage bases. */
+        public bases: jsbolo.IBase[];
+
+        /** UpdateMessage removedTankIds. */
+        public removedTankIds: number[];
+
+        /** UpdateMessage removedBuilderIds. */
+        public removedBuilderIds: number[];
+
+        /** UpdateMessage removedPillboxIds. */
+        public removedPillboxIds: number[];
+
+        /** UpdateMessage removedBaseIds. */
+        public removedBaseIds: number[];
+
+        /** UpdateMessage terrainUpdates. */
+        public terrainUpdates: jsbolo.ITerrainUpdate[];
+
+        /** UpdateMessage soundEvents. */
+        public soundEvents: jsbolo.ISoundEvent[];
+
+        /** UpdateMessage matchEnded. */
+        public matchEnded?: (boolean|null);
+
+        /** UpdateMessage winningTeams. */
+        public winningTeams: number[];
 
         /**
-         * Creates a new MapData instance using the specified properties.
+         * Creates a new UpdateMessage instance using the specified properties.
          * @param [properties] Properties to set
-         * @returns MapData instance
+         * @returns UpdateMessage instance
          */
-        public static create(properties?: jsbolo.IMapData): jsbolo.MapData;
+        public static create(properties?: jsbolo.IUpdateMessage): jsbolo.UpdateMessage;
 
         /**
-         * Encodes the specified MapData message. Does not implicitly {@link jsbolo.MapData.verify|verify} messages.
-         * @param message MapData message or plain object to encode
+         * Encodes the specified UpdateMessage message. Does not implicitly {@link jsbolo.UpdateMessage.verify|verify} messages.
+         * @param message UpdateMessage message or plain object to encode
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encode(message: jsbolo.IMapData, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encode(message: jsbolo.IUpdateMessage, writer?: $protobuf.Writer): $protobuf.Writer;
 
         /**
-         * Encodes the specified MapData message, length delimited. Does not implicitly {@link jsbolo.MapData.verify|verify} messages.
-         * @param message MapData message or plain object to encode
+         * Encodes the specified UpdateMessage message, length delimited. Does not implicitly {@link jsbolo.UpdateMessage.verify|verify} messages.
+         * @param message UpdateMessage message or plain object to encode
          * @param [writer] Writer to encode to
          * @returns Writer
          */
-        public static encodeDelimited(message: jsbolo.IMapData, writer?: $protobuf.Writer): $protobuf.Writer;
+        public static encodeDelimited(message: jsbolo.IUpdateMessage, writer?: $protobuf.Writer): $protobuf.Writer;
 
         /**
-         * Decodes a MapData message from the specified reader or buffer.
+         * Decodes an UpdateMessage message from the specified reader or buffer.
          * @param reader Reader or buffer to decode from
          * @param [length] Message length if known beforehand
-         * @returns MapData
+         * @returns UpdateMessage
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): jsbolo.MapData;
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): jsbolo.UpdateMessage;
 
         /**
-         * Decodes a MapData message from the specified reader or buffer, length delimited.
+         * Decodes an UpdateMessage message from the specified reader or buffer, length delimited.
          * @param reader Reader or buffer to decode from
-         * @returns MapData
+         * @returns UpdateMessage
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): jsbolo.MapData;
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): jsbolo.UpdateMessage;
 
         /**
-         * Verifies a MapData message.
+         * Verifies an UpdateMessage message.
          * @param message Plain object to verify
          * @returns `null` if valid, otherwise the reason why it is not
          */
         public static verify(message: { [k: string]: any }): (string|null);
 
         /**
-         * Creates a MapData message from a plain object. Also converts values to their respective internal types.
+         * Creates an UpdateMessage message from a plain object. Also converts values to their respective internal types.
          * @param object Plain object
-         * @returns MapData
+         * @returns UpdateMessage
          */
-        public static fromObject(object: { [k: string]: any }): jsbolo.MapData;
+        public static fromObject(object: { [k: string]: any }): jsbolo.UpdateMessage;
 
         /**
-         * Creates a plain object from a MapData message. Also converts values to other types if specified.
-         * @param message MapData
+         * Creates a plain object from an UpdateMessage message. Also converts values to other types if specified.
+         * @param message UpdateMessage
          * @param [options] Conversion options
          * @returns Plain object
          */
-        public static toObject(message: jsbolo.MapData, options?: $protobuf.IConversionOptions): { [k: string]: any };
+        public static toObject(message: jsbolo.UpdateMessage, options?: $protobuf.IConversionOptions): { [k: string]: any };
 
         /**
-         * Converts this MapData to JSON.
+         * Converts this UpdateMessage to JSON.
          * @returns JSON object
          */
         public toJSON(): { [k: string]: any };
 
         /**
-         * Gets the default type url for MapData
+         * Gets the default type url for UpdateMessage
          * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
          * @returns The default type url
          */
@@ -1877,9 +1699,6 @@ export namespace jsbolo {
 
         /** ClientMessage input. */
         public input?: (jsbolo.IPlayerInput|null);
-
-        /** ClientMessage message. */
-        public message?: "input";
 
         /**
          * Creates a new ClientMessage instance using the specified properties.
@@ -1966,13 +1785,7 @@ export namespace jsbolo {
         welcome?: (jsbolo.IWelcomeMessage|null);
 
         /** ServerMessage update */
-        update?: (jsbolo.IServerUpdate|null);
-
-        /** ServerMessage create */
-        create?: (jsbolo.ICreateEntity|null);
-
-        /** ServerMessage destroy */
-        destroy?: (jsbolo.IDestroyEntity|null);
+        update?: (jsbolo.IUpdateMessage|null);
     }
 
     /** Represents a ServerMessage. */
@@ -1988,16 +1801,10 @@ export namespace jsbolo {
         public welcome?: (jsbolo.IWelcomeMessage|null);
 
         /** ServerMessage update. */
-        public update?: (jsbolo.IServerUpdate|null);
-
-        /** ServerMessage create. */
-        public create?: (jsbolo.ICreateEntity|null);
-
-        /** ServerMessage destroy. */
-        public destroy?: (jsbolo.IDestroyEntity|null);
+        public update?: (jsbolo.IUpdateMessage|null);
 
         /** ServerMessage message. */
-        public message?: ("welcome"|"update"|"create"|"destroy");
+        public message?: ("welcome"|"update");
 
         /**
          * Creates a new ServerMessage instance using the specified properties.

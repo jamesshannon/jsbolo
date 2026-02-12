@@ -55,7 +55,7 @@ export class NetworkClient {
           console.log('Disconnected from server');
         };
 
-        this.ws.onmessage = (event: MessageEvent<string>): void => {
+        this.ws.onmessage = (event: MessageEvent<ArrayBuffer>): void => {
           this.handleMessage(event.data);
         };
       } catch (error) {
@@ -88,7 +88,7 @@ export class NetworkClient {
     this.ws.send(data);
   }
 
-  private handleMessage(data: string): void {
+  private handleMessage(data: ArrayBuffer | Uint8Array): void {
     try {
       const message: ServerMessage = decodeServerMessage(data);
 

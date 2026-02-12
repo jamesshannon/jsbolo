@@ -4,7 +4,7 @@ import {ServerPillbox} from '../../simulation/pillbox.js';
 import {ServerTank} from '../../simulation/tank.js';
 import {ServerWorld} from '../../simulation/world.js';
 import {SessionStateBroadcaster} from '../session-state-broadcaster.js';
-import {TerrainType} from '@jsbolo/shared';
+import {TerrainType, decodeServerMessage} from '@jsbolo/shared';
 
 function createMockWs() {
   return {
@@ -55,7 +55,7 @@ describe('SessionStateBroadcaster', () => {
     });
 
     expect(result.didBroadcast).toBe(true);
-    const message = JSON.parse((wsB.send as any).mock.calls[0][0]);
+    const message = decodeServerMessage((wsB.send as any).mock.calls[0][0]);
     expect(message.removedTankIds).toContain(tankA.id);
     expect(message.removedBuilderIds).toContain(tankA.builder.id);
   });
@@ -83,7 +83,7 @@ describe('SessionStateBroadcaster', () => {
       matchEndAnnounced: false,
     });
 
-    const message = JSON.parse((ws.send as any).mock.calls[0][0]);
+    const message = decodeServerMessage((ws.send as any).mock.calls[0][0]);
     expect(message.terrainUpdates).toHaveLength(1);
     expect(message.terrainUpdates[0]).toMatchObject({x: 5, y: 6});
     expect(terrainChanges.size).toBe(0);
@@ -111,7 +111,7 @@ describe('SessionStateBroadcaster', () => {
     });
 
     expect(first.matchEndAnnounced).toBe(true);
-    const firstMessage = JSON.parse((ws.send as any).mock.calls[0][0]);
+    const firstMessage = decodeServerMessage((ws.send as any).mock.calls[0][0]);
     expect(firstMessage.matchEnded).toBe(true);
     expect(firstMessage.winningTeams).toEqual([0]);
 

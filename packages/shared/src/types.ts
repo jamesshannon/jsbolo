@@ -31,6 +31,7 @@ export interface Tank {
   onBoat: boolean;
   reload: number;
   firingRange: number;
+  carriedPillbox?: number | null;
 }
 
 /** Builder/LGM state */
@@ -44,7 +45,9 @@ export interface Builder {
   order: BuilderOrder;
   trees: number;
   hasMine: boolean;
+  hasPillbox?: boolean;
   team: number;
+  respawnCounter?: number;
 }
 
 export enum BuilderOrder {

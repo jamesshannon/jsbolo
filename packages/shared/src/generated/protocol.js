@@ -16,6 +16,381 @@ export const jsbolo = $root.jsbolo = (() => {
      */
     const jsbolo = {};
 
+    /**
+     * RangeAdjustment enum.
+     * @name jsbolo.RangeAdjustment
+     * @enum {number}
+     * @property {number} RANGE_ADJUSTMENT_NONE=0 RANGE_ADJUSTMENT_NONE value
+     * @property {number} RANGE_ADJUSTMENT_INCREASE=1 RANGE_ADJUSTMENT_INCREASE value
+     * @property {number} RANGE_ADJUSTMENT_DECREASE=2 RANGE_ADJUSTMENT_DECREASE value
+     */
+    jsbolo.RangeAdjustment = (function() {
+        const valuesById = {}, values = Object.create(valuesById);
+        values[valuesById[0] = "RANGE_ADJUSTMENT_NONE"] = 0;
+        values[valuesById[1] = "RANGE_ADJUSTMENT_INCREASE"] = 1;
+        values[valuesById[2] = "RANGE_ADJUSTMENT_DECREASE"] = 2;
+        return values;
+    })();
+
+    /**
+     * BuildAction enum.
+     * @name jsbolo.BuildAction
+     * @enum {number}
+     * @property {number} BUILD_ACTION_NONE=0 BUILD_ACTION_NONE value
+     * @property {number} BUILD_ACTION_FOREST=1 BUILD_ACTION_FOREST value
+     * @property {number} BUILD_ACTION_ROAD=2 BUILD_ACTION_ROAD value
+     * @property {number} BUILD_ACTION_REPAIR=3 BUILD_ACTION_REPAIR value
+     * @property {number} BUILD_ACTION_BOAT=4 BUILD_ACTION_BOAT value
+     * @property {number} BUILD_ACTION_BUILDING=5 BUILD_ACTION_BUILDING value
+     * @property {number} BUILD_ACTION_PILLBOX=6 BUILD_ACTION_PILLBOX value
+     * @property {number} BUILD_ACTION_MINE=7 BUILD_ACTION_MINE value
+     */
+    jsbolo.BuildAction = (function() {
+        const valuesById = {}, values = Object.create(valuesById);
+        values[valuesById[0] = "BUILD_ACTION_NONE"] = 0;
+        values[valuesById[1] = "BUILD_ACTION_FOREST"] = 1;
+        values[valuesById[2] = "BUILD_ACTION_ROAD"] = 2;
+        values[valuesById[3] = "BUILD_ACTION_REPAIR"] = 3;
+        values[valuesById[4] = "BUILD_ACTION_BOAT"] = 4;
+        values[valuesById[5] = "BUILD_ACTION_BUILDING"] = 5;
+        values[valuesById[6] = "BUILD_ACTION_PILLBOX"] = 6;
+        values[valuesById[7] = "BUILD_ACTION_MINE"] = 7;
+        return values;
+    })();
+
+    /**
+     * BuilderOrder enum.
+     * @name jsbolo.BuilderOrder
+     * @enum {number}
+     * @property {number} BUILDER_ORDER_IN_TANK=0 BUILDER_ORDER_IN_TANK value
+     * @property {number} BUILDER_ORDER_WAITING=1 BUILDER_ORDER_WAITING value
+     * @property {number} BUILDER_ORDER_RETURNING=2 BUILDER_ORDER_RETURNING value
+     * @property {number} BUILDER_ORDER_PARACHUTING=3 BUILDER_ORDER_PARACHUTING value
+     * @property {number} BUILDER_ORDER_HARVESTING=10 BUILDER_ORDER_HARVESTING value
+     * @property {number} BUILDER_ORDER_BUILDING_ROAD=11 BUILDER_ORDER_BUILDING_ROAD value
+     * @property {number} BUILDER_ORDER_REPAIRING=12 BUILDER_ORDER_REPAIRING value
+     * @property {number} BUILDER_ORDER_BUILDING_BOAT=13 BUILDER_ORDER_BUILDING_BOAT value
+     * @property {number} BUILDER_ORDER_BUILDING_WALL=14 BUILDER_ORDER_BUILDING_WALL value
+     * @property {number} BUILDER_ORDER_PLACING_PILLBOX=15 BUILDER_ORDER_PLACING_PILLBOX value
+     * @property {number} BUILDER_ORDER_LAYING_MINE=16 BUILDER_ORDER_LAYING_MINE value
+     */
+    jsbolo.BuilderOrder = (function() {
+        const valuesById = {}, values = Object.create(valuesById);
+        values[valuesById[0] = "BUILDER_ORDER_IN_TANK"] = 0;
+        values[valuesById[1] = "BUILDER_ORDER_WAITING"] = 1;
+        values[valuesById[2] = "BUILDER_ORDER_RETURNING"] = 2;
+        values[valuesById[3] = "BUILDER_ORDER_PARACHUTING"] = 3;
+        values[valuesById[10] = "BUILDER_ORDER_HARVESTING"] = 10;
+        values[valuesById[11] = "BUILDER_ORDER_BUILDING_ROAD"] = 11;
+        values[valuesById[12] = "BUILDER_ORDER_REPAIRING"] = 12;
+        values[valuesById[13] = "BUILDER_ORDER_BUILDING_BOAT"] = 13;
+        values[valuesById[14] = "BUILDER_ORDER_BUILDING_WALL"] = 14;
+        values[valuesById[15] = "BUILDER_ORDER_PLACING_PILLBOX"] = 15;
+        values[valuesById[16] = "BUILDER_ORDER_LAYING_MINE"] = 16;
+        return values;
+    })();
+
+    jsbolo.BuildOrder = (function() {
+
+        /**
+         * Properties of a BuildOrder.
+         * @memberof jsbolo
+         * @interface IBuildOrder
+         * @property {jsbolo.BuildAction|null} [action] BuildOrder action
+         * @property {number|null} [targetX] BuildOrder targetX
+         * @property {number|null} [targetY] BuildOrder targetY
+         */
+
+        /**
+         * Constructs a new BuildOrder.
+         * @memberof jsbolo
+         * @classdesc Represents a BuildOrder.
+         * @implements IBuildOrder
+         * @constructor
+         * @param {jsbolo.IBuildOrder=} [properties] Properties to set
+         */
+        function BuildOrder(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null)
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * BuildOrder action.
+         * @member {jsbolo.BuildAction} action
+         * @memberof jsbolo.BuildOrder
+         * @instance
+         */
+        BuildOrder.prototype.action = 0;
+
+        /**
+         * BuildOrder targetX.
+         * @member {number} targetX
+         * @memberof jsbolo.BuildOrder
+         * @instance
+         */
+        BuildOrder.prototype.targetX = 0;
+
+        /**
+         * BuildOrder targetY.
+         * @member {number} targetY
+         * @memberof jsbolo.BuildOrder
+         * @instance
+         */
+        BuildOrder.prototype.targetY = 0;
+
+        /**
+         * Creates a new BuildOrder instance using the specified properties.
+         * @function create
+         * @memberof jsbolo.BuildOrder
+         * @static
+         * @param {jsbolo.IBuildOrder=} [properties] Properties to set
+         * @returns {jsbolo.BuildOrder} BuildOrder instance
+         */
+        BuildOrder.create = function create(properties) {
+            return new BuildOrder(properties);
+        };
+
+        /**
+         * Encodes the specified BuildOrder message. Does not implicitly {@link jsbolo.BuildOrder.verify|verify} messages.
+         * @function encode
+         * @memberof jsbolo.BuildOrder
+         * @static
+         * @param {jsbolo.IBuildOrder} message BuildOrder message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        BuildOrder.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.action != null && Object.hasOwnProperty.call(message, "action"))
+                writer.uint32(/* id 1, wireType 0 =*/8).int32(message.action);
+            if (message.targetX != null && Object.hasOwnProperty.call(message, "targetX"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.targetX);
+            if (message.targetY != null && Object.hasOwnProperty.call(message, "targetY"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.targetY);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified BuildOrder message, length delimited. Does not implicitly {@link jsbolo.BuildOrder.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof jsbolo.BuildOrder
+         * @static
+         * @param {jsbolo.IBuildOrder} message BuildOrder message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        BuildOrder.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a BuildOrder message from the specified reader or buffer.
+         * @function decode
+         * @memberof jsbolo.BuildOrder
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {jsbolo.BuildOrder} BuildOrder
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        BuildOrder.decode = function decode(reader, length, error) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.jsbolo.BuildOrder();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.action = reader.int32();
+                        break;
+                    }
+                case 2: {
+                        message.targetX = reader.uint32();
+                        break;
+                    }
+                case 3: {
+                        message.targetY = reader.uint32();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a BuildOrder message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof jsbolo.BuildOrder
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {jsbolo.BuildOrder} BuildOrder
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        BuildOrder.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a BuildOrder message.
+         * @function verify
+         * @memberof jsbolo.BuildOrder
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        BuildOrder.verify = function verify(message) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (message.action != null && message.hasOwnProperty("action"))
+                switch (message.action) {
+                default:
+                    return "action: enum value expected";
+                case 0:
+                case 1:
+                case 2:
+                case 3:
+                case 4:
+                case 5:
+                case 6:
+                case 7:
+                    break;
+                }
+            if (message.targetX != null && message.hasOwnProperty("targetX"))
+                if (!$util.isInteger(message.targetX))
+                    return "targetX: integer expected";
+            if (message.targetY != null && message.hasOwnProperty("targetY"))
+                if (!$util.isInteger(message.targetY))
+                    return "targetY: integer expected";
+            return null;
+        };
+
+        /**
+         * Creates a BuildOrder message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof jsbolo.BuildOrder
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {jsbolo.BuildOrder} BuildOrder
+         */
+        BuildOrder.fromObject = function fromObject(object) {
+            if (object instanceof $root.jsbolo.BuildOrder)
+                return object;
+            let message = new $root.jsbolo.BuildOrder();
+            switch (object.action) {
+            default:
+                if (typeof object.action === "number") {
+                    message.action = object.action;
+                    break;
+                }
+                break;
+            case "BUILD_ACTION_NONE":
+            case 0:
+                message.action = 0;
+                break;
+            case "BUILD_ACTION_FOREST":
+            case 1:
+                message.action = 1;
+                break;
+            case "BUILD_ACTION_ROAD":
+            case 2:
+                message.action = 2;
+                break;
+            case "BUILD_ACTION_REPAIR":
+            case 3:
+                message.action = 3;
+                break;
+            case "BUILD_ACTION_BOAT":
+            case 4:
+                message.action = 4;
+                break;
+            case "BUILD_ACTION_BUILDING":
+            case 5:
+                message.action = 5;
+                break;
+            case "BUILD_ACTION_PILLBOX":
+            case 6:
+                message.action = 6;
+                break;
+            case "BUILD_ACTION_MINE":
+            case 7:
+                message.action = 7;
+                break;
+            }
+            if (object.targetX != null)
+                message.targetX = object.targetX >>> 0;
+            if (object.targetY != null)
+                message.targetY = object.targetY >>> 0;
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a BuildOrder message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof jsbolo.BuildOrder
+         * @static
+         * @param {jsbolo.BuildOrder} message BuildOrder
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        BuildOrder.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.action = options.enums === String ? "BUILD_ACTION_NONE" : 0;
+                object.targetX = 0;
+                object.targetY = 0;
+            }
+            if (message.action != null && message.hasOwnProperty("action"))
+                object.action = options.enums === String ? $root.jsbolo.BuildAction[message.action] === undefined ? message.action : $root.jsbolo.BuildAction[message.action] : message.action;
+            if (message.targetX != null && message.hasOwnProperty("targetX"))
+                object.targetX = message.targetX;
+            if (message.targetY != null && message.hasOwnProperty("targetY"))
+                object.targetY = message.targetY;
+            return object;
+        };
+
+        /**
+         * Converts this BuildOrder to JSON.
+         * @function toJSON
+         * @memberof jsbolo.BuildOrder
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        BuildOrder.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for BuildOrder
+         * @function getTypeUrl
+         * @memberof jsbolo.BuildOrder
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        BuildOrder.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/jsbolo.BuildOrder";
+        };
+
+        return BuildOrder;
+    })();
+
     jsbolo.PlayerInput = (function() {
 
         /**
@@ -345,15 +720,15 @@ export const jsbolo = $root.jsbolo = (() => {
                     break;
                 }
                 break;
-            case "NONE":
+            case "RANGE_ADJUSTMENT_NONE":
             case 0:
                 message.rangeAdjustment = 0;
                 break;
-            case "INCREASE":
+            case "RANGE_ADJUSTMENT_INCREASE":
             case 1:
                 message.rangeAdjustment = 1;
                 break;
-            case "DECREASE":
+            case "RANGE_ADJUSTMENT_DECREASE":
             case 2:
                 message.rangeAdjustment = 2;
                 break;
@@ -383,7 +758,7 @@ export const jsbolo = $root.jsbolo = (() => {
                 object.turningCounterClockwise = false;
                 object.shooting = false;
                 object.buildOrder = null;
-                object.rangeAdjustment = options.enums === String ? "NONE" : 0;
+                object.rangeAdjustment = options.enums === String ? "RANGE_ADJUSTMENT_NONE" : 0;
             }
             if (message.sequence != null && message.hasOwnProperty("sequence"))
                 object.sequence = message.sequence;
@@ -435,26 +810,37 @@ export const jsbolo = $root.jsbolo = (() => {
         return PlayerInput;
     })();
 
-    jsbolo.BuildOrder = (function() {
+    jsbolo.Tank = (function() {
 
         /**
-         * Properties of a BuildOrder.
+         * Properties of a Tank.
          * @memberof jsbolo
-         * @interface IBuildOrder
-         * @property {jsbolo.BuildOrder.Action|null} [action] BuildOrder action
-         * @property {number|null} [targetX] BuildOrder targetX
-         * @property {number|null} [targetY] BuildOrder targetY
+         * @interface ITank
+         * @property {number|null} [id] Tank id
+         * @property {number|null} [x] Tank x
+         * @property {number|null} [y] Tank y
+         * @property {number|null} [direction] Tank direction
+         * @property {number|null} [speed] Tank speed
+         * @property {number|null} [armor] Tank armor
+         * @property {number|null} [shells] Tank shells
+         * @property {number|null} [mines] Tank mines
+         * @property {number|null} [trees] Tank trees
+         * @property {number|null} [team] Tank team
+         * @property {boolean|null} [onBoat] Tank onBoat
+         * @property {number|null} [reload] Tank reload
+         * @property {number|null} [firingRange] Tank firingRange
+         * @property {number|null} [carriedPillbox] Tank carriedPillbox
          */
 
         /**
-         * Constructs a new BuildOrder.
+         * Constructs a new Tank.
          * @memberof jsbolo
-         * @classdesc Represents a BuildOrder.
-         * @implements IBuildOrder
+         * @classdesc Represents a Tank.
+         * @implements ITank
          * @constructor
-         * @param {jsbolo.IBuildOrder=} [properties] Properties to set
+         * @param {jsbolo.ITank=} [properties] Properties to set
          */
-        function BuildOrder(properties) {
+        function Tank(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null)
@@ -462,999 +848,148 @@ export const jsbolo = $root.jsbolo = (() => {
         }
 
         /**
-         * BuildOrder action.
-         * @member {jsbolo.BuildOrder.Action} action
-         * @memberof jsbolo.BuildOrder
-         * @instance
-         */
-        BuildOrder.prototype.action = 0;
-
-        /**
-         * BuildOrder targetX.
-         * @member {number} targetX
-         * @memberof jsbolo.BuildOrder
-         * @instance
-         */
-        BuildOrder.prototype.targetX = 0;
-
-        /**
-         * BuildOrder targetY.
-         * @member {number} targetY
-         * @memberof jsbolo.BuildOrder
-         * @instance
-         */
-        BuildOrder.prototype.targetY = 0;
-
-        /**
-         * Creates a new BuildOrder instance using the specified properties.
-         * @function create
-         * @memberof jsbolo.BuildOrder
-         * @static
-         * @param {jsbolo.IBuildOrder=} [properties] Properties to set
-         * @returns {jsbolo.BuildOrder} BuildOrder instance
-         */
-        BuildOrder.create = function create(properties) {
-            return new BuildOrder(properties);
-        };
-
-        /**
-         * Encodes the specified BuildOrder message. Does not implicitly {@link jsbolo.BuildOrder.verify|verify} messages.
-         * @function encode
-         * @memberof jsbolo.BuildOrder
-         * @static
-         * @param {jsbolo.IBuildOrder} message BuildOrder message or plain object to encode
-         * @param {$protobuf.Writer} [writer] Writer to encode to
-         * @returns {$protobuf.Writer} Writer
-         */
-        BuildOrder.encode = function encode(message, writer) {
-            if (!writer)
-                writer = $Writer.create();
-            if (message.action != null && Object.hasOwnProperty.call(message, "action"))
-                writer.uint32(/* id 1, wireType 0 =*/8).int32(message.action);
-            if (message.targetX != null && Object.hasOwnProperty.call(message, "targetX"))
-                writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.targetX);
-            if (message.targetY != null && Object.hasOwnProperty.call(message, "targetY"))
-                writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.targetY);
-            return writer;
-        };
-
-        /**
-         * Encodes the specified BuildOrder message, length delimited. Does not implicitly {@link jsbolo.BuildOrder.verify|verify} messages.
-         * @function encodeDelimited
-         * @memberof jsbolo.BuildOrder
-         * @static
-         * @param {jsbolo.IBuildOrder} message BuildOrder message or plain object to encode
-         * @param {$protobuf.Writer} [writer] Writer to encode to
-         * @returns {$protobuf.Writer} Writer
-         */
-        BuildOrder.encodeDelimited = function encodeDelimited(message, writer) {
-            return this.encode(message, writer).ldelim();
-        };
-
-        /**
-         * Decodes a BuildOrder message from the specified reader or buffer.
-         * @function decode
-         * @memberof jsbolo.BuildOrder
-         * @static
-         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @param {number} [length] Message length if known beforehand
-         * @returns {jsbolo.BuildOrder} BuildOrder
-         * @throws {Error} If the payload is not a reader or valid buffer
-         * @throws {$protobuf.util.ProtocolError} If required fields are missing
-         */
-        BuildOrder.decode = function decode(reader, length, error) {
-            if (!(reader instanceof $Reader))
-                reader = $Reader.create(reader);
-            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.jsbolo.BuildOrder();
-            while (reader.pos < end) {
-                let tag = reader.uint32();
-                if (tag === error)
-                    break;
-                switch (tag >>> 3) {
-                case 1: {
-                        message.action = reader.int32();
-                        break;
-                    }
-                case 2: {
-                        message.targetX = reader.uint32();
-                        break;
-                    }
-                case 3: {
-                        message.targetY = reader.uint32();
-                        break;
-                    }
-                default:
-                    reader.skipType(tag & 7);
-                    break;
-                }
-            }
-            return message;
-        };
-
-        /**
-         * Decodes a BuildOrder message from the specified reader or buffer, length delimited.
-         * @function decodeDelimited
-         * @memberof jsbolo.BuildOrder
-         * @static
-         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @returns {jsbolo.BuildOrder} BuildOrder
-         * @throws {Error} If the payload is not a reader or valid buffer
-         * @throws {$protobuf.util.ProtocolError} If required fields are missing
-         */
-        BuildOrder.decodeDelimited = function decodeDelimited(reader) {
-            if (!(reader instanceof $Reader))
-                reader = new $Reader(reader);
-            return this.decode(reader, reader.uint32());
-        };
-
-        /**
-         * Verifies a BuildOrder message.
-         * @function verify
-         * @memberof jsbolo.BuildOrder
-         * @static
-         * @param {Object.<string,*>} message Plain object to verify
-         * @returns {string|null} `null` if valid, otherwise the reason why it is not
-         */
-        BuildOrder.verify = function verify(message) {
-            if (typeof message !== "object" || message === null)
-                return "object expected";
-            if (message.action != null && message.hasOwnProperty("action"))
-                switch (message.action) {
-                default:
-                    return "action: enum value expected";
-                case 0:
-                case 1:
-                case 2:
-                case 3:
-                case 4:
-                case 5:
-                case 6:
-                case 7:
-                    break;
-                }
-            if (message.targetX != null && message.hasOwnProperty("targetX"))
-                if (!$util.isInteger(message.targetX))
-                    return "targetX: integer expected";
-            if (message.targetY != null && message.hasOwnProperty("targetY"))
-                if (!$util.isInteger(message.targetY))
-                    return "targetY: integer expected";
-            return null;
-        };
-
-        /**
-         * Creates a BuildOrder message from a plain object. Also converts values to their respective internal types.
-         * @function fromObject
-         * @memberof jsbolo.BuildOrder
-         * @static
-         * @param {Object.<string,*>} object Plain object
-         * @returns {jsbolo.BuildOrder} BuildOrder
-         */
-        BuildOrder.fromObject = function fromObject(object) {
-            if (object instanceof $root.jsbolo.BuildOrder)
-                return object;
-            let message = new $root.jsbolo.BuildOrder();
-            switch (object.action) {
-            default:
-                if (typeof object.action === "number") {
-                    message.action = object.action;
-                    break;
-                }
-                break;
-            case "NONE":
-            case 0:
-                message.action = 0;
-                break;
-            case "FOREST":
-            case 1:
-                message.action = 1;
-                break;
-            case "ROAD":
-            case 2:
-                message.action = 2;
-                break;
-            case "REPAIR":
-            case 3:
-                message.action = 3;
-                break;
-            case "BOAT":
-            case 4:
-                message.action = 4;
-                break;
-            case "BUILDING":
-            case 5:
-                message.action = 5;
-                break;
-            case "PILLBOX":
-            case 6:
-                message.action = 6;
-                break;
-            case "MINE":
-            case 7:
-                message.action = 7;
-                break;
-            }
-            if (object.targetX != null)
-                message.targetX = object.targetX >>> 0;
-            if (object.targetY != null)
-                message.targetY = object.targetY >>> 0;
-            return message;
-        };
-
-        /**
-         * Creates a plain object from a BuildOrder message. Also converts values to other types if specified.
-         * @function toObject
-         * @memberof jsbolo.BuildOrder
-         * @static
-         * @param {jsbolo.BuildOrder} message BuildOrder
-         * @param {$protobuf.IConversionOptions} [options] Conversion options
-         * @returns {Object.<string,*>} Plain object
-         */
-        BuildOrder.toObject = function toObject(message, options) {
-            if (!options)
-                options = {};
-            let object = {};
-            if (options.defaults) {
-                object.action = options.enums === String ? "NONE" : 0;
-                object.targetX = 0;
-                object.targetY = 0;
-            }
-            if (message.action != null && message.hasOwnProperty("action"))
-                object.action = options.enums === String ? $root.jsbolo.BuildOrder.Action[message.action] === undefined ? message.action : $root.jsbolo.BuildOrder.Action[message.action] : message.action;
-            if (message.targetX != null && message.hasOwnProperty("targetX"))
-                object.targetX = message.targetX;
-            if (message.targetY != null && message.hasOwnProperty("targetY"))
-                object.targetY = message.targetY;
-            return object;
-        };
-
-        /**
-         * Converts this BuildOrder to JSON.
-         * @function toJSON
-         * @memberof jsbolo.BuildOrder
-         * @instance
-         * @returns {Object.<string,*>} JSON object
-         */
-        BuildOrder.prototype.toJSON = function toJSON() {
-            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
-        };
-
-        /**
-         * Gets the default type url for BuildOrder
-         * @function getTypeUrl
-         * @memberof jsbolo.BuildOrder
-         * @static
-         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
-         * @returns {string} The default type url
-         */
-        BuildOrder.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
-            if (typeUrlPrefix === undefined) {
-                typeUrlPrefix = "type.googleapis.com";
-            }
-            return typeUrlPrefix + "/jsbolo.BuildOrder";
-        };
-
-        /**
-         * Action enum.
-         * @name jsbolo.BuildOrder.Action
-         * @enum {number}
-         * @property {number} NONE=0 NONE value
-         * @property {number} FOREST=1 FOREST value
-         * @property {number} ROAD=2 ROAD value
-         * @property {number} REPAIR=3 REPAIR value
-         * @property {number} BOAT=4 BOAT value
-         * @property {number} BUILDING=5 BUILDING value
-         * @property {number} PILLBOX=6 PILLBOX value
-         * @property {number} MINE=7 MINE value
-         */
-        BuildOrder.Action = (function() {
-            const valuesById = {}, values = Object.create(valuesById);
-            values[valuesById[0] = "NONE"] = 0;
-            values[valuesById[1] = "FOREST"] = 1;
-            values[valuesById[2] = "ROAD"] = 2;
-            values[valuesById[3] = "REPAIR"] = 3;
-            values[valuesById[4] = "BOAT"] = 4;
-            values[valuesById[5] = "BUILDING"] = 5;
-            values[valuesById[6] = "PILLBOX"] = 6;
-            values[valuesById[7] = "MINE"] = 7;
-            return values;
-        })();
-
-        return BuildOrder;
-    })();
-
-    /**
-     * RangeAdjustment enum.
-     * @name jsbolo.RangeAdjustment
-     * @enum {number}
-     * @property {number} NONE=0 NONE value
-     * @property {number} INCREASE=1 INCREASE value
-     * @property {number} DECREASE=2 DECREASE value
-     */
-    jsbolo.RangeAdjustment = (function() {
-        const valuesById = {}, values = Object.create(valuesById);
-        values[valuesById[0] = "NONE"] = 0;
-        values[valuesById[1] = "INCREASE"] = 1;
-        values[valuesById[2] = "DECREASE"] = 2;
-        return values;
-    })();
-
-    jsbolo.ServerUpdate = (function() {
-
-        /**
-         * Properties of a ServerUpdate.
-         * @memberof jsbolo
-         * @interface IServerUpdate
-         * @property {number|null} [tick] ServerUpdate tick
-         * @property {Array.<jsbolo.ITankState>|null} [tanks] ServerUpdate tanks
-         * @property {Array.<jsbolo.IBuilderState>|null} [builders] ServerUpdate builders
-         * @property {Array.<jsbolo.IShellState>|null} [shells] ServerUpdate shells
-         * @property {Array.<jsbolo.IExplosionState>|null} [explosions] ServerUpdate explosions
-         * @property {Array.<jsbolo.ITerrainChange>|null} [terrainChanges] ServerUpdate terrainChanges
-         * @property {Array.<jsbolo.IPillboxState>|null} [pillboxes] ServerUpdate pillboxes
-         * @property {Array.<jsbolo.IBaseState>|null} [bases] ServerUpdate bases
-         */
-
-        /**
-         * Constructs a new ServerUpdate.
-         * @memberof jsbolo
-         * @classdesc Represents a ServerUpdate.
-         * @implements IServerUpdate
-         * @constructor
-         * @param {jsbolo.IServerUpdate=} [properties] Properties to set
-         */
-        function ServerUpdate(properties) {
-            this.tanks = [];
-            this.builders = [];
-            this.shells = [];
-            this.explosions = [];
-            this.terrainChanges = [];
-            this.pillboxes = [];
-            this.bases = [];
-            if (properties)
-                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
-                        this[keys[i]] = properties[keys[i]];
-        }
-
-        /**
-         * ServerUpdate tick.
-         * @member {number} tick
-         * @memberof jsbolo.ServerUpdate
-         * @instance
-         */
-        ServerUpdate.prototype.tick = 0;
-
-        /**
-         * ServerUpdate tanks.
-         * @member {Array.<jsbolo.ITankState>} tanks
-         * @memberof jsbolo.ServerUpdate
-         * @instance
-         */
-        ServerUpdate.prototype.tanks = $util.emptyArray;
-
-        /**
-         * ServerUpdate builders.
-         * @member {Array.<jsbolo.IBuilderState>} builders
-         * @memberof jsbolo.ServerUpdate
-         * @instance
-         */
-        ServerUpdate.prototype.builders = $util.emptyArray;
-
-        /**
-         * ServerUpdate shells.
-         * @member {Array.<jsbolo.IShellState>} shells
-         * @memberof jsbolo.ServerUpdate
-         * @instance
-         */
-        ServerUpdate.prototype.shells = $util.emptyArray;
-
-        /**
-         * ServerUpdate explosions.
-         * @member {Array.<jsbolo.IExplosionState>} explosions
-         * @memberof jsbolo.ServerUpdate
-         * @instance
-         */
-        ServerUpdate.prototype.explosions = $util.emptyArray;
-
-        /**
-         * ServerUpdate terrainChanges.
-         * @member {Array.<jsbolo.ITerrainChange>} terrainChanges
-         * @memberof jsbolo.ServerUpdate
-         * @instance
-         */
-        ServerUpdate.prototype.terrainChanges = $util.emptyArray;
-
-        /**
-         * ServerUpdate pillboxes.
-         * @member {Array.<jsbolo.IPillboxState>} pillboxes
-         * @memberof jsbolo.ServerUpdate
-         * @instance
-         */
-        ServerUpdate.prototype.pillboxes = $util.emptyArray;
-
-        /**
-         * ServerUpdate bases.
-         * @member {Array.<jsbolo.IBaseState>} bases
-         * @memberof jsbolo.ServerUpdate
-         * @instance
-         */
-        ServerUpdate.prototype.bases = $util.emptyArray;
-
-        /**
-         * Creates a new ServerUpdate instance using the specified properties.
-         * @function create
-         * @memberof jsbolo.ServerUpdate
-         * @static
-         * @param {jsbolo.IServerUpdate=} [properties] Properties to set
-         * @returns {jsbolo.ServerUpdate} ServerUpdate instance
-         */
-        ServerUpdate.create = function create(properties) {
-            return new ServerUpdate(properties);
-        };
-
-        /**
-         * Encodes the specified ServerUpdate message. Does not implicitly {@link jsbolo.ServerUpdate.verify|verify} messages.
-         * @function encode
-         * @memberof jsbolo.ServerUpdate
-         * @static
-         * @param {jsbolo.IServerUpdate} message ServerUpdate message or plain object to encode
-         * @param {$protobuf.Writer} [writer] Writer to encode to
-         * @returns {$protobuf.Writer} Writer
-         */
-        ServerUpdate.encode = function encode(message, writer) {
-            if (!writer)
-                writer = $Writer.create();
-            if (message.tick != null && Object.hasOwnProperty.call(message, "tick"))
-                writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.tick);
-            if (message.tanks != null && message.tanks.length)
-                for (let i = 0; i < message.tanks.length; ++i)
-                    $root.jsbolo.TankState.encode(message.tanks[i], writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
-            if (message.builders != null && message.builders.length)
-                for (let i = 0; i < message.builders.length; ++i)
-                    $root.jsbolo.BuilderState.encode(message.builders[i], writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
-            if (message.shells != null && message.shells.length)
-                for (let i = 0; i < message.shells.length; ++i)
-                    $root.jsbolo.ShellState.encode(message.shells[i], writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
-            if (message.explosions != null && message.explosions.length)
-                for (let i = 0; i < message.explosions.length; ++i)
-                    $root.jsbolo.ExplosionState.encode(message.explosions[i], writer.uint32(/* id 5, wireType 2 =*/42).fork()).ldelim();
-            if (message.terrainChanges != null && message.terrainChanges.length)
-                for (let i = 0; i < message.terrainChanges.length; ++i)
-                    $root.jsbolo.TerrainChange.encode(message.terrainChanges[i], writer.uint32(/* id 6, wireType 2 =*/50).fork()).ldelim();
-            if (message.pillboxes != null && message.pillboxes.length)
-                for (let i = 0; i < message.pillboxes.length; ++i)
-                    $root.jsbolo.PillboxState.encode(message.pillboxes[i], writer.uint32(/* id 7, wireType 2 =*/58).fork()).ldelim();
-            if (message.bases != null && message.bases.length)
-                for (let i = 0; i < message.bases.length; ++i)
-                    $root.jsbolo.BaseState.encode(message.bases[i], writer.uint32(/* id 8, wireType 2 =*/66).fork()).ldelim();
-            return writer;
-        };
-
-        /**
-         * Encodes the specified ServerUpdate message, length delimited. Does not implicitly {@link jsbolo.ServerUpdate.verify|verify} messages.
-         * @function encodeDelimited
-         * @memberof jsbolo.ServerUpdate
-         * @static
-         * @param {jsbolo.IServerUpdate} message ServerUpdate message or plain object to encode
-         * @param {$protobuf.Writer} [writer] Writer to encode to
-         * @returns {$protobuf.Writer} Writer
-         */
-        ServerUpdate.encodeDelimited = function encodeDelimited(message, writer) {
-            return this.encode(message, writer).ldelim();
-        };
-
-        /**
-         * Decodes a ServerUpdate message from the specified reader or buffer.
-         * @function decode
-         * @memberof jsbolo.ServerUpdate
-         * @static
-         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @param {number} [length] Message length if known beforehand
-         * @returns {jsbolo.ServerUpdate} ServerUpdate
-         * @throws {Error} If the payload is not a reader or valid buffer
-         * @throws {$protobuf.util.ProtocolError} If required fields are missing
-         */
-        ServerUpdate.decode = function decode(reader, length, error) {
-            if (!(reader instanceof $Reader))
-                reader = $Reader.create(reader);
-            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.jsbolo.ServerUpdate();
-            while (reader.pos < end) {
-                let tag = reader.uint32();
-                if (tag === error)
-                    break;
-                switch (tag >>> 3) {
-                case 1: {
-                        message.tick = reader.uint32();
-                        break;
-                    }
-                case 2: {
-                        if (!(message.tanks && message.tanks.length))
-                            message.tanks = [];
-                        message.tanks.push($root.jsbolo.TankState.decode(reader, reader.uint32()));
-                        break;
-                    }
-                case 3: {
-                        if (!(message.builders && message.builders.length))
-                            message.builders = [];
-                        message.builders.push($root.jsbolo.BuilderState.decode(reader, reader.uint32()));
-                        break;
-                    }
-                case 4: {
-                        if (!(message.shells && message.shells.length))
-                            message.shells = [];
-                        message.shells.push($root.jsbolo.ShellState.decode(reader, reader.uint32()));
-                        break;
-                    }
-                case 5: {
-                        if (!(message.explosions && message.explosions.length))
-                            message.explosions = [];
-                        message.explosions.push($root.jsbolo.ExplosionState.decode(reader, reader.uint32()));
-                        break;
-                    }
-                case 6: {
-                        if (!(message.terrainChanges && message.terrainChanges.length))
-                            message.terrainChanges = [];
-                        message.terrainChanges.push($root.jsbolo.TerrainChange.decode(reader, reader.uint32()));
-                        break;
-                    }
-                case 7: {
-                        if (!(message.pillboxes && message.pillboxes.length))
-                            message.pillboxes = [];
-                        message.pillboxes.push($root.jsbolo.PillboxState.decode(reader, reader.uint32()));
-                        break;
-                    }
-                case 8: {
-                        if (!(message.bases && message.bases.length))
-                            message.bases = [];
-                        message.bases.push($root.jsbolo.BaseState.decode(reader, reader.uint32()));
-                        break;
-                    }
-                default:
-                    reader.skipType(tag & 7);
-                    break;
-                }
-            }
-            return message;
-        };
-
-        /**
-         * Decodes a ServerUpdate message from the specified reader or buffer, length delimited.
-         * @function decodeDelimited
-         * @memberof jsbolo.ServerUpdate
-         * @static
-         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @returns {jsbolo.ServerUpdate} ServerUpdate
-         * @throws {Error} If the payload is not a reader or valid buffer
-         * @throws {$protobuf.util.ProtocolError} If required fields are missing
-         */
-        ServerUpdate.decodeDelimited = function decodeDelimited(reader) {
-            if (!(reader instanceof $Reader))
-                reader = new $Reader(reader);
-            return this.decode(reader, reader.uint32());
-        };
-
-        /**
-         * Verifies a ServerUpdate message.
-         * @function verify
-         * @memberof jsbolo.ServerUpdate
-         * @static
-         * @param {Object.<string,*>} message Plain object to verify
-         * @returns {string|null} `null` if valid, otherwise the reason why it is not
-         */
-        ServerUpdate.verify = function verify(message) {
-            if (typeof message !== "object" || message === null)
-                return "object expected";
-            if (message.tick != null && message.hasOwnProperty("tick"))
-                if (!$util.isInteger(message.tick))
-                    return "tick: integer expected";
-            if (message.tanks != null && message.hasOwnProperty("tanks")) {
-                if (!Array.isArray(message.tanks))
-                    return "tanks: array expected";
-                for (let i = 0; i < message.tanks.length; ++i) {
-                    let error = $root.jsbolo.TankState.verify(message.tanks[i]);
-                    if (error)
-                        return "tanks." + error;
-                }
-            }
-            if (message.builders != null && message.hasOwnProperty("builders")) {
-                if (!Array.isArray(message.builders))
-                    return "builders: array expected";
-                for (let i = 0; i < message.builders.length; ++i) {
-                    let error = $root.jsbolo.BuilderState.verify(message.builders[i]);
-                    if (error)
-                        return "builders." + error;
-                }
-            }
-            if (message.shells != null && message.hasOwnProperty("shells")) {
-                if (!Array.isArray(message.shells))
-                    return "shells: array expected";
-                for (let i = 0; i < message.shells.length; ++i) {
-                    let error = $root.jsbolo.ShellState.verify(message.shells[i]);
-                    if (error)
-                        return "shells." + error;
-                }
-            }
-            if (message.explosions != null && message.hasOwnProperty("explosions")) {
-                if (!Array.isArray(message.explosions))
-                    return "explosions: array expected";
-                for (let i = 0; i < message.explosions.length; ++i) {
-                    let error = $root.jsbolo.ExplosionState.verify(message.explosions[i]);
-                    if (error)
-                        return "explosions." + error;
-                }
-            }
-            if (message.terrainChanges != null && message.hasOwnProperty("terrainChanges")) {
-                if (!Array.isArray(message.terrainChanges))
-                    return "terrainChanges: array expected";
-                for (let i = 0; i < message.terrainChanges.length; ++i) {
-                    let error = $root.jsbolo.TerrainChange.verify(message.terrainChanges[i]);
-                    if (error)
-                        return "terrainChanges." + error;
-                }
-            }
-            if (message.pillboxes != null && message.hasOwnProperty("pillboxes")) {
-                if (!Array.isArray(message.pillboxes))
-                    return "pillboxes: array expected";
-                for (let i = 0; i < message.pillboxes.length; ++i) {
-                    let error = $root.jsbolo.PillboxState.verify(message.pillboxes[i]);
-                    if (error)
-                        return "pillboxes." + error;
-                }
-            }
-            if (message.bases != null && message.hasOwnProperty("bases")) {
-                if (!Array.isArray(message.bases))
-                    return "bases: array expected";
-                for (let i = 0; i < message.bases.length; ++i) {
-                    let error = $root.jsbolo.BaseState.verify(message.bases[i]);
-                    if (error)
-                        return "bases." + error;
-                }
-            }
-            return null;
-        };
-
-        /**
-         * Creates a ServerUpdate message from a plain object. Also converts values to their respective internal types.
-         * @function fromObject
-         * @memberof jsbolo.ServerUpdate
-         * @static
-         * @param {Object.<string,*>} object Plain object
-         * @returns {jsbolo.ServerUpdate} ServerUpdate
-         */
-        ServerUpdate.fromObject = function fromObject(object) {
-            if (object instanceof $root.jsbolo.ServerUpdate)
-                return object;
-            let message = new $root.jsbolo.ServerUpdate();
-            if (object.tick != null)
-                message.tick = object.tick >>> 0;
-            if (object.tanks) {
-                if (!Array.isArray(object.tanks))
-                    throw TypeError(".jsbolo.ServerUpdate.tanks: array expected");
-                message.tanks = [];
-                for (let i = 0; i < object.tanks.length; ++i) {
-                    if (typeof object.tanks[i] !== "object")
-                        throw TypeError(".jsbolo.ServerUpdate.tanks: object expected");
-                    message.tanks[i] = $root.jsbolo.TankState.fromObject(object.tanks[i]);
-                }
-            }
-            if (object.builders) {
-                if (!Array.isArray(object.builders))
-                    throw TypeError(".jsbolo.ServerUpdate.builders: array expected");
-                message.builders = [];
-                for (let i = 0; i < object.builders.length; ++i) {
-                    if (typeof object.builders[i] !== "object")
-                        throw TypeError(".jsbolo.ServerUpdate.builders: object expected");
-                    message.builders[i] = $root.jsbolo.BuilderState.fromObject(object.builders[i]);
-                }
-            }
-            if (object.shells) {
-                if (!Array.isArray(object.shells))
-                    throw TypeError(".jsbolo.ServerUpdate.shells: array expected");
-                message.shells = [];
-                for (let i = 0; i < object.shells.length; ++i) {
-                    if (typeof object.shells[i] !== "object")
-                        throw TypeError(".jsbolo.ServerUpdate.shells: object expected");
-                    message.shells[i] = $root.jsbolo.ShellState.fromObject(object.shells[i]);
-                }
-            }
-            if (object.explosions) {
-                if (!Array.isArray(object.explosions))
-                    throw TypeError(".jsbolo.ServerUpdate.explosions: array expected");
-                message.explosions = [];
-                for (let i = 0; i < object.explosions.length; ++i) {
-                    if (typeof object.explosions[i] !== "object")
-                        throw TypeError(".jsbolo.ServerUpdate.explosions: object expected");
-                    message.explosions[i] = $root.jsbolo.ExplosionState.fromObject(object.explosions[i]);
-                }
-            }
-            if (object.terrainChanges) {
-                if (!Array.isArray(object.terrainChanges))
-                    throw TypeError(".jsbolo.ServerUpdate.terrainChanges: array expected");
-                message.terrainChanges = [];
-                for (let i = 0; i < object.terrainChanges.length; ++i) {
-                    if (typeof object.terrainChanges[i] !== "object")
-                        throw TypeError(".jsbolo.ServerUpdate.terrainChanges: object expected");
-                    message.terrainChanges[i] = $root.jsbolo.TerrainChange.fromObject(object.terrainChanges[i]);
-                }
-            }
-            if (object.pillboxes) {
-                if (!Array.isArray(object.pillboxes))
-                    throw TypeError(".jsbolo.ServerUpdate.pillboxes: array expected");
-                message.pillboxes = [];
-                for (let i = 0; i < object.pillboxes.length; ++i) {
-                    if (typeof object.pillboxes[i] !== "object")
-                        throw TypeError(".jsbolo.ServerUpdate.pillboxes: object expected");
-                    message.pillboxes[i] = $root.jsbolo.PillboxState.fromObject(object.pillboxes[i]);
-                }
-            }
-            if (object.bases) {
-                if (!Array.isArray(object.bases))
-                    throw TypeError(".jsbolo.ServerUpdate.bases: array expected");
-                message.bases = [];
-                for (let i = 0; i < object.bases.length; ++i) {
-                    if (typeof object.bases[i] !== "object")
-                        throw TypeError(".jsbolo.ServerUpdate.bases: object expected");
-                    message.bases[i] = $root.jsbolo.BaseState.fromObject(object.bases[i]);
-                }
-            }
-            return message;
-        };
-
-        /**
-         * Creates a plain object from a ServerUpdate message. Also converts values to other types if specified.
-         * @function toObject
-         * @memberof jsbolo.ServerUpdate
-         * @static
-         * @param {jsbolo.ServerUpdate} message ServerUpdate
-         * @param {$protobuf.IConversionOptions} [options] Conversion options
-         * @returns {Object.<string,*>} Plain object
-         */
-        ServerUpdate.toObject = function toObject(message, options) {
-            if (!options)
-                options = {};
-            let object = {};
-            if (options.arrays || options.defaults) {
-                object.tanks = [];
-                object.builders = [];
-                object.shells = [];
-                object.explosions = [];
-                object.terrainChanges = [];
-                object.pillboxes = [];
-                object.bases = [];
-            }
-            if (options.defaults)
-                object.tick = 0;
-            if (message.tick != null && message.hasOwnProperty("tick"))
-                object.tick = message.tick;
-            if (message.tanks && message.tanks.length) {
-                object.tanks = [];
-                for (let j = 0; j < message.tanks.length; ++j)
-                    object.tanks[j] = $root.jsbolo.TankState.toObject(message.tanks[j], options);
-            }
-            if (message.builders && message.builders.length) {
-                object.builders = [];
-                for (let j = 0; j < message.builders.length; ++j)
-                    object.builders[j] = $root.jsbolo.BuilderState.toObject(message.builders[j], options);
-            }
-            if (message.shells && message.shells.length) {
-                object.shells = [];
-                for (let j = 0; j < message.shells.length; ++j)
-                    object.shells[j] = $root.jsbolo.ShellState.toObject(message.shells[j], options);
-            }
-            if (message.explosions && message.explosions.length) {
-                object.explosions = [];
-                for (let j = 0; j < message.explosions.length; ++j)
-                    object.explosions[j] = $root.jsbolo.ExplosionState.toObject(message.explosions[j], options);
-            }
-            if (message.terrainChanges && message.terrainChanges.length) {
-                object.terrainChanges = [];
-                for (let j = 0; j < message.terrainChanges.length; ++j)
-                    object.terrainChanges[j] = $root.jsbolo.TerrainChange.toObject(message.terrainChanges[j], options);
-            }
-            if (message.pillboxes && message.pillboxes.length) {
-                object.pillboxes = [];
-                for (let j = 0; j < message.pillboxes.length; ++j)
-                    object.pillboxes[j] = $root.jsbolo.PillboxState.toObject(message.pillboxes[j], options);
-            }
-            if (message.bases && message.bases.length) {
-                object.bases = [];
-                for (let j = 0; j < message.bases.length; ++j)
-                    object.bases[j] = $root.jsbolo.BaseState.toObject(message.bases[j], options);
-            }
-            return object;
-        };
-
-        /**
-         * Converts this ServerUpdate to JSON.
-         * @function toJSON
-         * @memberof jsbolo.ServerUpdate
-         * @instance
-         * @returns {Object.<string,*>} JSON object
-         */
-        ServerUpdate.prototype.toJSON = function toJSON() {
-            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
-        };
-
-        /**
-         * Gets the default type url for ServerUpdate
-         * @function getTypeUrl
-         * @memberof jsbolo.ServerUpdate
-         * @static
-         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
-         * @returns {string} The default type url
-         */
-        ServerUpdate.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
-            if (typeUrlPrefix === undefined) {
-                typeUrlPrefix = "type.googleapis.com";
-            }
-            return typeUrlPrefix + "/jsbolo.ServerUpdate";
-        };
-
-        return ServerUpdate;
-    })();
-
-    jsbolo.TankState = (function() {
-
-        /**
-         * Properties of a TankState.
-         * @memberof jsbolo
-         * @interface ITankState
-         * @property {number|null} [id] TankState id
-         * @property {number|null} [x] TankState x
-         * @property {number|null} [y] TankState y
-         * @property {number|null} [direction] TankState direction
-         * @property {number|null} [speed] TankState speed
-         * @property {number|null} [armor] TankState armor
-         * @property {number|null} [shells] TankState shells
-         * @property {number|null} [mines] TankState mines
-         * @property {number|null} [trees] TankState trees
-         * @property {number|null} [team] TankState team
-         * @property {boolean|null} [onBoat] TankState onBoat
-         * @property {number|null} [reload] TankState reload
-         * @property {number|null} [firingRange] TankState firingRange
-         */
-
-        /**
-         * Constructs a new TankState.
-         * @memberof jsbolo
-         * @classdesc Represents a TankState.
-         * @implements ITankState
-         * @constructor
-         * @param {jsbolo.ITankState=} [properties] Properties to set
-         */
-        function TankState(properties) {
-            if (properties)
-                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
-                        this[keys[i]] = properties[keys[i]];
-        }
-
-        /**
-         * TankState id.
+         * Tank id.
          * @member {number} id
-         * @memberof jsbolo.TankState
+         * @memberof jsbolo.Tank
          * @instance
          */
-        TankState.prototype.id = 0;
+        Tank.prototype.id = 0;
 
         /**
-         * TankState x.
+         * Tank x.
          * @member {number} x
-         * @memberof jsbolo.TankState
+         * @memberof jsbolo.Tank
          * @instance
          */
-        TankState.prototype.x = 0;
+        Tank.prototype.x = 0;
 
         /**
-         * TankState y.
+         * Tank y.
          * @member {number} y
-         * @memberof jsbolo.TankState
+         * @memberof jsbolo.Tank
          * @instance
          */
-        TankState.prototype.y = 0;
+        Tank.prototype.y = 0;
 
         /**
-         * TankState direction.
+         * Tank direction.
          * @member {number} direction
-         * @memberof jsbolo.TankState
+         * @memberof jsbolo.Tank
          * @instance
          */
-        TankState.prototype.direction = 0;
+        Tank.prototype.direction = 0;
 
         /**
-         * TankState speed.
+         * Tank speed.
          * @member {number} speed
-         * @memberof jsbolo.TankState
+         * @memberof jsbolo.Tank
          * @instance
          */
-        TankState.prototype.speed = 0;
+        Tank.prototype.speed = 0;
 
         /**
-         * TankState armor.
+         * Tank armor.
          * @member {number} armor
-         * @memberof jsbolo.TankState
+         * @memberof jsbolo.Tank
          * @instance
          */
-        TankState.prototype.armor = 0;
+        Tank.prototype.armor = 0;
 
         /**
-         * TankState shells.
+         * Tank shells.
          * @member {number} shells
-         * @memberof jsbolo.TankState
+         * @memberof jsbolo.Tank
          * @instance
          */
-        TankState.prototype.shells = 0;
+        Tank.prototype.shells = 0;
 
         /**
-         * TankState mines.
+         * Tank mines.
          * @member {number} mines
-         * @memberof jsbolo.TankState
+         * @memberof jsbolo.Tank
          * @instance
          */
-        TankState.prototype.mines = 0;
+        Tank.prototype.mines = 0;
 
         /**
-         * TankState trees.
+         * Tank trees.
          * @member {number} trees
-         * @memberof jsbolo.TankState
+         * @memberof jsbolo.Tank
          * @instance
          */
-        TankState.prototype.trees = 0;
+        Tank.prototype.trees = 0;
 
         /**
-         * TankState team.
+         * Tank team.
          * @member {number} team
-         * @memberof jsbolo.TankState
+         * @memberof jsbolo.Tank
          * @instance
          */
-        TankState.prototype.team = 0;
+        Tank.prototype.team = 0;
 
         /**
-         * TankState onBoat.
+         * Tank onBoat.
          * @member {boolean} onBoat
-         * @memberof jsbolo.TankState
+         * @memberof jsbolo.Tank
          * @instance
          */
-        TankState.prototype.onBoat = false;
+        Tank.prototype.onBoat = false;
 
         /**
-         * TankState reload.
+         * Tank reload.
          * @member {number} reload
-         * @memberof jsbolo.TankState
+         * @memberof jsbolo.Tank
          * @instance
          */
-        TankState.prototype.reload = 0;
+        Tank.prototype.reload = 0;
 
         /**
-         * TankState firingRange.
+         * Tank firingRange.
          * @member {number} firingRange
-         * @memberof jsbolo.TankState
+         * @memberof jsbolo.Tank
          * @instance
          */
-        TankState.prototype.firingRange = 0;
+        Tank.prototype.firingRange = 0;
 
         /**
-         * Creates a new TankState instance using the specified properties.
-         * @function create
-         * @memberof jsbolo.TankState
-         * @static
-         * @param {jsbolo.ITankState=} [properties] Properties to set
-         * @returns {jsbolo.TankState} TankState instance
+         * Tank carriedPillbox.
+         * @member {number|null|undefined} carriedPillbox
+         * @memberof jsbolo.Tank
+         * @instance
          */
-        TankState.create = function create(properties) {
-            return new TankState(properties);
+        Tank.prototype.carriedPillbox = null;
+
+        // OneOf field names bound to virtual getters and setters
+        let $oneOfFields;
+
+        // Virtual OneOf for proto3 optional field
+        Object.defineProperty(Tank.prototype, "_carriedPillbox", {
+            get: $util.oneOfGetter($oneOfFields = ["carriedPillbox"]),
+            set: $util.oneOfSetter($oneOfFields)
+        });
+
+        /**
+         * Creates a new Tank instance using the specified properties.
+         * @function create
+         * @memberof jsbolo.Tank
+         * @static
+         * @param {jsbolo.ITank=} [properties] Properties to set
+         * @returns {jsbolo.Tank} Tank instance
+         */
+        Tank.create = function create(properties) {
+            return new Tank(properties);
         };
 
         /**
-         * Encodes the specified TankState message. Does not implicitly {@link jsbolo.TankState.verify|verify} messages.
+         * Encodes the specified Tank message. Does not implicitly {@link jsbolo.Tank.verify|verify} messages.
          * @function encode
-         * @memberof jsbolo.TankState
+         * @memberof jsbolo.Tank
          * @static
-         * @param {jsbolo.ITankState} message TankState message or plain object to encode
+         * @param {jsbolo.ITank} message Tank message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
-        TankState.encode = function encode(message, writer) {
+        Tank.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
             if (message.id != null && Object.hasOwnProperty.call(message, "id"))
@@ -1483,37 +1018,39 @@ export const jsbolo = $root.jsbolo = (() => {
                 writer.uint32(/* id 12, wireType 0 =*/96).uint32(message.reload);
             if (message.firingRange != null && Object.hasOwnProperty.call(message, "firingRange"))
                 writer.uint32(/* id 13, wireType 5 =*/109).float(message.firingRange);
+            if (message.carriedPillbox != null && Object.hasOwnProperty.call(message, "carriedPillbox"))
+                writer.uint32(/* id 14, wireType 0 =*/112).uint32(message.carriedPillbox);
             return writer;
         };
 
         /**
-         * Encodes the specified TankState message, length delimited. Does not implicitly {@link jsbolo.TankState.verify|verify} messages.
+         * Encodes the specified Tank message, length delimited. Does not implicitly {@link jsbolo.Tank.verify|verify} messages.
          * @function encodeDelimited
-         * @memberof jsbolo.TankState
+         * @memberof jsbolo.Tank
          * @static
-         * @param {jsbolo.ITankState} message TankState message or plain object to encode
+         * @param {jsbolo.ITank} message Tank message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
-        TankState.encodeDelimited = function encodeDelimited(message, writer) {
+        Tank.encodeDelimited = function encodeDelimited(message, writer) {
             return this.encode(message, writer).ldelim();
         };
 
         /**
-         * Decodes a TankState message from the specified reader or buffer.
+         * Decodes a Tank message from the specified reader or buffer.
          * @function decode
-         * @memberof jsbolo.TankState
+         * @memberof jsbolo.Tank
          * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
-         * @returns {jsbolo.TankState} TankState
+         * @returns {jsbolo.Tank} Tank
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        TankState.decode = function decode(reader, length, error) {
+        Tank.decode = function decode(reader, length, error) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
-            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.jsbolo.TankState();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.jsbolo.Tank();
             while (reader.pos < end) {
                 let tag = reader.uint32();
                 if (tag === error)
@@ -1571,6 +1108,10 @@ export const jsbolo = $root.jsbolo = (() => {
                         message.firingRange = reader.float();
                         break;
                     }
+                case 14: {
+                        message.carriedPillbox = reader.uint32();
+                        break;
+                    }
                 default:
                     reader.skipType(tag & 7);
                     break;
@@ -1580,32 +1121,33 @@ export const jsbolo = $root.jsbolo = (() => {
         };
 
         /**
-         * Decodes a TankState message from the specified reader or buffer, length delimited.
+         * Decodes a Tank message from the specified reader or buffer, length delimited.
          * @function decodeDelimited
-         * @memberof jsbolo.TankState
+         * @memberof jsbolo.Tank
          * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @returns {jsbolo.TankState} TankState
+         * @returns {jsbolo.Tank} Tank
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        TankState.decodeDelimited = function decodeDelimited(reader) {
+        Tank.decodeDelimited = function decodeDelimited(reader) {
             if (!(reader instanceof $Reader))
                 reader = new $Reader(reader);
             return this.decode(reader, reader.uint32());
         };
 
         /**
-         * Verifies a TankState message.
+         * Verifies a Tank message.
          * @function verify
-         * @memberof jsbolo.TankState
+         * @memberof jsbolo.Tank
          * @static
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        TankState.verify = function verify(message) {
+        Tank.verify = function verify(message) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            let properties = {};
             if (message.id != null && message.hasOwnProperty("id"))
                 if (!$util.isInteger(message.id))
                     return "id: integer expected";
@@ -1645,21 +1187,26 @@ export const jsbolo = $root.jsbolo = (() => {
             if (message.firingRange != null && message.hasOwnProperty("firingRange"))
                 if (typeof message.firingRange !== "number")
                     return "firingRange: number expected";
+            if (message.carriedPillbox != null && message.hasOwnProperty("carriedPillbox")) {
+                properties._carriedPillbox = 1;
+                if (!$util.isInteger(message.carriedPillbox))
+                    return "carriedPillbox: integer expected";
+            }
             return null;
         };
 
         /**
-         * Creates a TankState message from a plain object. Also converts values to their respective internal types.
+         * Creates a Tank message from a plain object. Also converts values to their respective internal types.
          * @function fromObject
-         * @memberof jsbolo.TankState
+         * @memberof jsbolo.Tank
          * @static
          * @param {Object.<string,*>} object Plain object
-         * @returns {jsbolo.TankState} TankState
+         * @returns {jsbolo.Tank} Tank
          */
-        TankState.fromObject = function fromObject(object) {
-            if (object instanceof $root.jsbolo.TankState)
+        Tank.fromObject = function fromObject(object) {
+            if (object instanceof $root.jsbolo.Tank)
                 return object;
-            let message = new $root.jsbolo.TankState();
+            let message = new $root.jsbolo.Tank();
             if (object.id != null)
                 message.id = object.id >>> 0;
             if (object.x != null)
@@ -1686,19 +1233,21 @@ export const jsbolo = $root.jsbolo = (() => {
                 message.reload = object.reload >>> 0;
             if (object.firingRange != null)
                 message.firingRange = Number(object.firingRange);
+            if (object.carriedPillbox != null)
+                message.carriedPillbox = object.carriedPillbox >>> 0;
             return message;
         };
 
         /**
-         * Creates a plain object from a TankState message. Also converts values to other types if specified.
+         * Creates a plain object from a Tank message. Also converts values to other types if specified.
          * @function toObject
-         * @memberof jsbolo.TankState
+         * @memberof jsbolo.Tank
          * @static
-         * @param {jsbolo.TankState} message TankState
+         * @param {jsbolo.Tank} message Tank
          * @param {$protobuf.IConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
-        TankState.toObject = function toObject(message, options) {
+        Tank.toObject = function toObject(message, options) {
             if (!options)
                 options = {};
             let object = {};
@@ -1743,65 +1292,72 @@ export const jsbolo = $root.jsbolo = (() => {
                 object.reload = message.reload;
             if (message.firingRange != null && message.hasOwnProperty("firingRange"))
                 object.firingRange = options.json && !isFinite(message.firingRange) ? String(message.firingRange) : message.firingRange;
+            if (message.carriedPillbox != null && message.hasOwnProperty("carriedPillbox")) {
+                object.carriedPillbox = message.carriedPillbox;
+                if (options.oneofs)
+                    object._carriedPillbox = "carriedPillbox";
+            }
             return object;
         };
 
         /**
-         * Converts this TankState to JSON.
+         * Converts this Tank to JSON.
          * @function toJSON
-         * @memberof jsbolo.TankState
+         * @memberof jsbolo.Tank
          * @instance
          * @returns {Object.<string,*>} JSON object
          */
-        TankState.prototype.toJSON = function toJSON() {
+        Tank.prototype.toJSON = function toJSON() {
             return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
         };
 
         /**
-         * Gets the default type url for TankState
+         * Gets the default type url for Tank
          * @function getTypeUrl
-         * @memberof jsbolo.TankState
+         * @memberof jsbolo.Tank
          * @static
          * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
          * @returns {string} The default type url
          */
-        TankState.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+        Tank.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
             if (typeUrlPrefix === undefined) {
                 typeUrlPrefix = "type.googleapis.com";
             }
-            return typeUrlPrefix + "/jsbolo.TankState";
+            return typeUrlPrefix + "/jsbolo.Tank";
         };
 
-        return TankState;
+        return Tank;
     })();
 
-    jsbolo.BuilderState = (function() {
+    jsbolo.Builder = (function() {
 
         /**
-         * Properties of a BuilderState.
+         * Properties of a Builder.
          * @memberof jsbolo
-         * @interface IBuilderState
-         * @property {number|null} [id] BuilderState id
-         * @property {number|null} [ownerTankId] BuilderState ownerTankId
-         * @property {number|null} [x] BuilderState x
-         * @property {number|null} [y] BuilderState y
-         * @property {number|null} [targetX] BuilderState targetX
-         * @property {number|null} [targetY] BuilderState targetY
-         * @property {jsbolo.BuilderOrder|null} [order] BuilderState order
-         * @property {number|null} [trees] BuilderState trees
-         * @property {boolean|null} [hasMine] BuilderState hasMine
-         * @property {number|null} [team] BuilderState team
+         * @interface IBuilder
+         * @property {number|null} [id] Builder id
+         * @property {number|null} [ownerTankId] Builder ownerTankId
+         * @property {number|null} [x] Builder x
+         * @property {number|null} [y] Builder y
+         * @property {number|null} [targetX] Builder targetX
+         * @property {number|null} [targetY] Builder targetY
+         * @property {jsbolo.BuilderOrder|null} [order] Builder order
+         * @property {number|null} [trees] Builder trees
+         * @property {boolean|null} [hasMine] Builder hasMine
+         * @property {boolean|null} [hasPillbox] Builder hasPillbox
+         * @property {number|null} [team] Builder team
+         * @property {number|null} [respawnCounter] Builder respawnCounter
          */
 
         /**
-         * Constructs a new BuilderState.
+         * Constructs a new Builder.
          * @memberof jsbolo
-         * @classdesc Represents a BuilderState.
-         * @implements IBuilderState
+         * @classdesc Represents a Builder.
+         * @implements IBuilder
          * @constructor
-         * @param {jsbolo.IBuilderState=} [properties] Properties to set
+         * @param {jsbolo.IBuilder=} [properties] Properties to set
          */
-        function BuilderState(properties) {
+        function Builder(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null)
@@ -1809,107 +1365,123 @@ export const jsbolo = $root.jsbolo = (() => {
         }
 
         /**
-         * BuilderState id.
+         * Builder id.
          * @member {number} id
-         * @memberof jsbolo.BuilderState
+         * @memberof jsbolo.Builder
          * @instance
          */
-        BuilderState.prototype.id = 0;
+        Builder.prototype.id = 0;
 
         /**
-         * BuilderState ownerTankId.
+         * Builder ownerTankId.
          * @member {number} ownerTankId
-         * @memberof jsbolo.BuilderState
+         * @memberof jsbolo.Builder
          * @instance
          */
-        BuilderState.prototype.ownerTankId = 0;
+        Builder.prototype.ownerTankId = 0;
 
         /**
-         * BuilderState x.
+         * Builder x.
          * @member {number} x
-         * @memberof jsbolo.BuilderState
+         * @memberof jsbolo.Builder
          * @instance
          */
-        BuilderState.prototype.x = 0;
+        Builder.prototype.x = 0;
 
         /**
-         * BuilderState y.
+         * Builder y.
          * @member {number} y
-         * @memberof jsbolo.BuilderState
+         * @memberof jsbolo.Builder
          * @instance
          */
-        BuilderState.prototype.y = 0;
+        Builder.prototype.y = 0;
 
         /**
-         * BuilderState targetX.
+         * Builder targetX.
          * @member {number} targetX
-         * @memberof jsbolo.BuilderState
+         * @memberof jsbolo.Builder
          * @instance
          */
-        BuilderState.prototype.targetX = 0;
+        Builder.prototype.targetX = 0;
 
         /**
-         * BuilderState targetY.
+         * Builder targetY.
          * @member {number} targetY
-         * @memberof jsbolo.BuilderState
+         * @memberof jsbolo.Builder
          * @instance
          */
-        BuilderState.prototype.targetY = 0;
+        Builder.prototype.targetY = 0;
 
         /**
-         * BuilderState order.
+         * Builder order.
          * @member {jsbolo.BuilderOrder} order
-         * @memberof jsbolo.BuilderState
+         * @memberof jsbolo.Builder
          * @instance
          */
-        BuilderState.prototype.order = 0;
+        Builder.prototype.order = 0;
 
         /**
-         * BuilderState trees.
+         * Builder trees.
          * @member {number} trees
-         * @memberof jsbolo.BuilderState
+         * @memberof jsbolo.Builder
          * @instance
          */
-        BuilderState.prototype.trees = 0;
+        Builder.prototype.trees = 0;
 
         /**
-         * BuilderState hasMine.
+         * Builder hasMine.
          * @member {boolean} hasMine
-         * @memberof jsbolo.BuilderState
+         * @memberof jsbolo.Builder
          * @instance
          */
-        BuilderState.prototype.hasMine = false;
+        Builder.prototype.hasMine = false;
 
         /**
-         * BuilderState team.
+         * Builder hasPillbox.
+         * @member {boolean} hasPillbox
+         * @memberof jsbolo.Builder
+         * @instance
+         */
+        Builder.prototype.hasPillbox = false;
+
+        /**
+         * Builder team.
          * @member {number} team
-         * @memberof jsbolo.BuilderState
+         * @memberof jsbolo.Builder
          * @instance
          */
-        BuilderState.prototype.team = 0;
+        Builder.prototype.team = 0;
 
         /**
-         * Creates a new BuilderState instance using the specified properties.
-         * @function create
-         * @memberof jsbolo.BuilderState
-         * @static
-         * @param {jsbolo.IBuilderState=} [properties] Properties to set
-         * @returns {jsbolo.BuilderState} BuilderState instance
+         * Builder respawnCounter.
+         * @member {number} respawnCounter
+         * @memberof jsbolo.Builder
+         * @instance
          */
-        BuilderState.create = function create(properties) {
-            return new BuilderState(properties);
+        Builder.prototype.respawnCounter = 0;
+
+        /**
+         * Creates a new Builder instance using the specified properties.
+         * @function create
+         * @memberof jsbolo.Builder
+         * @static
+         * @param {jsbolo.IBuilder=} [properties] Properties to set
+         * @returns {jsbolo.Builder} Builder instance
+         */
+        Builder.create = function create(properties) {
+            return new Builder(properties);
         };
 
         /**
-         * Encodes the specified BuilderState message. Does not implicitly {@link jsbolo.BuilderState.verify|verify} messages.
+         * Encodes the specified Builder message. Does not implicitly {@link jsbolo.Builder.verify|verify} messages.
          * @function encode
-         * @memberof jsbolo.BuilderState
+         * @memberof jsbolo.Builder
          * @static
-         * @param {jsbolo.IBuilderState} message BuilderState message or plain object to encode
+         * @param {jsbolo.IBuilder} message Builder message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
-        BuilderState.encode = function encode(message, writer) {
+        Builder.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
             if (message.id != null && Object.hasOwnProperty.call(message, "id"))
@@ -1930,39 +1502,43 @@ export const jsbolo = $root.jsbolo = (() => {
                 writer.uint32(/* id 8, wireType 0 =*/64).uint32(message.trees);
             if (message.hasMine != null && Object.hasOwnProperty.call(message, "hasMine"))
                 writer.uint32(/* id 9, wireType 0 =*/72).bool(message.hasMine);
+            if (message.hasPillbox != null && Object.hasOwnProperty.call(message, "hasPillbox"))
+                writer.uint32(/* id 10, wireType 0 =*/80).bool(message.hasPillbox);
             if (message.team != null && Object.hasOwnProperty.call(message, "team"))
-                writer.uint32(/* id 10, wireType 0 =*/80).uint32(message.team);
+                writer.uint32(/* id 11, wireType 0 =*/88).uint32(message.team);
+            if (message.respawnCounter != null && Object.hasOwnProperty.call(message, "respawnCounter"))
+                writer.uint32(/* id 12, wireType 0 =*/96).uint32(message.respawnCounter);
             return writer;
         };
 
         /**
-         * Encodes the specified BuilderState message, length delimited. Does not implicitly {@link jsbolo.BuilderState.verify|verify} messages.
+         * Encodes the specified Builder message, length delimited. Does not implicitly {@link jsbolo.Builder.verify|verify} messages.
          * @function encodeDelimited
-         * @memberof jsbolo.BuilderState
+         * @memberof jsbolo.Builder
          * @static
-         * @param {jsbolo.IBuilderState} message BuilderState message or plain object to encode
+         * @param {jsbolo.IBuilder} message Builder message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
-        BuilderState.encodeDelimited = function encodeDelimited(message, writer) {
+        Builder.encodeDelimited = function encodeDelimited(message, writer) {
             return this.encode(message, writer).ldelim();
         };
 
         /**
-         * Decodes a BuilderState message from the specified reader or buffer.
+         * Decodes a Builder message from the specified reader or buffer.
          * @function decode
-         * @memberof jsbolo.BuilderState
+         * @memberof jsbolo.Builder
          * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
-         * @returns {jsbolo.BuilderState} BuilderState
+         * @returns {jsbolo.Builder} Builder
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        BuilderState.decode = function decode(reader, length, error) {
+        Builder.decode = function decode(reader, length, error) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
-            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.jsbolo.BuilderState();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.jsbolo.Builder();
             while (reader.pos < end) {
                 let tag = reader.uint32();
                 if (tag === error)
@@ -2005,7 +1581,15 @@ export const jsbolo = $root.jsbolo = (() => {
                         break;
                     }
                 case 10: {
+                        message.hasPillbox = reader.bool();
+                        break;
+                    }
+                case 11: {
                         message.team = reader.uint32();
+                        break;
+                    }
+                case 12: {
+                        message.respawnCounter = reader.uint32();
                         break;
                     }
                 default:
@@ -2017,30 +1601,30 @@ export const jsbolo = $root.jsbolo = (() => {
         };
 
         /**
-         * Decodes a BuilderState message from the specified reader or buffer, length delimited.
+         * Decodes a Builder message from the specified reader or buffer, length delimited.
          * @function decodeDelimited
-         * @memberof jsbolo.BuilderState
+         * @memberof jsbolo.Builder
          * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @returns {jsbolo.BuilderState} BuilderState
+         * @returns {jsbolo.Builder} Builder
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        BuilderState.decodeDelimited = function decodeDelimited(reader) {
+        Builder.decodeDelimited = function decodeDelimited(reader) {
             if (!(reader instanceof $Reader))
                 reader = new $Reader(reader);
             return this.decode(reader, reader.uint32());
         };
 
         /**
-         * Verifies a BuilderState message.
+         * Verifies a Builder message.
          * @function verify
-         * @memberof jsbolo.BuilderState
+         * @memberof jsbolo.Builder
          * @static
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        BuilderState.verify = function verify(message) {
+        Builder.verify = function verify(message) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
             if (message.id != null && message.hasOwnProperty("id"))
@@ -2084,24 +1668,30 @@ export const jsbolo = $root.jsbolo = (() => {
             if (message.hasMine != null && message.hasOwnProperty("hasMine"))
                 if (typeof message.hasMine !== "boolean")
                     return "hasMine: boolean expected";
+            if (message.hasPillbox != null && message.hasOwnProperty("hasPillbox"))
+                if (typeof message.hasPillbox !== "boolean")
+                    return "hasPillbox: boolean expected";
             if (message.team != null && message.hasOwnProperty("team"))
                 if (!$util.isInteger(message.team))
                     return "team: integer expected";
+            if (message.respawnCounter != null && message.hasOwnProperty("respawnCounter"))
+                if (!$util.isInteger(message.respawnCounter))
+                    return "respawnCounter: integer expected";
             return null;
         };
 
         /**
-         * Creates a BuilderState message from a plain object. Also converts values to their respective internal types.
+         * Creates a Builder message from a plain object. Also converts values to their respective internal types.
          * @function fromObject
-         * @memberof jsbolo.BuilderState
+         * @memberof jsbolo.Builder
          * @static
          * @param {Object.<string,*>} object Plain object
-         * @returns {jsbolo.BuilderState} BuilderState
+         * @returns {jsbolo.Builder} Builder
          */
-        BuilderState.fromObject = function fromObject(object) {
-            if (object instanceof $root.jsbolo.BuilderState)
+        Builder.fromObject = function fromObject(object) {
+            if (object instanceof $root.jsbolo.Builder)
                 return object;
-            let message = new $root.jsbolo.BuilderState();
+            let message = new $root.jsbolo.Builder();
             if (object.id != null)
                 message.id = object.id >>> 0;
             if (object.ownerTankId != null)
@@ -2121,47 +1711,47 @@ export const jsbolo = $root.jsbolo = (() => {
                     break;
                 }
                 break;
-            case "IN_TANK":
+            case "BUILDER_ORDER_IN_TANK":
             case 0:
                 message.order = 0;
                 break;
-            case "WAITING":
+            case "BUILDER_ORDER_WAITING":
             case 1:
                 message.order = 1;
                 break;
-            case "RETURNING":
+            case "BUILDER_ORDER_RETURNING":
             case 2:
                 message.order = 2;
                 break;
-            case "PARACHUTING":
+            case "BUILDER_ORDER_PARACHUTING":
             case 3:
                 message.order = 3;
                 break;
-            case "HARVESTING":
+            case "BUILDER_ORDER_HARVESTING":
             case 10:
                 message.order = 10;
                 break;
-            case "BUILDING_ROAD":
+            case "BUILDER_ORDER_BUILDING_ROAD":
             case 11:
                 message.order = 11;
                 break;
-            case "REPAIRING":
+            case "BUILDER_ORDER_REPAIRING":
             case 12:
                 message.order = 12;
                 break;
-            case "BUILDING_BOAT":
+            case "BUILDER_ORDER_BUILDING_BOAT":
             case 13:
                 message.order = 13;
                 break;
-            case "BUILDING_WALL":
+            case "BUILDER_ORDER_BUILDING_WALL":
             case 14:
                 message.order = 14;
                 break;
-            case "PLACING_PILLBOX":
+            case "BUILDER_ORDER_PLACING_PILLBOX":
             case 15:
                 message.order = 15;
                 break;
-            case "LAYING_MINE":
+            case "BUILDER_ORDER_LAYING_MINE":
             case 16:
                 message.order = 16;
                 break;
@@ -2170,21 +1760,25 @@ export const jsbolo = $root.jsbolo = (() => {
                 message.trees = object.trees >>> 0;
             if (object.hasMine != null)
                 message.hasMine = Boolean(object.hasMine);
+            if (object.hasPillbox != null)
+                message.hasPillbox = Boolean(object.hasPillbox);
             if (object.team != null)
                 message.team = object.team >>> 0;
+            if (object.respawnCounter != null)
+                message.respawnCounter = object.respawnCounter >>> 0;
             return message;
         };
 
         /**
-         * Creates a plain object from a BuilderState message. Also converts values to other types if specified.
+         * Creates a plain object from a Builder message. Also converts values to other types if specified.
          * @function toObject
-         * @memberof jsbolo.BuilderState
+         * @memberof jsbolo.Builder
          * @static
-         * @param {jsbolo.BuilderState} message BuilderState
+         * @param {jsbolo.Builder} message Builder
          * @param {$protobuf.IConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
-        BuilderState.toObject = function toObject(message, options) {
+        Builder.toObject = function toObject(message, options) {
             if (!options)
                 options = {};
             let object = {};
@@ -2195,10 +1789,12 @@ export const jsbolo = $root.jsbolo = (() => {
                 object.y = 0;
                 object.targetX = 0;
                 object.targetY = 0;
-                object.order = options.enums === String ? "IN_TANK" : 0;
+                object.order = options.enums === String ? "BUILDER_ORDER_IN_TANK" : 0;
                 object.trees = 0;
                 object.hasMine = false;
+                object.hasPillbox = false;
                 object.team = 0;
+                object.respawnCounter = 0;
             }
             if (message.id != null && message.hasOwnProperty("id"))
                 object.id = message.id;
@@ -2218,94 +1814,66 @@ export const jsbolo = $root.jsbolo = (() => {
                 object.trees = message.trees;
             if (message.hasMine != null && message.hasOwnProperty("hasMine"))
                 object.hasMine = message.hasMine;
+            if (message.hasPillbox != null && message.hasOwnProperty("hasPillbox"))
+                object.hasPillbox = message.hasPillbox;
             if (message.team != null && message.hasOwnProperty("team"))
                 object.team = message.team;
+            if (message.respawnCounter != null && message.hasOwnProperty("respawnCounter"))
+                object.respawnCounter = message.respawnCounter;
             return object;
         };
 
         /**
-         * Converts this BuilderState to JSON.
+         * Converts this Builder to JSON.
          * @function toJSON
-         * @memberof jsbolo.BuilderState
+         * @memberof jsbolo.Builder
          * @instance
          * @returns {Object.<string,*>} JSON object
          */
-        BuilderState.prototype.toJSON = function toJSON() {
+        Builder.prototype.toJSON = function toJSON() {
             return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
         };
 
         /**
-         * Gets the default type url for BuilderState
+         * Gets the default type url for Builder
          * @function getTypeUrl
-         * @memberof jsbolo.BuilderState
+         * @memberof jsbolo.Builder
          * @static
          * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
          * @returns {string} The default type url
          */
-        BuilderState.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+        Builder.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
             if (typeUrlPrefix === undefined) {
                 typeUrlPrefix = "type.googleapis.com";
             }
-            return typeUrlPrefix + "/jsbolo.BuilderState";
+            return typeUrlPrefix + "/jsbolo.Builder";
         };
 
-        return BuilderState;
+        return Builder;
     })();
 
-    /**
-     * BuilderOrder enum.
-     * @name jsbolo.BuilderOrder
-     * @enum {number}
-     * @property {number} IN_TANK=0 IN_TANK value
-     * @property {number} WAITING=1 WAITING value
-     * @property {number} RETURNING=2 RETURNING value
-     * @property {number} PARACHUTING=3 PARACHUTING value
-     * @property {number} HARVESTING=10 HARVESTING value
-     * @property {number} BUILDING_ROAD=11 BUILDING_ROAD value
-     * @property {number} REPAIRING=12 REPAIRING value
-     * @property {number} BUILDING_BOAT=13 BUILDING_BOAT value
-     * @property {number} BUILDING_WALL=14 BUILDING_WALL value
-     * @property {number} PLACING_PILLBOX=15 PLACING_PILLBOX value
-     * @property {number} LAYING_MINE=16 LAYING_MINE value
-     */
-    jsbolo.BuilderOrder = (function() {
-        const valuesById = {}, values = Object.create(valuesById);
-        values[valuesById[0] = "IN_TANK"] = 0;
-        values[valuesById[1] = "WAITING"] = 1;
-        values[valuesById[2] = "RETURNING"] = 2;
-        values[valuesById[3] = "PARACHUTING"] = 3;
-        values[valuesById[10] = "HARVESTING"] = 10;
-        values[valuesById[11] = "BUILDING_ROAD"] = 11;
-        values[valuesById[12] = "REPAIRING"] = 12;
-        values[valuesById[13] = "BUILDING_BOAT"] = 13;
-        values[valuesById[14] = "BUILDING_WALL"] = 14;
-        values[valuesById[15] = "PLACING_PILLBOX"] = 15;
-        values[valuesById[16] = "LAYING_MINE"] = 16;
-        return values;
-    })();
-
-    jsbolo.ShellState = (function() {
+    jsbolo.Shell = (function() {
 
         /**
-         * Properties of a ShellState.
+         * Properties of a Shell.
          * @memberof jsbolo
-         * @interface IShellState
-         * @property {number|null} [id] ShellState id
-         * @property {number|null} [x] ShellState x
-         * @property {number|null} [y] ShellState y
-         * @property {number|null} [direction] ShellState direction
-         * @property {number|null} [ownerTankId] ShellState ownerTankId
+         * @interface IShell
+         * @property {number|null} [id] Shell id
+         * @property {number|null} [x] Shell x
+         * @property {number|null} [y] Shell y
+         * @property {number|null} [direction] Shell direction
+         * @property {number|null} [ownerTankId] Shell ownerTankId
          */
 
         /**
-         * Constructs a new ShellState.
+         * Constructs a new Shell.
          * @memberof jsbolo
-         * @classdesc Represents a ShellState.
-         * @implements IShellState
+         * @classdesc Represents a Shell.
+         * @implements IShell
          * @constructor
-         * @param {jsbolo.IShellState=} [properties] Properties to set
+         * @param {jsbolo.IShell=} [properties] Properties to set
          */
-        function ShellState(properties) {
+        function Shell(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null)
@@ -2313,67 +1881,67 @@ export const jsbolo = $root.jsbolo = (() => {
         }
 
         /**
-         * ShellState id.
+         * Shell id.
          * @member {number} id
-         * @memberof jsbolo.ShellState
+         * @memberof jsbolo.Shell
          * @instance
          */
-        ShellState.prototype.id = 0;
+        Shell.prototype.id = 0;
 
         /**
-         * ShellState x.
+         * Shell x.
          * @member {number} x
-         * @memberof jsbolo.ShellState
+         * @memberof jsbolo.Shell
          * @instance
          */
-        ShellState.prototype.x = 0;
+        Shell.prototype.x = 0;
 
         /**
-         * ShellState y.
+         * Shell y.
          * @member {number} y
-         * @memberof jsbolo.ShellState
+         * @memberof jsbolo.Shell
          * @instance
          */
-        ShellState.prototype.y = 0;
+        Shell.prototype.y = 0;
 
         /**
-         * ShellState direction.
+         * Shell direction.
          * @member {number} direction
-         * @memberof jsbolo.ShellState
+         * @memberof jsbolo.Shell
          * @instance
          */
-        ShellState.prototype.direction = 0;
+        Shell.prototype.direction = 0;
 
         /**
-         * ShellState ownerTankId.
+         * Shell ownerTankId.
          * @member {number} ownerTankId
-         * @memberof jsbolo.ShellState
+         * @memberof jsbolo.Shell
          * @instance
          */
-        ShellState.prototype.ownerTankId = 0;
+        Shell.prototype.ownerTankId = 0;
 
         /**
-         * Creates a new ShellState instance using the specified properties.
+         * Creates a new Shell instance using the specified properties.
          * @function create
-         * @memberof jsbolo.ShellState
+         * @memberof jsbolo.Shell
          * @static
-         * @param {jsbolo.IShellState=} [properties] Properties to set
-         * @returns {jsbolo.ShellState} ShellState instance
+         * @param {jsbolo.IShell=} [properties] Properties to set
+         * @returns {jsbolo.Shell} Shell instance
          */
-        ShellState.create = function create(properties) {
-            return new ShellState(properties);
+        Shell.create = function create(properties) {
+            return new Shell(properties);
         };
 
         /**
-         * Encodes the specified ShellState message. Does not implicitly {@link jsbolo.ShellState.verify|verify} messages.
+         * Encodes the specified Shell message. Does not implicitly {@link jsbolo.Shell.verify|verify} messages.
          * @function encode
-         * @memberof jsbolo.ShellState
+         * @memberof jsbolo.Shell
          * @static
-         * @param {jsbolo.IShellState} message ShellState message or plain object to encode
+         * @param {jsbolo.IShell} message Shell message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
-        ShellState.encode = function encode(message, writer) {
+        Shell.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
             if (message.id != null && Object.hasOwnProperty.call(message, "id"))
@@ -2385,38 +1953,38 @@ export const jsbolo = $root.jsbolo = (() => {
             if (message.direction != null && Object.hasOwnProperty.call(message, "direction"))
                 writer.uint32(/* id 4, wireType 0 =*/32).uint32(message.direction);
             if (message.ownerTankId != null && Object.hasOwnProperty.call(message, "ownerTankId"))
-                writer.uint32(/* id 5, wireType 0 =*/40).uint32(message.ownerTankId);
+                writer.uint32(/* id 5, wireType 0 =*/40).sint32(message.ownerTankId);
             return writer;
         };
 
         /**
-         * Encodes the specified ShellState message, length delimited. Does not implicitly {@link jsbolo.ShellState.verify|verify} messages.
+         * Encodes the specified Shell message, length delimited. Does not implicitly {@link jsbolo.Shell.verify|verify} messages.
          * @function encodeDelimited
-         * @memberof jsbolo.ShellState
+         * @memberof jsbolo.Shell
          * @static
-         * @param {jsbolo.IShellState} message ShellState message or plain object to encode
+         * @param {jsbolo.IShell} message Shell message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
-        ShellState.encodeDelimited = function encodeDelimited(message, writer) {
+        Shell.encodeDelimited = function encodeDelimited(message, writer) {
             return this.encode(message, writer).ldelim();
         };
 
         /**
-         * Decodes a ShellState message from the specified reader or buffer.
+         * Decodes a Shell message from the specified reader or buffer.
          * @function decode
-         * @memberof jsbolo.ShellState
+         * @memberof jsbolo.Shell
          * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
-         * @returns {jsbolo.ShellState} ShellState
+         * @returns {jsbolo.Shell} Shell
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        ShellState.decode = function decode(reader, length, error) {
+        Shell.decode = function decode(reader, length, error) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
-            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.jsbolo.ShellState();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.jsbolo.Shell();
             while (reader.pos < end) {
                 let tag = reader.uint32();
                 if (tag === error)
@@ -2439,7 +2007,7 @@ export const jsbolo = $root.jsbolo = (() => {
                         break;
                     }
                 case 5: {
-                        message.ownerTankId = reader.uint32();
+                        message.ownerTankId = reader.sint32();
                         break;
                     }
                 default:
@@ -2451,30 +2019,30 @@ export const jsbolo = $root.jsbolo = (() => {
         };
 
         /**
-         * Decodes a ShellState message from the specified reader or buffer, length delimited.
+         * Decodes a Shell message from the specified reader or buffer, length delimited.
          * @function decodeDelimited
-         * @memberof jsbolo.ShellState
+         * @memberof jsbolo.Shell
          * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @returns {jsbolo.ShellState} ShellState
+         * @returns {jsbolo.Shell} Shell
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        ShellState.decodeDelimited = function decodeDelimited(reader) {
+        Shell.decodeDelimited = function decodeDelimited(reader) {
             if (!(reader instanceof $Reader))
                 reader = new $Reader(reader);
             return this.decode(reader, reader.uint32());
         };
 
         /**
-         * Verifies a ShellState message.
+         * Verifies a Shell message.
          * @function verify
-         * @memberof jsbolo.ShellState
+         * @memberof jsbolo.Shell
          * @static
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        ShellState.verify = function verify(message) {
+        Shell.verify = function verify(message) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
             if (message.id != null && message.hasOwnProperty("id"))
@@ -2496,17 +2064,17 @@ export const jsbolo = $root.jsbolo = (() => {
         };
 
         /**
-         * Creates a ShellState message from a plain object. Also converts values to their respective internal types.
+         * Creates a Shell message from a plain object. Also converts values to their respective internal types.
          * @function fromObject
-         * @memberof jsbolo.ShellState
+         * @memberof jsbolo.Shell
          * @static
          * @param {Object.<string,*>} object Plain object
-         * @returns {jsbolo.ShellState} ShellState
+         * @returns {jsbolo.Shell} Shell
          */
-        ShellState.fromObject = function fromObject(object) {
-            if (object instanceof $root.jsbolo.ShellState)
+        Shell.fromObject = function fromObject(object) {
+            if (object instanceof $root.jsbolo.Shell)
                 return object;
-            let message = new $root.jsbolo.ShellState();
+            let message = new $root.jsbolo.Shell();
             if (object.id != null)
                 message.id = object.id >>> 0;
             if (object.x != null)
@@ -2516,20 +2084,20 @@ export const jsbolo = $root.jsbolo = (() => {
             if (object.direction != null)
                 message.direction = object.direction >>> 0;
             if (object.ownerTankId != null)
-                message.ownerTankId = object.ownerTankId >>> 0;
+                message.ownerTankId = object.ownerTankId | 0;
             return message;
         };
 
         /**
-         * Creates a plain object from a ShellState message. Also converts values to other types if specified.
+         * Creates a plain object from a Shell message. Also converts values to other types if specified.
          * @function toObject
-         * @memberof jsbolo.ShellState
+         * @memberof jsbolo.Shell
          * @static
-         * @param {jsbolo.ShellState} message ShellState
+         * @param {jsbolo.Shell} message Shell
          * @param {$protobuf.IConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
-        ShellState.toObject = function toObject(message, options) {
+        Shell.toObject = function toObject(message, options) {
             if (!options)
                 options = {};
             let object = {};
@@ -2554,56 +2122,57 @@ export const jsbolo = $root.jsbolo = (() => {
         };
 
         /**
-         * Converts this ShellState to JSON.
+         * Converts this Shell to JSON.
          * @function toJSON
-         * @memberof jsbolo.ShellState
+         * @memberof jsbolo.Shell
          * @instance
          * @returns {Object.<string,*>} JSON object
          */
-        ShellState.prototype.toJSON = function toJSON() {
+        Shell.prototype.toJSON = function toJSON() {
             return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
         };
 
         /**
-         * Gets the default type url for ShellState
+         * Gets the default type url for Shell
          * @function getTypeUrl
-         * @memberof jsbolo.ShellState
+         * @memberof jsbolo.Shell
          * @static
          * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
          * @returns {string} The default type url
          */
-        ShellState.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+        Shell.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
             if (typeUrlPrefix === undefined) {
                 typeUrlPrefix = "type.googleapis.com";
             }
-            return typeUrlPrefix + "/jsbolo.ShellState";
+            return typeUrlPrefix + "/jsbolo.Shell";
         };
 
-        return ShellState;
+        return Shell;
     })();
 
-    jsbolo.ExplosionState = (function() {
+    jsbolo.Pillbox = (function() {
 
         /**
-         * Properties of an ExplosionState.
+         * Properties of a Pillbox.
          * @memberof jsbolo
-         * @interface IExplosionState
-         * @property {number|null} [id] ExplosionState id
-         * @property {number|null} [x] ExplosionState x
-         * @property {number|null} [y] ExplosionState y
-         * @property {jsbolo.ExplosionType|null} [type] ExplosionState type
-         * @property {number|null} [frame] ExplosionState frame
+         * @interface IPillbox
+         * @property {number|null} [id] Pillbox id
+         * @property {number|null} [tileX] Pillbox tileX
+         * @property {number|null} [tileY] Pillbox tileY
+         * @property {number|null} [armor] Pillbox armor
+         * @property {number|null} [ownerTeam] Pillbox ownerTeam
+         * @property {boolean|null} [inTank] Pillbox inTank
          */
 
         /**
-         * Constructs a new ExplosionState.
+         * Constructs a new Pillbox.
          * @memberof jsbolo
-         * @classdesc Represents an ExplosionState.
-         * @implements IExplosionState
+         * @classdesc Represents a Pillbox.
+         * @implements IPillbox
          * @constructor
-         * @param {jsbolo.IExplosionState=} [properties] Properties to set
+         * @param {jsbolo.IPillbox=} [properties] Properties to set
          */
-        function ExplosionState(properties) {
+        function Pillbox(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null)
@@ -2611,689 +2180,75 @@ export const jsbolo = $root.jsbolo = (() => {
         }
 
         /**
-         * ExplosionState id.
+         * Pillbox id.
          * @member {number} id
-         * @memberof jsbolo.ExplosionState
+         * @memberof jsbolo.Pillbox
          * @instance
          */
-        ExplosionState.prototype.id = 0;
+        Pillbox.prototype.id = 0;
 
         /**
-         * ExplosionState x.
-         * @member {number} x
-         * @memberof jsbolo.ExplosionState
-         * @instance
-         */
-        ExplosionState.prototype.x = 0;
-
-        /**
-         * ExplosionState y.
-         * @member {number} y
-         * @memberof jsbolo.ExplosionState
-         * @instance
-         */
-        ExplosionState.prototype.y = 0;
-
-        /**
-         * ExplosionState type.
-         * @member {jsbolo.ExplosionType} type
-         * @memberof jsbolo.ExplosionState
-         * @instance
-         */
-        ExplosionState.prototype.type = 0;
-
-        /**
-         * ExplosionState frame.
-         * @member {number} frame
-         * @memberof jsbolo.ExplosionState
-         * @instance
-         */
-        ExplosionState.prototype.frame = 0;
-
-        /**
-         * Creates a new ExplosionState instance using the specified properties.
-         * @function create
-         * @memberof jsbolo.ExplosionState
-         * @static
-         * @param {jsbolo.IExplosionState=} [properties] Properties to set
-         * @returns {jsbolo.ExplosionState} ExplosionState instance
-         */
-        ExplosionState.create = function create(properties) {
-            return new ExplosionState(properties);
-        };
-
-        /**
-         * Encodes the specified ExplosionState message. Does not implicitly {@link jsbolo.ExplosionState.verify|verify} messages.
-         * @function encode
-         * @memberof jsbolo.ExplosionState
-         * @static
-         * @param {jsbolo.IExplosionState} message ExplosionState message or plain object to encode
-         * @param {$protobuf.Writer} [writer] Writer to encode to
-         * @returns {$protobuf.Writer} Writer
-         */
-        ExplosionState.encode = function encode(message, writer) {
-            if (!writer)
-                writer = $Writer.create();
-            if (message.id != null && Object.hasOwnProperty.call(message, "id"))
-                writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.id);
-            if (message.x != null && Object.hasOwnProperty.call(message, "x"))
-                writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.x);
-            if (message.y != null && Object.hasOwnProperty.call(message, "y"))
-                writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.y);
-            if (message.type != null && Object.hasOwnProperty.call(message, "type"))
-                writer.uint32(/* id 4, wireType 0 =*/32).int32(message.type);
-            if (message.frame != null && Object.hasOwnProperty.call(message, "frame"))
-                writer.uint32(/* id 5, wireType 0 =*/40).uint32(message.frame);
-            return writer;
-        };
-
-        /**
-         * Encodes the specified ExplosionState message, length delimited. Does not implicitly {@link jsbolo.ExplosionState.verify|verify} messages.
-         * @function encodeDelimited
-         * @memberof jsbolo.ExplosionState
-         * @static
-         * @param {jsbolo.IExplosionState} message ExplosionState message or plain object to encode
-         * @param {$protobuf.Writer} [writer] Writer to encode to
-         * @returns {$protobuf.Writer} Writer
-         */
-        ExplosionState.encodeDelimited = function encodeDelimited(message, writer) {
-            return this.encode(message, writer).ldelim();
-        };
-
-        /**
-         * Decodes an ExplosionState message from the specified reader or buffer.
-         * @function decode
-         * @memberof jsbolo.ExplosionState
-         * @static
-         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @param {number} [length] Message length if known beforehand
-         * @returns {jsbolo.ExplosionState} ExplosionState
-         * @throws {Error} If the payload is not a reader or valid buffer
-         * @throws {$protobuf.util.ProtocolError} If required fields are missing
-         */
-        ExplosionState.decode = function decode(reader, length, error) {
-            if (!(reader instanceof $Reader))
-                reader = $Reader.create(reader);
-            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.jsbolo.ExplosionState();
-            while (reader.pos < end) {
-                let tag = reader.uint32();
-                if (tag === error)
-                    break;
-                switch (tag >>> 3) {
-                case 1: {
-                        message.id = reader.uint32();
-                        break;
-                    }
-                case 2: {
-                        message.x = reader.uint32();
-                        break;
-                    }
-                case 3: {
-                        message.y = reader.uint32();
-                        break;
-                    }
-                case 4: {
-                        message.type = reader.int32();
-                        break;
-                    }
-                case 5: {
-                        message.frame = reader.uint32();
-                        break;
-                    }
-                default:
-                    reader.skipType(tag & 7);
-                    break;
-                }
-            }
-            return message;
-        };
-
-        /**
-         * Decodes an ExplosionState message from the specified reader or buffer, length delimited.
-         * @function decodeDelimited
-         * @memberof jsbolo.ExplosionState
-         * @static
-         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @returns {jsbolo.ExplosionState} ExplosionState
-         * @throws {Error} If the payload is not a reader or valid buffer
-         * @throws {$protobuf.util.ProtocolError} If required fields are missing
-         */
-        ExplosionState.decodeDelimited = function decodeDelimited(reader) {
-            if (!(reader instanceof $Reader))
-                reader = new $Reader(reader);
-            return this.decode(reader, reader.uint32());
-        };
-
-        /**
-         * Verifies an ExplosionState message.
-         * @function verify
-         * @memberof jsbolo.ExplosionState
-         * @static
-         * @param {Object.<string,*>} message Plain object to verify
-         * @returns {string|null} `null` if valid, otherwise the reason why it is not
-         */
-        ExplosionState.verify = function verify(message) {
-            if (typeof message !== "object" || message === null)
-                return "object expected";
-            if (message.id != null && message.hasOwnProperty("id"))
-                if (!$util.isInteger(message.id))
-                    return "id: integer expected";
-            if (message.x != null && message.hasOwnProperty("x"))
-                if (!$util.isInteger(message.x))
-                    return "x: integer expected";
-            if (message.y != null && message.hasOwnProperty("y"))
-                if (!$util.isInteger(message.y))
-                    return "y: integer expected";
-            if (message.type != null && message.hasOwnProperty("type"))
-                switch (message.type) {
-                default:
-                    return "type: enum value expected";
-                case 0:
-                case 1:
-                case 2:
-                    break;
-                }
-            if (message.frame != null && message.hasOwnProperty("frame"))
-                if (!$util.isInteger(message.frame))
-                    return "frame: integer expected";
-            return null;
-        };
-
-        /**
-         * Creates an ExplosionState message from a plain object. Also converts values to their respective internal types.
-         * @function fromObject
-         * @memberof jsbolo.ExplosionState
-         * @static
-         * @param {Object.<string,*>} object Plain object
-         * @returns {jsbolo.ExplosionState} ExplosionState
-         */
-        ExplosionState.fromObject = function fromObject(object) {
-            if (object instanceof $root.jsbolo.ExplosionState)
-                return object;
-            let message = new $root.jsbolo.ExplosionState();
-            if (object.id != null)
-                message.id = object.id >>> 0;
-            if (object.x != null)
-                message.x = object.x >>> 0;
-            if (object.y != null)
-                message.y = object.y >>> 0;
-            switch (object.type) {
-            default:
-                if (typeof object.type === "number") {
-                    message.type = object.type;
-                    break;
-                }
-                break;
-            case "SMALL":
-            case 0:
-                message.type = 0;
-                break;
-            case "LARGE":
-            case 1:
-                message.type = 1;
-                break;
-            case "MINE":
-            case 2:
-                message.type = 2;
-                break;
-            }
-            if (object.frame != null)
-                message.frame = object.frame >>> 0;
-            return message;
-        };
-
-        /**
-         * Creates a plain object from an ExplosionState message. Also converts values to other types if specified.
-         * @function toObject
-         * @memberof jsbolo.ExplosionState
-         * @static
-         * @param {jsbolo.ExplosionState} message ExplosionState
-         * @param {$protobuf.IConversionOptions} [options] Conversion options
-         * @returns {Object.<string,*>} Plain object
-         */
-        ExplosionState.toObject = function toObject(message, options) {
-            if (!options)
-                options = {};
-            let object = {};
-            if (options.defaults) {
-                object.id = 0;
-                object.x = 0;
-                object.y = 0;
-                object.type = options.enums === String ? "SMALL" : 0;
-                object.frame = 0;
-            }
-            if (message.id != null && message.hasOwnProperty("id"))
-                object.id = message.id;
-            if (message.x != null && message.hasOwnProperty("x"))
-                object.x = message.x;
-            if (message.y != null && message.hasOwnProperty("y"))
-                object.y = message.y;
-            if (message.type != null && message.hasOwnProperty("type"))
-                object.type = options.enums === String ? $root.jsbolo.ExplosionType[message.type] === undefined ? message.type : $root.jsbolo.ExplosionType[message.type] : message.type;
-            if (message.frame != null && message.hasOwnProperty("frame"))
-                object.frame = message.frame;
-            return object;
-        };
-
-        /**
-         * Converts this ExplosionState to JSON.
-         * @function toJSON
-         * @memberof jsbolo.ExplosionState
-         * @instance
-         * @returns {Object.<string,*>} JSON object
-         */
-        ExplosionState.prototype.toJSON = function toJSON() {
-            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
-        };
-
-        /**
-         * Gets the default type url for ExplosionState
-         * @function getTypeUrl
-         * @memberof jsbolo.ExplosionState
-         * @static
-         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
-         * @returns {string} The default type url
-         */
-        ExplosionState.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
-            if (typeUrlPrefix === undefined) {
-                typeUrlPrefix = "type.googleapis.com";
-            }
-            return typeUrlPrefix + "/jsbolo.ExplosionState";
-        };
-
-        return ExplosionState;
-    })();
-
-    /**
-     * ExplosionType enum.
-     * @name jsbolo.ExplosionType
-     * @enum {number}
-     * @property {number} SMALL=0 SMALL value
-     * @property {number} LARGE=1 LARGE value
-     * @property {number} MINE=2 MINE value
-     */
-    jsbolo.ExplosionType = (function() {
-        const valuesById = {}, values = Object.create(valuesById);
-        values[valuesById[0] = "SMALL"] = 0;
-        values[valuesById[1] = "LARGE"] = 1;
-        values[valuesById[2] = "MINE"] = 2;
-        return values;
-    })();
-
-    jsbolo.TerrainChange = (function() {
-
-        /**
-         * Properties of a TerrainChange.
-         * @memberof jsbolo
-         * @interface ITerrainChange
-         * @property {number|null} [tileX] TerrainChange tileX
-         * @property {number|null} [tileY] TerrainChange tileY
-         * @property {number|null} [terrainType] TerrainChange terrainType
-         * @property {boolean|null} [hasMine] TerrainChange hasMine
-         */
-
-        /**
-         * Constructs a new TerrainChange.
-         * @memberof jsbolo
-         * @classdesc Represents a TerrainChange.
-         * @implements ITerrainChange
-         * @constructor
-         * @param {jsbolo.ITerrainChange=} [properties] Properties to set
-         */
-        function TerrainChange(properties) {
-            if (properties)
-                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
-                        this[keys[i]] = properties[keys[i]];
-        }
-
-        /**
-         * TerrainChange tileX.
+         * Pillbox tileX.
          * @member {number} tileX
-         * @memberof jsbolo.TerrainChange
+         * @memberof jsbolo.Pillbox
          * @instance
          */
-        TerrainChange.prototype.tileX = 0;
+        Pillbox.prototype.tileX = 0;
 
         /**
-         * TerrainChange tileY.
+         * Pillbox tileY.
          * @member {number} tileY
-         * @memberof jsbolo.TerrainChange
+         * @memberof jsbolo.Pillbox
          * @instance
          */
-        TerrainChange.prototype.tileY = 0;
+        Pillbox.prototype.tileY = 0;
 
         /**
-         * TerrainChange terrainType.
-         * @member {number} terrainType
-         * @memberof jsbolo.TerrainChange
-         * @instance
-         */
-        TerrainChange.prototype.terrainType = 0;
-
-        /**
-         * TerrainChange hasMine.
-         * @member {boolean} hasMine
-         * @memberof jsbolo.TerrainChange
-         * @instance
-         */
-        TerrainChange.prototype.hasMine = false;
-
-        /**
-         * Creates a new TerrainChange instance using the specified properties.
-         * @function create
-         * @memberof jsbolo.TerrainChange
-         * @static
-         * @param {jsbolo.ITerrainChange=} [properties] Properties to set
-         * @returns {jsbolo.TerrainChange} TerrainChange instance
-         */
-        TerrainChange.create = function create(properties) {
-            return new TerrainChange(properties);
-        };
-
-        /**
-         * Encodes the specified TerrainChange message. Does not implicitly {@link jsbolo.TerrainChange.verify|verify} messages.
-         * @function encode
-         * @memberof jsbolo.TerrainChange
-         * @static
-         * @param {jsbolo.ITerrainChange} message TerrainChange message or plain object to encode
-         * @param {$protobuf.Writer} [writer] Writer to encode to
-         * @returns {$protobuf.Writer} Writer
-         */
-        TerrainChange.encode = function encode(message, writer) {
-            if (!writer)
-                writer = $Writer.create();
-            if (message.tileX != null && Object.hasOwnProperty.call(message, "tileX"))
-                writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.tileX);
-            if (message.tileY != null && Object.hasOwnProperty.call(message, "tileY"))
-                writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.tileY);
-            if (message.terrainType != null && Object.hasOwnProperty.call(message, "terrainType"))
-                writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.terrainType);
-            if (message.hasMine != null && Object.hasOwnProperty.call(message, "hasMine"))
-                writer.uint32(/* id 4, wireType 0 =*/32).bool(message.hasMine);
-            return writer;
-        };
-
-        /**
-         * Encodes the specified TerrainChange message, length delimited. Does not implicitly {@link jsbolo.TerrainChange.verify|verify} messages.
-         * @function encodeDelimited
-         * @memberof jsbolo.TerrainChange
-         * @static
-         * @param {jsbolo.ITerrainChange} message TerrainChange message or plain object to encode
-         * @param {$protobuf.Writer} [writer] Writer to encode to
-         * @returns {$protobuf.Writer} Writer
-         */
-        TerrainChange.encodeDelimited = function encodeDelimited(message, writer) {
-            return this.encode(message, writer).ldelim();
-        };
-
-        /**
-         * Decodes a TerrainChange message from the specified reader or buffer.
-         * @function decode
-         * @memberof jsbolo.TerrainChange
-         * @static
-         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @param {number} [length] Message length if known beforehand
-         * @returns {jsbolo.TerrainChange} TerrainChange
-         * @throws {Error} If the payload is not a reader or valid buffer
-         * @throws {$protobuf.util.ProtocolError} If required fields are missing
-         */
-        TerrainChange.decode = function decode(reader, length, error) {
-            if (!(reader instanceof $Reader))
-                reader = $Reader.create(reader);
-            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.jsbolo.TerrainChange();
-            while (reader.pos < end) {
-                let tag = reader.uint32();
-                if (tag === error)
-                    break;
-                switch (tag >>> 3) {
-                case 1: {
-                        message.tileX = reader.uint32();
-                        break;
-                    }
-                case 2: {
-                        message.tileY = reader.uint32();
-                        break;
-                    }
-                case 3: {
-                        message.terrainType = reader.uint32();
-                        break;
-                    }
-                case 4: {
-                        message.hasMine = reader.bool();
-                        break;
-                    }
-                default:
-                    reader.skipType(tag & 7);
-                    break;
-                }
-            }
-            return message;
-        };
-
-        /**
-         * Decodes a TerrainChange message from the specified reader or buffer, length delimited.
-         * @function decodeDelimited
-         * @memberof jsbolo.TerrainChange
-         * @static
-         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @returns {jsbolo.TerrainChange} TerrainChange
-         * @throws {Error} If the payload is not a reader or valid buffer
-         * @throws {$protobuf.util.ProtocolError} If required fields are missing
-         */
-        TerrainChange.decodeDelimited = function decodeDelimited(reader) {
-            if (!(reader instanceof $Reader))
-                reader = new $Reader(reader);
-            return this.decode(reader, reader.uint32());
-        };
-
-        /**
-         * Verifies a TerrainChange message.
-         * @function verify
-         * @memberof jsbolo.TerrainChange
-         * @static
-         * @param {Object.<string,*>} message Plain object to verify
-         * @returns {string|null} `null` if valid, otherwise the reason why it is not
-         */
-        TerrainChange.verify = function verify(message) {
-            if (typeof message !== "object" || message === null)
-                return "object expected";
-            if (message.tileX != null && message.hasOwnProperty("tileX"))
-                if (!$util.isInteger(message.tileX))
-                    return "tileX: integer expected";
-            if (message.tileY != null && message.hasOwnProperty("tileY"))
-                if (!$util.isInteger(message.tileY))
-                    return "tileY: integer expected";
-            if (message.terrainType != null && message.hasOwnProperty("terrainType"))
-                if (!$util.isInteger(message.terrainType))
-                    return "terrainType: integer expected";
-            if (message.hasMine != null && message.hasOwnProperty("hasMine"))
-                if (typeof message.hasMine !== "boolean")
-                    return "hasMine: boolean expected";
-            return null;
-        };
-
-        /**
-         * Creates a TerrainChange message from a plain object. Also converts values to their respective internal types.
-         * @function fromObject
-         * @memberof jsbolo.TerrainChange
-         * @static
-         * @param {Object.<string,*>} object Plain object
-         * @returns {jsbolo.TerrainChange} TerrainChange
-         */
-        TerrainChange.fromObject = function fromObject(object) {
-            if (object instanceof $root.jsbolo.TerrainChange)
-                return object;
-            let message = new $root.jsbolo.TerrainChange();
-            if (object.tileX != null)
-                message.tileX = object.tileX >>> 0;
-            if (object.tileY != null)
-                message.tileY = object.tileY >>> 0;
-            if (object.terrainType != null)
-                message.terrainType = object.terrainType >>> 0;
-            if (object.hasMine != null)
-                message.hasMine = Boolean(object.hasMine);
-            return message;
-        };
-
-        /**
-         * Creates a plain object from a TerrainChange message. Also converts values to other types if specified.
-         * @function toObject
-         * @memberof jsbolo.TerrainChange
-         * @static
-         * @param {jsbolo.TerrainChange} message TerrainChange
-         * @param {$protobuf.IConversionOptions} [options] Conversion options
-         * @returns {Object.<string,*>} Plain object
-         */
-        TerrainChange.toObject = function toObject(message, options) {
-            if (!options)
-                options = {};
-            let object = {};
-            if (options.defaults) {
-                object.tileX = 0;
-                object.tileY = 0;
-                object.terrainType = 0;
-                object.hasMine = false;
-            }
-            if (message.tileX != null && message.hasOwnProperty("tileX"))
-                object.tileX = message.tileX;
-            if (message.tileY != null && message.hasOwnProperty("tileY"))
-                object.tileY = message.tileY;
-            if (message.terrainType != null && message.hasOwnProperty("terrainType"))
-                object.terrainType = message.terrainType;
-            if (message.hasMine != null && message.hasOwnProperty("hasMine"))
-                object.hasMine = message.hasMine;
-            return object;
-        };
-
-        /**
-         * Converts this TerrainChange to JSON.
-         * @function toJSON
-         * @memberof jsbolo.TerrainChange
-         * @instance
-         * @returns {Object.<string,*>} JSON object
-         */
-        TerrainChange.prototype.toJSON = function toJSON() {
-            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
-        };
-
-        /**
-         * Gets the default type url for TerrainChange
-         * @function getTypeUrl
-         * @memberof jsbolo.TerrainChange
-         * @static
-         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
-         * @returns {string} The default type url
-         */
-        TerrainChange.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
-            if (typeUrlPrefix === undefined) {
-                typeUrlPrefix = "type.googleapis.com";
-            }
-            return typeUrlPrefix + "/jsbolo.TerrainChange";
-        };
-
-        return TerrainChange;
-    })();
-
-    jsbolo.PillboxState = (function() {
-
-        /**
-         * Properties of a PillboxState.
-         * @memberof jsbolo
-         * @interface IPillboxState
-         * @property {number|null} [id] PillboxState id
-         * @property {number|null} [tileX] PillboxState tileX
-         * @property {number|null} [tileY] PillboxState tileY
-         * @property {number|null} [armor] PillboxState armor
-         * @property {number|null} [ownerTeam] PillboxState ownerTeam
-         * @property {boolean|null} [inTank] PillboxState inTank
-         */
-
-        /**
-         * Constructs a new PillboxState.
-         * @memberof jsbolo
-         * @classdesc Represents a PillboxState.
-         * @implements IPillboxState
-         * @constructor
-         * @param {jsbolo.IPillboxState=} [properties] Properties to set
-         */
-        function PillboxState(properties) {
-            if (properties)
-                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
-                    if (properties[keys[i]] != null)
-                        this[keys[i]] = properties[keys[i]];
-        }
-
-        /**
-         * PillboxState id.
-         * @member {number} id
-         * @memberof jsbolo.PillboxState
-         * @instance
-         */
-        PillboxState.prototype.id = 0;
-
-        /**
-         * PillboxState tileX.
-         * @member {number} tileX
-         * @memberof jsbolo.PillboxState
-         * @instance
-         */
-        PillboxState.prototype.tileX = 0;
-
-        /**
-         * PillboxState tileY.
-         * @member {number} tileY
-         * @memberof jsbolo.PillboxState
-         * @instance
-         */
-        PillboxState.prototype.tileY = 0;
-
-        /**
-         * PillboxState armor.
+         * Pillbox armor.
          * @member {number} armor
-         * @memberof jsbolo.PillboxState
+         * @memberof jsbolo.Pillbox
          * @instance
          */
-        PillboxState.prototype.armor = 0;
+        Pillbox.prototype.armor = 0;
 
         /**
-         * PillboxState ownerTeam.
+         * Pillbox ownerTeam.
          * @member {number} ownerTeam
-         * @memberof jsbolo.PillboxState
+         * @memberof jsbolo.Pillbox
          * @instance
          */
-        PillboxState.prototype.ownerTeam = 0;
+        Pillbox.prototype.ownerTeam = 0;
 
         /**
-         * PillboxState inTank.
+         * Pillbox inTank.
          * @member {boolean} inTank
-         * @memberof jsbolo.PillboxState
+         * @memberof jsbolo.Pillbox
          * @instance
          */
-        PillboxState.prototype.inTank = false;
+        Pillbox.prototype.inTank = false;
 
         /**
-         * Creates a new PillboxState instance using the specified properties.
+         * Creates a new Pillbox instance using the specified properties.
          * @function create
-         * @memberof jsbolo.PillboxState
+         * @memberof jsbolo.Pillbox
          * @static
-         * @param {jsbolo.IPillboxState=} [properties] Properties to set
-         * @returns {jsbolo.PillboxState} PillboxState instance
+         * @param {jsbolo.IPillbox=} [properties] Properties to set
+         * @returns {jsbolo.Pillbox} Pillbox instance
          */
-        PillboxState.create = function create(properties) {
-            return new PillboxState(properties);
+        Pillbox.create = function create(properties) {
+            return new Pillbox(properties);
         };
 
         /**
-         * Encodes the specified PillboxState message. Does not implicitly {@link jsbolo.PillboxState.verify|verify} messages.
+         * Encodes the specified Pillbox message. Does not implicitly {@link jsbolo.Pillbox.verify|verify} messages.
          * @function encode
-         * @memberof jsbolo.PillboxState
+         * @memberof jsbolo.Pillbox
          * @static
-         * @param {jsbolo.IPillboxState} message PillboxState message or plain object to encode
+         * @param {jsbolo.IPillbox} message Pillbox message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
-        PillboxState.encode = function encode(message, writer) {
+        Pillbox.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
             if (message.id != null && Object.hasOwnProperty.call(message, "id"))
@@ -3312,33 +2267,33 @@ export const jsbolo = $root.jsbolo = (() => {
         };
 
         /**
-         * Encodes the specified PillboxState message, length delimited. Does not implicitly {@link jsbolo.PillboxState.verify|verify} messages.
+         * Encodes the specified Pillbox message, length delimited. Does not implicitly {@link jsbolo.Pillbox.verify|verify} messages.
          * @function encodeDelimited
-         * @memberof jsbolo.PillboxState
+         * @memberof jsbolo.Pillbox
          * @static
-         * @param {jsbolo.IPillboxState} message PillboxState message or plain object to encode
+         * @param {jsbolo.IPillbox} message Pillbox message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
-        PillboxState.encodeDelimited = function encodeDelimited(message, writer) {
+        Pillbox.encodeDelimited = function encodeDelimited(message, writer) {
             return this.encode(message, writer).ldelim();
         };
 
         /**
-         * Decodes a PillboxState message from the specified reader or buffer.
+         * Decodes a Pillbox message from the specified reader or buffer.
          * @function decode
-         * @memberof jsbolo.PillboxState
+         * @memberof jsbolo.Pillbox
          * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
-         * @returns {jsbolo.PillboxState} PillboxState
+         * @returns {jsbolo.Pillbox} Pillbox
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        PillboxState.decode = function decode(reader, length, error) {
+        Pillbox.decode = function decode(reader, length, error) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
-            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.jsbolo.PillboxState();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.jsbolo.Pillbox();
             while (reader.pos < end) {
                 let tag = reader.uint32();
                 if (tag === error)
@@ -3377,30 +2332,30 @@ export const jsbolo = $root.jsbolo = (() => {
         };
 
         /**
-         * Decodes a PillboxState message from the specified reader or buffer, length delimited.
+         * Decodes a Pillbox message from the specified reader or buffer, length delimited.
          * @function decodeDelimited
-         * @memberof jsbolo.PillboxState
+         * @memberof jsbolo.Pillbox
          * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @returns {jsbolo.PillboxState} PillboxState
+         * @returns {jsbolo.Pillbox} Pillbox
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        PillboxState.decodeDelimited = function decodeDelimited(reader) {
+        Pillbox.decodeDelimited = function decodeDelimited(reader) {
             if (!(reader instanceof $Reader))
                 reader = new $Reader(reader);
             return this.decode(reader, reader.uint32());
         };
 
         /**
-         * Verifies a PillboxState message.
+         * Verifies a Pillbox message.
          * @function verify
-         * @memberof jsbolo.PillboxState
+         * @memberof jsbolo.Pillbox
          * @static
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        PillboxState.verify = function verify(message) {
+        Pillbox.verify = function verify(message) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
             if (message.id != null && message.hasOwnProperty("id"))
@@ -3425,17 +2380,17 @@ export const jsbolo = $root.jsbolo = (() => {
         };
 
         /**
-         * Creates a PillboxState message from a plain object. Also converts values to their respective internal types.
+         * Creates a Pillbox message from a plain object. Also converts values to their respective internal types.
          * @function fromObject
-         * @memberof jsbolo.PillboxState
+         * @memberof jsbolo.Pillbox
          * @static
          * @param {Object.<string,*>} object Plain object
-         * @returns {jsbolo.PillboxState} PillboxState
+         * @returns {jsbolo.Pillbox} Pillbox
          */
-        PillboxState.fromObject = function fromObject(object) {
-            if (object instanceof $root.jsbolo.PillboxState)
+        Pillbox.fromObject = function fromObject(object) {
+            if (object instanceof $root.jsbolo.Pillbox)
                 return object;
-            let message = new $root.jsbolo.PillboxState();
+            let message = new $root.jsbolo.Pillbox();
             if (object.id != null)
                 message.id = object.id >>> 0;
             if (object.tileX != null)
@@ -3452,15 +2407,15 @@ export const jsbolo = $root.jsbolo = (() => {
         };
 
         /**
-         * Creates a plain object from a PillboxState message. Also converts values to other types if specified.
+         * Creates a plain object from a Pillbox message. Also converts values to other types if specified.
          * @function toObject
-         * @memberof jsbolo.PillboxState
+         * @memberof jsbolo.Pillbox
          * @static
-         * @param {jsbolo.PillboxState} message PillboxState
+         * @param {jsbolo.Pillbox} message Pillbox
          * @param {$protobuf.IConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
-        PillboxState.toObject = function toObject(message, options) {
+        Pillbox.toObject = function toObject(message, options) {
             if (!options)
                 options = {};
             let object = {};
@@ -3488,58 +2443,58 @@ export const jsbolo = $root.jsbolo = (() => {
         };
 
         /**
-         * Converts this PillboxState to JSON.
+         * Converts this Pillbox to JSON.
          * @function toJSON
-         * @memberof jsbolo.PillboxState
+         * @memberof jsbolo.Pillbox
          * @instance
          * @returns {Object.<string,*>} JSON object
          */
-        PillboxState.prototype.toJSON = function toJSON() {
+        Pillbox.prototype.toJSON = function toJSON() {
             return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
         };
 
         /**
-         * Gets the default type url for PillboxState
+         * Gets the default type url for Pillbox
          * @function getTypeUrl
-         * @memberof jsbolo.PillboxState
+         * @memberof jsbolo.Pillbox
          * @static
          * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
          * @returns {string} The default type url
          */
-        PillboxState.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+        Pillbox.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
             if (typeUrlPrefix === undefined) {
                 typeUrlPrefix = "type.googleapis.com";
             }
-            return typeUrlPrefix + "/jsbolo.PillboxState";
+            return typeUrlPrefix + "/jsbolo.Pillbox";
         };
 
-        return PillboxState;
+        return Pillbox;
     })();
 
-    jsbolo.BaseState = (function() {
+    jsbolo.Base = (function() {
 
         /**
-         * Properties of a BaseState.
+         * Properties of a Base.
          * @memberof jsbolo
-         * @interface IBaseState
-         * @property {number|null} [id] BaseState id
-         * @property {number|null} [tileX] BaseState tileX
-         * @property {number|null} [tileY] BaseState tileY
-         * @property {number|null} [armor] BaseState armor
-         * @property {number|null} [shells] BaseState shells
-         * @property {number|null} [mines] BaseState mines
-         * @property {number|null} [ownerTeam] BaseState ownerTeam
+         * @interface IBase
+         * @property {number|null} [id] Base id
+         * @property {number|null} [tileX] Base tileX
+         * @property {number|null} [tileY] Base tileY
+         * @property {number|null} [armor] Base armor
+         * @property {number|null} [shells] Base shells
+         * @property {number|null} [mines] Base mines
+         * @property {number|null} [ownerTeam] Base ownerTeam
          */
 
         /**
-         * Constructs a new BaseState.
+         * Constructs a new Base.
          * @memberof jsbolo
-         * @classdesc Represents a BaseState.
-         * @implements IBaseState
+         * @classdesc Represents a Base.
+         * @implements IBase
          * @constructor
-         * @param {jsbolo.IBaseState=} [properties] Properties to set
+         * @param {jsbolo.IBase=} [properties] Properties to set
          */
-        function BaseState(properties) {
+        function Base(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null)
@@ -3547,83 +2502,83 @@ export const jsbolo = $root.jsbolo = (() => {
         }
 
         /**
-         * BaseState id.
+         * Base id.
          * @member {number} id
-         * @memberof jsbolo.BaseState
+         * @memberof jsbolo.Base
          * @instance
          */
-        BaseState.prototype.id = 0;
+        Base.prototype.id = 0;
 
         /**
-         * BaseState tileX.
+         * Base tileX.
          * @member {number} tileX
-         * @memberof jsbolo.BaseState
+         * @memberof jsbolo.Base
          * @instance
          */
-        BaseState.prototype.tileX = 0;
+        Base.prototype.tileX = 0;
 
         /**
-         * BaseState tileY.
+         * Base tileY.
          * @member {number} tileY
-         * @memberof jsbolo.BaseState
+         * @memberof jsbolo.Base
          * @instance
          */
-        BaseState.prototype.tileY = 0;
+        Base.prototype.tileY = 0;
 
         /**
-         * BaseState armor.
+         * Base armor.
          * @member {number} armor
-         * @memberof jsbolo.BaseState
+         * @memberof jsbolo.Base
          * @instance
          */
-        BaseState.prototype.armor = 0;
+        Base.prototype.armor = 0;
 
         /**
-         * BaseState shells.
+         * Base shells.
          * @member {number} shells
-         * @memberof jsbolo.BaseState
+         * @memberof jsbolo.Base
          * @instance
          */
-        BaseState.prototype.shells = 0;
+        Base.prototype.shells = 0;
 
         /**
-         * BaseState mines.
+         * Base mines.
          * @member {number} mines
-         * @memberof jsbolo.BaseState
+         * @memberof jsbolo.Base
          * @instance
          */
-        BaseState.prototype.mines = 0;
+        Base.prototype.mines = 0;
 
         /**
-         * BaseState ownerTeam.
+         * Base ownerTeam.
          * @member {number} ownerTeam
-         * @memberof jsbolo.BaseState
+         * @memberof jsbolo.Base
          * @instance
          */
-        BaseState.prototype.ownerTeam = 0;
+        Base.prototype.ownerTeam = 0;
 
         /**
-         * Creates a new BaseState instance using the specified properties.
+         * Creates a new Base instance using the specified properties.
          * @function create
-         * @memberof jsbolo.BaseState
+         * @memberof jsbolo.Base
          * @static
-         * @param {jsbolo.IBaseState=} [properties] Properties to set
-         * @returns {jsbolo.BaseState} BaseState instance
+         * @param {jsbolo.IBase=} [properties] Properties to set
+         * @returns {jsbolo.Base} Base instance
          */
-        BaseState.create = function create(properties) {
-            return new BaseState(properties);
+        Base.create = function create(properties) {
+            return new Base(properties);
         };
 
         /**
-         * Encodes the specified BaseState message. Does not implicitly {@link jsbolo.BaseState.verify|verify} messages.
+         * Encodes the specified Base message. Does not implicitly {@link jsbolo.Base.verify|verify} messages.
          * @function encode
-         * @memberof jsbolo.BaseState
+         * @memberof jsbolo.Base
          * @static
-         * @param {jsbolo.IBaseState} message BaseState message or plain object to encode
+         * @param {jsbolo.IBase} message Base message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
-        BaseState.encode = function encode(message, writer) {
+        Base.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
             if (message.id != null && Object.hasOwnProperty.call(message, "id"))
@@ -3644,33 +2599,33 @@ export const jsbolo = $root.jsbolo = (() => {
         };
 
         /**
-         * Encodes the specified BaseState message, length delimited. Does not implicitly {@link jsbolo.BaseState.verify|verify} messages.
+         * Encodes the specified Base message, length delimited. Does not implicitly {@link jsbolo.Base.verify|verify} messages.
          * @function encodeDelimited
-         * @memberof jsbolo.BaseState
+         * @memberof jsbolo.Base
          * @static
-         * @param {jsbolo.IBaseState} message BaseState message or plain object to encode
+         * @param {jsbolo.IBase} message Base message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
-        BaseState.encodeDelimited = function encodeDelimited(message, writer) {
+        Base.encodeDelimited = function encodeDelimited(message, writer) {
             return this.encode(message, writer).ldelim();
         };
 
         /**
-         * Decodes a BaseState message from the specified reader or buffer.
+         * Decodes a Base message from the specified reader or buffer.
          * @function decode
-         * @memberof jsbolo.BaseState
+         * @memberof jsbolo.Base
          * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
-         * @returns {jsbolo.BaseState} BaseState
+         * @returns {jsbolo.Base} Base
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        BaseState.decode = function decode(reader, length, error) {
+        Base.decode = function decode(reader, length, error) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
-            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.jsbolo.BaseState();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.jsbolo.Base();
             while (reader.pos < end) {
                 let tag = reader.uint32();
                 if (tag === error)
@@ -3713,30 +2668,30 @@ export const jsbolo = $root.jsbolo = (() => {
         };
 
         /**
-         * Decodes a BaseState message from the specified reader or buffer, length delimited.
+         * Decodes a Base message from the specified reader or buffer, length delimited.
          * @function decodeDelimited
-         * @memberof jsbolo.BaseState
+         * @memberof jsbolo.Base
          * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @returns {jsbolo.BaseState} BaseState
+         * @returns {jsbolo.Base} Base
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        BaseState.decodeDelimited = function decodeDelimited(reader) {
+        Base.decodeDelimited = function decodeDelimited(reader) {
             if (!(reader instanceof $Reader))
                 reader = new $Reader(reader);
             return this.decode(reader, reader.uint32());
         };
 
         /**
-         * Verifies a BaseState message.
+         * Verifies a Base message.
          * @function verify
-         * @memberof jsbolo.BaseState
+         * @memberof jsbolo.Base
          * @static
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        BaseState.verify = function verify(message) {
+        Base.verify = function verify(message) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
             if (message.id != null && message.hasOwnProperty("id"))
@@ -3764,17 +2719,17 @@ export const jsbolo = $root.jsbolo = (() => {
         };
 
         /**
-         * Creates a BaseState message from a plain object. Also converts values to their respective internal types.
+         * Creates a Base message from a plain object. Also converts values to their respective internal types.
          * @function fromObject
-         * @memberof jsbolo.BaseState
+         * @memberof jsbolo.Base
          * @static
          * @param {Object.<string,*>} object Plain object
-         * @returns {jsbolo.BaseState} BaseState
+         * @returns {jsbolo.Base} Base
          */
-        BaseState.fromObject = function fromObject(object) {
-            if (object instanceof $root.jsbolo.BaseState)
+        Base.fromObject = function fromObject(object) {
+            if (object instanceof $root.jsbolo.Base)
                 return object;
-            let message = new $root.jsbolo.BaseState();
+            let message = new $root.jsbolo.Base();
             if (object.id != null)
                 message.id = object.id >>> 0;
             if (object.tileX != null)
@@ -3793,15 +2748,15 @@ export const jsbolo = $root.jsbolo = (() => {
         };
 
         /**
-         * Creates a plain object from a BaseState message. Also converts values to other types if specified.
+         * Creates a plain object from a Base message. Also converts values to other types if specified.
          * @function toObject
-         * @memberof jsbolo.BaseState
+         * @memberof jsbolo.Base
          * @static
-         * @param {jsbolo.BaseState} message BaseState
+         * @param {jsbolo.Base} message Base
          * @param {$protobuf.IConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
-        BaseState.toObject = function toObject(message, options) {
+        Base.toObject = function toObject(message, options) {
             if (!options)
                 options = {};
             let object = {};
@@ -3832,57 +2787,56 @@ export const jsbolo = $root.jsbolo = (() => {
         };
 
         /**
-         * Converts this BaseState to JSON.
+         * Converts this Base to JSON.
          * @function toJSON
-         * @memberof jsbolo.BaseState
+         * @memberof jsbolo.Base
          * @instance
          * @returns {Object.<string,*>} JSON object
          */
-        BaseState.prototype.toJSON = function toJSON() {
+        Base.prototype.toJSON = function toJSON() {
             return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
         };
 
         /**
-         * Gets the default type url for BaseState
+         * Gets the default type url for Base
          * @function getTypeUrl
-         * @memberof jsbolo.BaseState
+         * @memberof jsbolo.Base
          * @static
          * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
          * @returns {string} The default type url
          */
-        BaseState.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+        Base.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
             if (typeUrlPrefix === undefined) {
                 typeUrlPrefix = "type.googleapis.com";
             }
-            return typeUrlPrefix + "/jsbolo.BaseState";
+            return typeUrlPrefix + "/jsbolo.Base";
         };
 
-        return BaseState;
+        return Base;
     })();
 
-    jsbolo.CreateEntity = (function() {
+    jsbolo.TerrainUpdate = (function() {
 
         /**
-         * Properties of a CreateEntity.
+         * Properties of a TerrainUpdate.
          * @memberof jsbolo
-         * @interface ICreateEntity
-         * @property {jsbolo.ITankState|null} [tank] CreateEntity tank
-         * @property {jsbolo.IBuilderState|null} [builder] CreateEntity builder
-         * @property {jsbolo.IShellState|null} [shell] CreateEntity shell
-         * @property {jsbolo.IExplosionState|null} [explosion] CreateEntity explosion
-         * @property {jsbolo.IPillboxState|null} [pillbox] CreateEntity pillbox
-         * @property {jsbolo.IBaseState|null} [base] CreateEntity base
+         * @interface ITerrainUpdate
+         * @property {number|null} [x] TerrainUpdate x
+         * @property {number|null} [y] TerrainUpdate y
+         * @property {number|null} [terrain] TerrainUpdate terrain
+         * @property {number|null} [terrainLife] TerrainUpdate terrainLife
+         * @property {number|null} [direction] TerrainUpdate direction
          */
 
         /**
-         * Constructs a new CreateEntity.
+         * Constructs a new TerrainUpdate.
          * @memberof jsbolo
-         * @classdesc Represents a CreateEntity.
-         * @implements ICreateEntity
+         * @classdesc Represents a TerrainUpdate.
+         * @implements ITerrainUpdate
          * @constructor
-         * @param {jsbolo.ICreateEntity=} [properties] Properties to set
+         * @param {jsbolo.ITerrainUpdate=} [properties] Properties to set
          */
-        function CreateEntity(properties) {
+        function TerrainUpdate(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null)
@@ -3890,161 +2844,142 @@ export const jsbolo = $root.jsbolo = (() => {
         }
 
         /**
-         * CreateEntity tank.
-         * @member {jsbolo.ITankState|null|undefined} tank
-         * @memberof jsbolo.CreateEntity
+         * TerrainUpdate x.
+         * @member {number} x
+         * @memberof jsbolo.TerrainUpdate
          * @instance
          */
-        CreateEntity.prototype.tank = null;
+        TerrainUpdate.prototype.x = 0;
 
         /**
-         * CreateEntity builder.
-         * @member {jsbolo.IBuilderState|null|undefined} builder
-         * @memberof jsbolo.CreateEntity
+         * TerrainUpdate y.
+         * @member {number} y
+         * @memberof jsbolo.TerrainUpdate
          * @instance
          */
-        CreateEntity.prototype.builder = null;
+        TerrainUpdate.prototype.y = 0;
 
         /**
-         * CreateEntity shell.
-         * @member {jsbolo.IShellState|null|undefined} shell
-         * @memberof jsbolo.CreateEntity
+         * TerrainUpdate terrain.
+         * @member {number} terrain
+         * @memberof jsbolo.TerrainUpdate
          * @instance
          */
-        CreateEntity.prototype.shell = null;
+        TerrainUpdate.prototype.terrain = 0;
 
         /**
-         * CreateEntity explosion.
-         * @member {jsbolo.IExplosionState|null|undefined} explosion
-         * @memberof jsbolo.CreateEntity
+         * TerrainUpdate terrainLife.
+         * @member {number} terrainLife
+         * @memberof jsbolo.TerrainUpdate
          * @instance
          */
-        CreateEntity.prototype.explosion = null;
+        TerrainUpdate.prototype.terrainLife = 0;
 
         /**
-         * CreateEntity pillbox.
-         * @member {jsbolo.IPillboxState|null|undefined} pillbox
-         * @memberof jsbolo.CreateEntity
+         * TerrainUpdate direction.
+         * @member {number|null|undefined} direction
+         * @memberof jsbolo.TerrainUpdate
          * @instance
          */
-        CreateEntity.prototype.pillbox = null;
-
-        /**
-         * CreateEntity base.
-         * @member {jsbolo.IBaseState|null|undefined} base
-         * @memberof jsbolo.CreateEntity
-         * @instance
-         */
-        CreateEntity.prototype.base = null;
+        TerrainUpdate.prototype.direction = null;
 
         // OneOf field names bound to virtual getters and setters
         let $oneOfFields;
 
-        /**
-         * CreateEntity entity.
-         * @member {"tank"|"builder"|"shell"|"explosion"|"pillbox"|"base"|undefined} entity
-         * @memberof jsbolo.CreateEntity
-         * @instance
-         */
-        Object.defineProperty(CreateEntity.prototype, "entity", {
-            get: $util.oneOfGetter($oneOfFields = ["tank", "builder", "shell", "explosion", "pillbox", "base"]),
+        // Virtual OneOf for proto3 optional field
+        Object.defineProperty(TerrainUpdate.prototype, "_direction", {
+            get: $util.oneOfGetter($oneOfFields = ["direction"]),
             set: $util.oneOfSetter($oneOfFields)
         });
 
         /**
-         * Creates a new CreateEntity instance using the specified properties.
+         * Creates a new TerrainUpdate instance using the specified properties.
          * @function create
-         * @memberof jsbolo.CreateEntity
+         * @memberof jsbolo.TerrainUpdate
          * @static
-         * @param {jsbolo.ICreateEntity=} [properties] Properties to set
-         * @returns {jsbolo.CreateEntity} CreateEntity instance
+         * @param {jsbolo.ITerrainUpdate=} [properties] Properties to set
+         * @returns {jsbolo.TerrainUpdate} TerrainUpdate instance
          */
-        CreateEntity.create = function create(properties) {
-            return new CreateEntity(properties);
+        TerrainUpdate.create = function create(properties) {
+            return new TerrainUpdate(properties);
         };
 
         /**
-         * Encodes the specified CreateEntity message. Does not implicitly {@link jsbolo.CreateEntity.verify|verify} messages.
+         * Encodes the specified TerrainUpdate message. Does not implicitly {@link jsbolo.TerrainUpdate.verify|verify} messages.
          * @function encode
-         * @memberof jsbolo.CreateEntity
+         * @memberof jsbolo.TerrainUpdate
          * @static
-         * @param {jsbolo.ICreateEntity} message CreateEntity message or plain object to encode
+         * @param {jsbolo.ITerrainUpdate} message TerrainUpdate message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
-        CreateEntity.encode = function encode(message, writer) {
+        TerrainUpdate.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.tank != null && Object.hasOwnProperty.call(message, "tank"))
-                $root.jsbolo.TankState.encode(message.tank, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
-            if (message.builder != null && Object.hasOwnProperty.call(message, "builder"))
-                $root.jsbolo.BuilderState.encode(message.builder, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
-            if (message.shell != null && Object.hasOwnProperty.call(message, "shell"))
-                $root.jsbolo.ShellState.encode(message.shell, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
-            if (message.explosion != null && Object.hasOwnProperty.call(message, "explosion"))
-                $root.jsbolo.ExplosionState.encode(message.explosion, writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
-            if (message.pillbox != null && Object.hasOwnProperty.call(message, "pillbox"))
-                $root.jsbolo.PillboxState.encode(message.pillbox, writer.uint32(/* id 5, wireType 2 =*/42).fork()).ldelim();
-            if (message.base != null && Object.hasOwnProperty.call(message, "base"))
-                $root.jsbolo.BaseState.encode(message.base, writer.uint32(/* id 6, wireType 2 =*/50).fork()).ldelim();
+            if (message.x != null && Object.hasOwnProperty.call(message, "x"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.x);
+            if (message.y != null && Object.hasOwnProperty.call(message, "y"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.y);
+            if (message.terrain != null && Object.hasOwnProperty.call(message, "terrain"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.terrain);
+            if (message.terrainLife != null && Object.hasOwnProperty.call(message, "terrainLife"))
+                writer.uint32(/* id 4, wireType 0 =*/32).uint32(message.terrainLife);
+            if (message.direction != null && Object.hasOwnProperty.call(message, "direction"))
+                writer.uint32(/* id 5, wireType 0 =*/40).uint32(message.direction);
             return writer;
         };
 
         /**
-         * Encodes the specified CreateEntity message, length delimited. Does not implicitly {@link jsbolo.CreateEntity.verify|verify} messages.
+         * Encodes the specified TerrainUpdate message, length delimited. Does not implicitly {@link jsbolo.TerrainUpdate.verify|verify} messages.
          * @function encodeDelimited
-         * @memberof jsbolo.CreateEntity
+         * @memberof jsbolo.TerrainUpdate
          * @static
-         * @param {jsbolo.ICreateEntity} message CreateEntity message or plain object to encode
+         * @param {jsbolo.ITerrainUpdate} message TerrainUpdate message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
-        CreateEntity.encodeDelimited = function encodeDelimited(message, writer) {
+        TerrainUpdate.encodeDelimited = function encodeDelimited(message, writer) {
             return this.encode(message, writer).ldelim();
         };
 
         /**
-         * Decodes a CreateEntity message from the specified reader or buffer.
+         * Decodes a TerrainUpdate message from the specified reader or buffer.
          * @function decode
-         * @memberof jsbolo.CreateEntity
+         * @memberof jsbolo.TerrainUpdate
          * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
-         * @returns {jsbolo.CreateEntity} CreateEntity
+         * @returns {jsbolo.TerrainUpdate} TerrainUpdate
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        CreateEntity.decode = function decode(reader, length, error) {
+        TerrainUpdate.decode = function decode(reader, length, error) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
-            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.jsbolo.CreateEntity();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.jsbolo.TerrainUpdate();
             while (reader.pos < end) {
                 let tag = reader.uint32();
                 if (tag === error)
                     break;
                 switch (tag >>> 3) {
                 case 1: {
-                        message.tank = $root.jsbolo.TankState.decode(reader, reader.uint32());
+                        message.x = reader.uint32();
                         break;
                     }
                 case 2: {
-                        message.builder = $root.jsbolo.BuilderState.decode(reader, reader.uint32());
+                        message.y = reader.uint32();
                         break;
                     }
                 case 3: {
-                        message.shell = $root.jsbolo.ShellState.decode(reader, reader.uint32());
+                        message.terrain = reader.uint32();
                         break;
                     }
                 case 4: {
-                        message.explosion = $root.jsbolo.ExplosionState.decode(reader, reader.uint32());
+                        message.terrainLife = reader.uint32();
                         break;
                     }
                 case 5: {
-                        message.pillbox = $root.jsbolo.PillboxState.decode(reader, reader.uint32());
-                        break;
-                    }
-                case 6: {
-                        message.base = $root.jsbolo.BaseState.decode(reader, reader.uint32());
+                        message.direction = reader.uint32();
                         break;
                     }
                 default:
@@ -4056,233 +2991,162 @@ export const jsbolo = $root.jsbolo = (() => {
         };
 
         /**
-         * Decodes a CreateEntity message from the specified reader or buffer, length delimited.
+         * Decodes a TerrainUpdate message from the specified reader or buffer, length delimited.
          * @function decodeDelimited
-         * @memberof jsbolo.CreateEntity
+         * @memberof jsbolo.TerrainUpdate
          * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @returns {jsbolo.CreateEntity} CreateEntity
+         * @returns {jsbolo.TerrainUpdate} TerrainUpdate
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        CreateEntity.decodeDelimited = function decodeDelimited(reader) {
+        TerrainUpdate.decodeDelimited = function decodeDelimited(reader) {
             if (!(reader instanceof $Reader))
                 reader = new $Reader(reader);
             return this.decode(reader, reader.uint32());
         };
 
         /**
-         * Verifies a CreateEntity message.
+         * Verifies a TerrainUpdate message.
          * @function verify
-         * @memberof jsbolo.CreateEntity
+         * @memberof jsbolo.TerrainUpdate
          * @static
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        CreateEntity.verify = function verify(message) {
+        TerrainUpdate.verify = function verify(message) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
             let properties = {};
-            if (message.tank != null && message.hasOwnProperty("tank")) {
-                properties.entity = 1;
-                {
-                    let error = $root.jsbolo.TankState.verify(message.tank);
-                    if (error)
-                        return "tank." + error;
-                }
-            }
-            if (message.builder != null && message.hasOwnProperty("builder")) {
-                if (properties.entity === 1)
-                    return "entity: multiple values";
-                properties.entity = 1;
-                {
-                    let error = $root.jsbolo.BuilderState.verify(message.builder);
-                    if (error)
-                        return "builder." + error;
-                }
-            }
-            if (message.shell != null && message.hasOwnProperty("shell")) {
-                if (properties.entity === 1)
-                    return "entity: multiple values";
-                properties.entity = 1;
-                {
-                    let error = $root.jsbolo.ShellState.verify(message.shell);
-                    if (error)
-                        return "shell." + error;
-                }
-            }
-            if (message.explosion != null && message.hasOwnProperty("explosion")) {
-                if (properties.entity === 1)
-                    return "entity: multiple values";
-                properties.entity = 1;
-                {
-                    let error = $root.jsbolo.ExplosionState.verify(message.explosion);
-                    if (error)
-                        return "explosion." + error;
-                }
-            }
-            if (message.pillbox != null && message.hasOwnProperty("pillbox")) {
-                if (properties.entity === 1)
-                    return "entity: multiple values";
-                properties.entity = 1;
-                {
-                    let error = $root.jsbolo.PillboxState.verify(message.pillbox);
-                    if (error)
-                        return "pillbox." + error;
-                }
-            }
-            if (message.base != null && message.hasOwnProperty("base")) {
-                if (properties.entity === 1)
-                    return "entity: multiple values";
-                properties.entity = 1;
-                {
-                    let error = $root.jsbolo.BaseState.verify(message.base);
-                    if (error)
-                        return "base." + error;
-                }
+            if (message.x != null && message.hasOwnProperty("x"))
+                if (!$util.isInteger(message.x))
+                    return "x: integer expected";
+            if (message.y != null && message.hasOwnProperty("y"))
+                if (!$util.isInteger(message.y))
+                    return "y: integer expected";
+            if (message.terrain != null && message.hasOwnProperty("terrain"))
+                if (!$util.isInteger(message.terrain))
+                    return "terrain: integer expected";
+            if (message.terrainLife != null && message.hasOwnProperty("terrainLife"))
+                if (!$util.isInteger(message.terrainLife))
+                    return "terrainLife: integer expected";
+            if (message.direction != null && message.hasOwnProperty("direction")) {
+                properties._direction = 1;
+                if (!$util.isInteger(message.direction))
+                    return "direction: integer expected";
             }
             return null;
         };
 
         /**
-         * Creates a CreateEntity message from a plain object. Also converts values to their respective internal types.
+         * Creates a TerrainUpdate message from a plain object. Also converts values to their respective internal types.
          * @function fromObject
-         * @memberof jsbolo.CreateEntity
+         * @memberof jsbolo.TerrainUpdate
          * @static
          * @param {Object.<string,*>} object Plain object
-         * @returns {jsbolo.CreateEntity} CreateEntity
+         * @returns {jsbolo.TerrainUpdate} TerrainUpdate
          */
-        CreateEntity.fromObject = function fromObject(object) {
-            if (object instanceof $root.jsbolo.CreateEntity)
+        TerrainUpdate.fromObject = function fromObject(object) {
+            if (object instanceof $root.jsbolo.TerrainUpdate)
                 return object;
-            let message = new $root.jsbolo.CreateEntity();
-            if (object.tank != null) {
-                if (typeof object.tank !== "object")
-                    throw TypeError(".jsbolo.CreateEntity.tank: object expected");
-                message.tank = $root.jsbolo.TankState.fromObject(object.tank);
-            }
-            if (object.builder != null) {
-                if (typeof object.builder !== "object")
-                    throw TypeError(".jsbolo.CreateEntity.builder: object expected");
-                message.builder = $root.jsbolo.BuilderState.fromObject(object.builder);
-            }
-            if (object.shell != null) {
-                if (typeof object.shell !== "object")
-                    throw TypeError(".jsbolo.CreateEntity.shell: object expected");
-                message.shell = $root.jsbolo.ShellState.fromObject(object.shell);
-            }
-            if (object.explosion != null) {
-                if (typeof object.explosion !== "object")
-                    throw TypeError(".jsbolo.CreateEntity.explosion: object expected");
-                message.explosion = $root.jsbolo.ExplosionState.fromObject(object.explosion);
-            }
-            if (object.pillbox != null) {
-                if (typeof object.pillbox !== "object")
-                    throw TypeError(".jsbolo.CreateEntity.pillbox: object expected");
-                message.pillbox = $root.jsbolo.PillboxState.fromObject(object.pillbox);
-            }
-            if (object.base != null) {
-                if (typeof object.base !== "object")
-                    throw TypeError(".jsbolo.CreateEntity.base: object expected");
-                message.base = $root.jsbolo.BaseState.fromObject(object.base);
-            }
+            let message = new $root.jsbolo.TerrainUpdate();
+            if (object.x != null)
+                message.x = object.x >>> 0;
+            if (object.y != null)
+                message.y = object.y >>> 0;
+            if (object.terrain != null)
+                message.terrain = object.terrain >>> 0;
+            if (object.terrainLife != null)
+                message.terrainLife = object.terrainLife >>> 0;
+            if (object.direction != null)
+                message.direction = object.direction >>> 0;
             return message;
         };
 
         /**
-         * Creates a plain object from a CreateEntity message. Also converts values to other types if specified.
+         * Creates a plain object from a TerrainUpdate message. Also converts values to other types if specified.
          * @function toObject
-         * @memberof jsbolo.CreateEntity
+         * @memberof jsbolo.TerrainUpdate
          * @static
-         * @param {jsbolo.CreateEntity} message CreateEntity
+         * @param {jsbolo.TerrainUpdate} message TerrainUpdate
          * @param {$protobuf.IConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
-        CreateEntity.toObject = function toObject(message, options) {
+        TerrainUpdate.toObject = function toObject(message, options) {
             if (!options)
                 options = {};
             let object = {};
-            if (message.tank != null && message.hasOwnProperty("tank")) {
-                object.tank = $root.jsbolo.TankState.toObject(message.tank, options);
-                if (options.oneofs)
-                    object.entity = "tank";
+            if (options.defaults) {
+                object.x = 0;
+                object.y = 0;
+                object.terrain = 0;
+                object.terrainLife = 0;
             }
-            if (message.builder != null && message.hasOwnProperty("builder")) {
-                object.builder = $root.jsbolo.BuilderState.toObject(message.builder, options);
+            if (message.x != null && message.hasOwnProperty("x"))
+                object.x = message.x;
+            if (message.y != null && message.hasOwnProperty("y"))
+                object.y = message.y;
+            if (message.terrain != null && message.hasOwnProperty("terrain"))
+                object.terrain = message.terrain;
+            if (message.terrainLife != null && message.hasOwnProperty("terrainLife"))
+                object.terrainLife = message.terrainLife;
+            if (message.direction != null && message.hasOwnProperty("direction")) {
+                object.direction = message.direction;
                 if (options.oneofs)
-                    object.entity = "builder";
-            }
-            if (message.shell != null && message.hasOwnProperty("shell")) {
-                object.shell = $root.jsbolo.ShellState.toObject(message.shell, options);
-                if (options.oneofs)
-                    object.entity = "shell";
-            }
-            if (message.explosion != null && message.hasOwnProperty("explosion")) {
-                object.explosion = $root.jsbolo.ExplosionState.toObject(message.explosion, options);
-                if (options.oneofs)
-                    object.entity = "explosion";
-            }
-            if (message.pillbox != null && message.hasOwnProperty("pillbox")) {
-                object.pillbox = $root.jsbolo.PillboxState.toObject(message.pillbox, options);
-                if (options.oneofs)
-                    object.entity = "pillbox";
-            }
-            if (message.base != null && message.hasOwnProperty("base")) {
-                object.base = $root.jsbolo.BaseState.toObject(message.base, options);
-                if (options.oneofs)
-                    object.entity = "base";
+                    object._direction = "direction";
             }
             return object;
         };
 
         /**
-         * Converts this CreateEntity to JSON.
+         * Converts this TerrainUpdate to JSON.
          * @function toJSON
-         * @memberof jsbolo.CreateEntity
+         * @memberof jsbolo.TerrainUpdate
          * @instance
          * @returns {Object.<string,*>} JSON object
          */
-        CreateEntity.prototype.toJSON = function toJSON() {
+        TerrainUpdate.prototype.toJSON = function toJSON() {
             return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
         };
 
         /**
-         * Gets the default type url for CreateEntity
+         * Gets the default type url for TerrainUpdate
          * @function getTypeUrl
-         * @memberof jsbolo.CreateEntity
+         * @memberof jsbolo.TerrainUpdate
          * @static
          * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
          * @returns {string} The default type url
          */
-        CreateEntity.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+        TerrainUpdate.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
             if (typeUrlPrefix === undefined) {
                 typeUrlPrefix = "type.googleapis.com";
             }
-            return typeUrlPrefix + "/jsbolo.CreateEntity";
+            return typeUrlPrefix + "/jsbolo.TerrainUpdate";
         };
 
-        return CreateEntity;
+        return TerrainUpdate;
     })();
 
-    jsbolo.DestroyEntity = (function() {
+    jsbolo.SoundEvent = (function() {
 
         /**
-         * Properties of a DestroyEntity.
+         * Properties of a SoundEvent.
          * @memberof jsbolo
-         * @interface IDestroyEntity
-         * @property {jsbolo.DestroyEntity.EntityType|null} [type] DestroyEntity type
-         * @property {number|null} [id] DestroyEntity id
+         * @interface ISoundEvent
+         * @property {number|null} [soundId] SoundEvent soundId
+         * @property {number|null} [x] SoundEvent x
+         * @property {number|null} [y] SoundEvent y
          */
 
         /**
-         * Constructs a new DestroyEntity.
+         * Constructs a new SoundEvent.
          * @memberof jsbolo
-         * @classdesc Represents a DestroyEntity.
-         * @implements IDestroyEntity
+         * @classdesc Represents a SoundEvent.
+         * @implements ISoundEvent
          * @constructor
-         * @param {jsbolo.IDestroyEntity=} [properties] Properties to set
+         * @param {jsbolo.ISoundEvent=} [properties] Properties to set
          */
-        function DestroyEntity(properties) {
+        function SoundEvent(properties) {
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null)
@@ -4290,91 +3154,105 @@ export const jsbolo = $root.jsbolo = (() => {
         }
 
         /**
-         * DestroyEntity type.
-         * @member {jsbolo.DestroyEntity.EntityType} type
-         * @memberof jsbolo.DestroyEntity
+         * SoundEvent soundId.
+         * @member {number} soundId
+         * @memberof jsbolo.SoundEvent
          * @instance
          */
-        DestroyEntity.prototype.type = 0;
+        SoundEvent.prototype.soundId = 0;
 
         /**
-         * DestroyEntity id.
-         * @member {number} id
-         * @memberof jsbolo.DestroyEntity
+         * SoundEvent x.
+         * @member {number} x
+         * @memberof jsbolo.SoundEvent
          * @instance
          */
-        DestroyEntity.prototype.id = 0;
+        SoundEvent.prototype.x = 0;
 
         /**
-         * Creates a new DestroyEntity instance using the specified properties.
+         * SoundEvent y.
+         * @member {number} y
+         * @memberof jsbolo.SoundEvent
+         * @instance
+         */
+        SoundEvent.prototype.y = 0;
+
+        /**
+         * Creates a new SoundEvent instance using the specified properties.
          * @function create
-         * @memberof jsbolo.DestroyEntity
+         * @memberof jsbolo.SoundEvent
          * @static
-         * @param {jsbolo.IDestroyEntity=} [properties] Properties to set
-         * @returns {jsbolo.DestroyEntity} DestroyEntity instance
+         * @param {jsbolo.ISoundEvent=} [properties] Properties to set
+         * @returns {jsbolo.SoundEvent} SoundEvent instance
          */
-        DestroyEntity.create = function create(properties) {
-            return new DestroyEntity(properties);
+        SoundEvent.create = function create(properties) {
+            return new SoundEvent(properties);
         };
 
         /**
-         * Encodes the specified DestroyEntity message. Does not implicitly {@link jsbolo.DestroyEntity.verify|verify} messages.
+         * Encodes the specified SoundEvent message. Does not implicitly {@link jsbolo.SoundEvent.verify|verify} messages.
          * @function encode
-         * @memberof jsbolo.DestroyEntity
+         * @memberof jsbolo.SoundEvent
          * @static
-         * @param {jsbolo.IDestroyEntity} message DestroyEntity message or plain object to encode
+         * @param {jsbolo.ISoundEvent} message SoundEvent message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
-        DestroyEntity.encode = function encode(message, writer) {
+        SoundEvent.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.type != null && Object.hasOwnProperty.call(message, "type"))
-                writer.uint32(/* id 1, wireType 0 =*/8).int32(message.type);
-            if (message.id != null && Object.hasOwnProperty.call(message, "id"))
-                writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.id);
+            if (message.soundId != null && Object.hasOwnProperty.call(message, "soundId"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.soundId);
+            if (message.x != null && Object.hasOwnProperty.call(message, "x"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.x);
+            if (message.y != null && Object.hasOwnProperty.call(message, "y"))
+                writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.y);
             return writer;
         };
 
         /**
-         * Encodes the specified DestroyEntity message, length delimited. Does not implicitly {@link jsbolo.DestroyEntity.verify|verify} messages.
+         * Encodes the specified SoundEvent message, length delimited. Does not implicitly {@link jsbolo.SoundEvent.verify|verify} messages.
          * @function encodeDelimited
-         * @memberof jsbolo.DestroyEntity
+         * @memberof jsbolo.SoundEvent
          * @static
-         * @param {jsbolo.IDestroyEntity} message DestroyEntity message or plain object to encode
+         * @param {jsbolo.ISoundEvent} message SoundEvent message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
-        DestroyEntity.encodeDelimited = function encodeDelimited(message, writer) {
+        SoundEvent.encodeDelimited = function encodeDelimited(message, writer) {
             return this.encode(message, writer).ldelim();
         };
 
         /**
-         * Decodes a DestroyEntity message from the specified reader or buffer.
+         * Decodes a SoundEvent message from the specified reader or buffer.
          * @function decode
-         * @memberof jsbolo.DestroyEntity
+         * @memberof jsbolo.SoundEvent
          * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
-         * @returns {jsbolo.DestroyEntity} DestroyEntity
+         * @returns {jsbolo.SoundEvent} SoundEvent
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        DestroyEntity.decode = function decode(reader, length, error) {
+        SoundEvent.decode = function decode(reader, length, error) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
-            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.jsbolo.DestroyEntity();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.jsbolo.SoundEvent();
             while (reader.pos < end) {
                 let tag = reader.uint32();
                 if (tag === error)
                     break;
                 switch (tag >>> 3) {
                 case 1: {
-                        message.type = reader.int32();
+                        message.soundId = reader.uint32();
                         break;
                     }
                 case 2: {
-                        message.id = reader.uint32();
+                        message.x = reader.uint32();
+                        break;
+                    }
+                case 3: {
+                        message.y = reader.uint32();
                         break;
                     }
                 default:
@@ -4386,172 +3264,444 @@ export const jsbolo = $root.jsbolo = (() => {
         };
 
         /**
-         * Decodes a DestroyEntity message from the specified reader or buffer, length delimited.
+         * Decodes a SoundEvent message from the specified reader or buffer, length delimited.
          * @function decodeDelimited
-         * @memberof jsbolo.DestroyEntity
+         * @memberof jsbolo.SoundEvent
          * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @returns {jsbolo.DestroyEntity} DestroyEntity
+         * @returns {jsbolo.SoundEvent} SoundEvent
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        DestroyEntity.decodeDelimited = function decodeDelimited(reader) {
+        SoundEvent.decodeDelimited = function decodeDelimited(reader) {
             if (!(reader instanceof $Reader))
                 reader = new $Reader(reader);
             return this.decode(reader, reader.uint32());
         };
 
         /**
-         * Verifies a DestroyEntity message.
+         * Verifies a SoundEvent message.
          * @function verify
-         * @memberof jsbolo.DestroyEntity
+         * @memberof jsbolo.SoundEvent
          * @static
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        DestroyEntity.verify = function verify(message) {
+        SoundEvent.verify = function verify(message) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
-            if (message.type != null && message.hasOwnProperty("type"))
-                switch (message.type) {
-                default:
-                    return "type: enum value expected";
-                case 0:
-                case 1:
-                case 2:
-                case 3:
-                case 4:
-                case 5:
-                    break;
-                }
-            if (message.id != null && message.hasOwnProperty("id"))
-                if (!$util.isInteger(message.id))
-                    return "id: integer expected";
+            if (message.soundId != null && message.hasOwnProperty("soundId"))
+                if (!$util.isInteger(message.soundId))
+                    return "soundId: integer expected";
+            if (message.x != null && message.hasOwnProperty("x"))
+                if (!$util.isInteger(message.x))
+                    return "x: integer expected";
+            if (message.y != null && message.hasOwnProperty("y"))
+                if (!$util.isInteger(message.y))
+                    return "y: integer expected";
             return null;
         };
 
         /**
-         * Creates a DestroyEntity message from a plain object. Also converts values to their respective internal types.
+         * Creates a SoundEvent message from a plain object. Also converts values to their respective internal types.
          * @function fromObject
-         * @memberof jsbolo.DestroyEntity
+         * @memberof jsbolo.SoundEvent
          * @static
          * @param {Object.<string,*>} object Plain object
-         * @returns {jsbolo.DestroyEntity} DestroyEntity
+         * @returns {jsbolo.SoundEvent} SoundEvent
          */
-        DestroyEntity.fromObject = function fromObject(object) {
-            if (object instanceof $root.jsbolo.DestroyEntity)
+        SoundEvent.fromObject = function fromObject(object) {
+            if (object instanceof $root.jsbolo.SoundEvent)
                 return object;
-            let message = new $root.jsbolo.DestroyEntity();
-            switch (object.type) {
-            default:
-                if (typeof object.type === "number") {
-                    message.type = object.type;
-                    break;
-                }
-                break;
-            case "TANK":
-            case 0:
-                message.type = 0;
-                break;
-            case "BUILDER":
-            case 1:
-                message.type = 1;
-                break;
-            case "SHELL":
-            case 2:
-                message.type = 2;
-                break;
-            case "EXPLOSION":
-            case 3:
-                message.type = 3;
-                break;
-            case "PILLBOX":
-            case 4:
-                message.type = 4;
-                break;
-            case "BASE":
-            case 5:
-                message.type = 5;
-                break;
-            }
-            if (object.id != null)
-                message.id = object.id >>> 0;
+            let message = new $root.jsbolo.SoundEvent();
+            if (object.soundId != null)
+                message.soundId = object.soundId >>> 0;
+            if (object.x != null)
+                message.x = object.x >>> 0;
+            if (object.y != null)
+                message.y = object.y >>> 0;
             return message;
         };
 
         /**
-         * Creates a plain object from a DestroyEntity message. Also converts values to other types if specified.
+         * Creates a plain object from a SoundEvent message. Also converts values to other types if specified.
          * @function toObject
-         * @memberof jsbolo.DestroyEntity
+         * @memberof jsbolo.SoundEvent
          * @static
-         * @param {jsbolo.DestroyEntity} message DestroyEntity
+         * @param {jsbolo.SoundEvent} message SoundEvent
          * @param {$protobuf.IConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
-        DestroyEntity.toObject = function toObject(message, options) {
+        SoundEvent.toObject = function toObject(message, options) {
             if (!options)
                 options = {};
             let object = {};
             if (options.defaults) {
-                object.type = options.enums === String ? "TANK" : 0;
-                object.id = 0;
+                object.soundId = 0;
+                object.x = 0;
+                object.y = 0;
             }
-            if (message.type != null && message.hasOwnProperty("type"))
-                object.type = options.enums === String ? $root.jsbolo.DestroyEntity.EntityType[message.type] === undefined ? message.type : $root.jsbolo.DestroyEntity.EntityType[message.type] : message.type;
-            if (message.id != null && message.hasOwnProperty("id"))
-                object.id = message.id;
+            if (message.soundId != null && message.hasOwnProperty("soundId"))
+                object.soundId = message.soundId;
+            if (message.x != null && message.hasOwnProperty("x"))
+                object.x = message.x;
+            if (message.y != null && message.hasOwnProperty("y"))
+                object.y = message.y;
             return object;
         };
 
         /**
-         * Converts this DestroyEntity to JSON.
+         * Converts this SoundEvent to JSON.
          * @function toJSON
-         * @memberof jsbolo.DestroyEntity
+         * @memberof jsbolo.SoundEvent
          * @instance
          * @returns {Object.<string,*>} JSON object
          */
-        DestroyEntity.prototype.toJSON = function toJSON() {
+        SoundEvent.prototype.toJSON = function toJSON() {
             return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
         };
 
         /**
-         * Gets the default type url for DestroyEntity
+         * Gets the default type url for SoundEvent
          * @function getTypeUrl
-         * @memberof jsbolo.DestroyEntity
+         * @memberof jsbolo.SoundEvent
          * @static
          * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
          * @returns {string} The default type url
          */
-        DestroyEntity.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+        SoundEvent.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
             if (typeUrlPrefix === undefined) {
                 typeUrlPrefix = "type.googleapis.com";
             }
-            return typeUrlPrefix + "/jsbolo.DestroyEntity";
+            return typeUrlPrefix + "/jsbolo.SoundEvent";
+        };
+
+        return SoundEvent;
+    })();
+
+    jsbolo.WelcomeMap = (function() {
+
+        /**
+         * Properties of a WelcomeMap.
+         * @memberof jsbolo
+         * @interface IWelcomeMap
+         * @property {number|null} [width] WelcomeMap width
+         * @property {number|null} [height] WelcomeMap height
+         * @property {Array.<number>|null} [terrain] WelcomeMap terrain
+         * @property {Array.<number>|null} [terrainLife] WelcomeMap terrainLife
+         */
+
+        /**
+         * Constructs a new WelcomeMap.
+         * @memberof jsbolo
+         * @classdesc Represents a WelcomeMap.
+         * @implements IWelcomeMap
+         * @constructor
+         * @param {jsbolo.IWelcomeMap=} [properties] Properties to set
+         */
+        function WelcomeMap(properties) {
+            this.terrain = [];
+            this.terrainLife = [];
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null)
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * WelcomeMap width.
+         * @member {number} width
+         * @memberof jsbolo.WelcomeMap
+         * @instance
+         */
+        WelcomeMap.prototype.width = 0;
+
+        /**
+         * WelcomeMap height.
+         * @member {number} height
+         * @memberof jsbolo.WelcomeMap
+         * @instance
+         */
+        WelcomeMap.prototype.height = 0;
+
+        /**
+         * WelcomeMap terrain.
+         * @member {Array.<number>} terrain
+         * @memberof jsbolo.WelcomeMap
+         * @instance
+         */
+        WelcomeMap.prototype.terrain = $util.emptyArray;
+
+        /**
+         * WelcomeMap terrainLife.
+         * @member {Array.<number>} terrainLife
+         * @memberof jsbolo.WelcomeMap
+         * @instance
+         */
+        WelcomeMap.prototype.terrainLife = $util.emptyArray;
+
+        /**
+         * Creates a new WelcomeMap instance using the specified properties.
+         * @function create
+         * @memberof jsbolo.WelcomeMap
+         * @static
+         * @param {jsbolo.IWelcomeMap=} [properties] Properties to set
+         * @returns {jsbolo.WelcomeMap} WelcomeMap instance
+         */
+        WelcomeMap.create = function create(properties) {
+            return new WelcomeMap(properties);
         };
 
         /**
-         * EntityType enum.
-         * @name jsbolo.DestroyEntity.EntityType
-         * @enum {number}
-         * @property {number} TANK=0 TANK value
-         * @property {number} BUILDER=1 BUILDER value
-         * @property {number} SHELL=2 SHELL value
-         * @property {number} EXPLOSION=3 EXPLOSION value
-         * @property {number} PILLBOX=4 PILLBOX value
-         * @property {number} BASE=5 BASE value
+         * Encodes the specified WelcomeMap message. Does not implicitly {@link jsbolo.WelcomeMap.verify|verify} messages.
+         * @function encode
+         * @memberof jsbolo.WelcomeMap
+         * @static
+         * @param {jsbolo.IWelcomeMap} message WelcomeMap message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
          */
-        DestroyEntity.EntityType = (function() {
-            const valuesById = {}, values = Object.create(valuesById);
-            values[valuesById[0] = "TANK"] = 0;
-            values[valuesById[1] = "BUILDER"] = 1;
-            values[valuesById[2] = "SHELL"] = 2;
-            values[valuesById[3] = "EXPLOSION"] = 3;
-            values[valuesById[4] = "PILLBOX"] = 4;
-            values[valuesById[5] = "BASE"] = 5;
-            return values;
-        })();
+        WelcomeMap.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.width != null && Object.hasOwnProperty.call(message, "width"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.width);
+            if (message.height != null && Object.hasOwnProperty.call(message, "height"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.height);
+            if (message.terrain != null && message.terrain.length) {
+                writer.uint32(/* id 3, wireType 2 =*/26).fork();
+                for (let i = 0; i < message.terrain.length; ++i)
+                    writer.uint32(message.terrain[i]);
+                writer.ldelim();
+            }
+            if (message.terrainLife != null && message.terrainLife.length) {
+                writer.uint32(/* id 4, wireType 2 =*/34).fork();
+                for (let i = 0; i < message.terrainLife.length; ++i)
+                    writer.uint32(message.terrainLife[i]);
+                writer.ldelim();
+            }
+            return writer;
+        };
 
-        return DestroyEntity;
+        /**
+         * Encodes the specified WelcomeMap message, length delimited. Does not implicitly {@link jsbolo.WelcomeMap.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof jsbolo.WelcomeMap
+         * @static
+         * @param {jsbolo.IWelcomeMap} message WelcomeMap message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        WelcomeMap.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a WelcomeMap message from the specified reader or buffer.
+         * @function decode
+         * @memberof jsbolo.WelcomeMap
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {jsbolo.WelcomeMap} WelcomeMap
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        WelcomeMap.decode = function decode(reader, length, error) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.jsbolo.WelcomeMap();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.width = reader.uint32();
+                        break;
+                    }
+                case 2: {
+                        message.height = reader.uint32();
+                        break;
+                    }
+                case 3: {
+                        if (!(message.terrain && message.terrain.length))
+                            message.terrain = [];
+                        if ((tag & 7) === 2) {
+                            let end2 = reader.uint32() + reader.pos;
+                            while (reader.pos < end2)
+                                message.terrain.push(reader.uint32());
+                        } else
+                            message.terrain.push(reader.uint32());
+                        break;
+                    }
+                case 4: {
+                        if (!(message.terrainLife && message.terrainLife.length))
+                            message.terrainLife = [];
+                        if ((tag & 7) === 2) {
+                            let end2 = reader.uint32() + reader.pos;
+                            while (reader.pos < end2)
+                                message.terrainLife.push(reader.uint32());
+                        } else
+                            message.terrainLife.push(reader.uint32());
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a WelcomeMap message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof jsbolo.WelcomeMap
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {jsbolo.WelcomeMap} WelcomeMap
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        WelcomeMap.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a WelcomeMap message.
+         * @function verify
+         * @memberof jsbolo.WelcomeMap
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        WelcomeMap.verify = function verify(message) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (message.width != null && message.hasOwnProperty("width"))
+                if (!$util.isInteger(message.width))
+                    return "width: integer expected";
+            if (message.height != null && message.hasOwnProperty("height"))
+                if (!$util.isInteger(message.height))
+                    return "height: integer expected";
+            if (message.terrain != null && message.hasOwnProperty("terrain")) {
+                if (!Array.isArray(message.terrain))
+                    return "terrain: array expected";
+                for (let i = 0; i < message.terrain.length; ++i)
+                    if (!$util.isInteger(message.terrain[i]))
+                        return "terrain: integer[] expected";
+            }
+            if (message.terrainLife != null && message.hasOwnProperty("terrainLife")) {
+                if (!Array.isArray(message.terrainLife))
+                    return "terrainLife: array expected";
+                for (let i = 0; i < message.terrainLife.length; ++i)
+                    if (!$util.isInteger(message.terrainLife[i]))
+                        return "terrainLife: integer[] expected";
+            }
+            return null;
+        };
+
+        /**
+         * Creates a WelcomeMap message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof jsbolo.WelcomeMap
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {jsbolo.WelcomeMap} WelcomeMap
+         */
+        WelcomeMap.fromObject = function fromObject(object) {
+            if (object instanceof $root.jsbolo.WelcomeMap)
+                return object;
+            let message = new $root.jsbolo.WelcomeMap();
+            if (object.width != null)
+                message.width = object.width >>> 0;
+            if (object.height != null)
+                message.height = object.height >>> 0;
+            if (object.terrain) {
+                if (!Array.isArray(object.terrain))
+                    throw TypeError(".jsbolo.WelcomeMap.terrain: array expected");
+                message.terrain = [];
+                for (let i = 0; i < object.terrain.length; ++i)
+                    message.terrain[i] = object.terrain[i] >>> 0;
+            }
+            if (object.terrainLife) {
+                if (!Array.isArray(object.terrainLife))
+                    throw TypeError(".jsbolo.WelcomeMap.terrainLife: array expected");
+                message.terrainLife = [];
+                for (let i = 0; i < object.terrainLife.length; ++i)
+                    message.terrainLife[i] = object.terrainLife[i] >>> 0;
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a WelcomeMap message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof jsbolo.WelcomeMap
+         * @static
+         * @param {jsbolo.WelcomeMap} message WelcomeMap
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        WelcomeMap.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.arrays || options.defaults) {
+                object.terrain = [];
+                object.terrainLife = [];
+            }
+            if (options.defaults) {
+                object.width = 0;
+                object.height = 0;
+            }
+            if (message.width != null && message.hasOwnProperty("width"))
+                object.width = message.width;
+            if (message.height != null && message.hasOwnProperty("height"))
+                object.height = message.height;
+            if (message.terrain && message.terrain.length) {
+                object.terrain = [];
+                for (let j = 0; j < message.terrain.length; ++j)
+                    object.terrain[j] = message.terrain[j];
+            }
+            if (message.terrainLife && message.terrainLife.length) {
+                object.terrainLife = [];
+                for (let j = 0; j < message.terrainLife.length; ++j)
+                    object.terrainLife[j] = message.terrainLife[j];
+            }
+            return object;
+        };
+
+        /**
+         * Converts this WelcomeMap to JSON.
+         * @function toJSON
+         * @memberof jsbolo.WelcomeMap
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        WelcomeMap.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for WelcomeMap
+         * @function getTypeUrl
+         * @memberof jsbolo.WelcomeMap
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        WelcomeMap.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/jsbolo.WelcomeMap";
+        };
+
+        return WelcomeMap;
     })();
 
     jsbolo.WelcomeMessage = (function() {
@@ -4563,7 +3713,13 @@ export const jsbolo = $root.jsbolo = (() => {
          * @property {number|null} [playerId] WelcomeMessage playerId
          * @property {number|null} [assignedTeam] WelcomeMessage assignedTeam
          * @property {number|null} [currentTick] WelcomeMessage currentTick
-         * @property {jsbolo.IMapData|null} [map] WelcomeMessage map
+         * @property {string|null} [mapName] WelcomeMessage mapName
+         * @property {jsbolo.IWelcomeMap|null} [map] WelcomeMessage map
+         * @property {Array.<jsbolo.ITank>|null} [tanks] WelcomeMessage tanks
+         * @property {Array.<jsbolo.IPillbox>|null} [pillboxes] WelcomeMessage pillboxes
+         * @property {Array.<jsbolo.IBase>|null} [bases] WelcomeMessage bases
+         * @property {boolean|null} [matchEnded] WelcomeMessage matchEnded
+         * @property {Array.<number>|null} [winningTeams] WelcomeMessage winningTeams
          */
 
         /**
@@ -4575,6 +3731,10 @@ export const jsbolo = $root.jsbolo = (() => {
          * @param {jsbolo.IWelcomeMessage=} [properties] Properties to set
          */
         function WelcomeMessage(properties) {
+            this.tanks = [];
+            this.pillboxes = [];
+            this.bases = [];
+            this.winningTeams = [];
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null)
@@ -4606,12 +3766,69 @@ export const jsbolo = $root.jsbolo = (() => {
         WelcomeMessage.prototype.currentTick = 0;
 
         /**
+         * WelcomeMessage mapName.
+         * @member {string} mapName
+         * @memberof jsbolo.WelcomeMessage
+         * @instance
+         */
+        WelcomeMessage.prototype.mapName = "";
+
+        /**
          * WelcomeMessage map.
-         * @member {jsbolo.IMapData|null|undefined} map
+         * @member {jsbolo.IWelcomeMap|null|undefined} map
          * @memberof jsbolo.WelcomeMessage
          * @instance
          */
         WelcomeMessage.prototype.map = null;
+
+        /**
+         * WelcomeMessage tanks.
+         * @member {Array.<jsbolo.ITank>} tanks
+         * @memberof jsbolo.WelcomeMessage
+         * @instance
+         */
+        WelcomeMessage.prototype.tanks = $util.emptyArray;
+
+        /**
+         * WelcomeMessage pillboxes.
+         * @member {Array.<jsbolo.IPillbox>} pillboxes
+         * @memberof jsbolo.WelcomeMessage
+         * @instance
+         */
+        WelcomeMessage.prototype.pillboxes = $util.emptyArray;
+
+        /**
+         * WelcomeMessage bases.
+         * @member {Array.<jsbolo.IBase>} bases
+         * @memberof jsbolo.WelcomeMessage
+         * @instance
+         */
+        WelcomeMessage.prototype.bases = $util.emptyArray;
+
+        /**
+         * WelcomeMessage matchEnded.
+         * @member {boolean|null|undefined} matchEnded
+         * @memberof jsbolo.WelcomeMessage
+         * @instance
+         */
+        WelcomeMessage.prototype.matchEnded = null;
+
+        /**
+         * WelcomeMessage winningTeams.
+         * @member {Array.<number>} winningTeams
+         * @memberof jsbolo.WelcomeMessage
+         * @instance
+         */
+        WelcomeMessage.prototype.winningTeams = $util.emptyArray;
+
+        // OneOf field names bound to virtual getters and setters
+        let $oneOfFields;
+
+        // Virtual OneOf for proto3 optional field
+        Object.defineProperty(WelcomeMessage.prototype, "_matchEnded", {
+            get: $util.oneOfGetter($oneOfFields = ["matchEnded"]),
+            set: $util.oneOfSetter($oneOfFields)
+        });
 
         /**
          * Creates a new WelcomeMessage instance using the specified properties.
@@ -4643,8 +3860,27 @@ export const jsbolo = $root.jsbolo = (() => {
                 writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.assignedTeam);
             if (message.currentTick != null && Object.hasOwnProperty.call(message, "currentTick"))
                 writer.uint32(/* id 3, wireType 0 =*/24).uint32(message.currentTick);
+            if (message.mapName != null && Object.hasOwnProperty.call(message, "mapName"))
+                writer.uint32(/* id 4, wireType 2 =*/34).string(message.mapName);
             if (message.map != null && Object.hasOwnProperty.call(message, "map"))
-                $root.jsbolo.MapData.encode(message.map, writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
+                $root.jsbolo.WelcomeMap.encode(message.map, writer.uint32(/* id 5, wireType 2 =*/42).fork()).ldelim();
+            if (message.tanks != null && message.tanks.length)
+                for (let i = 0; i < message.tanks.length; ++i)
+                    $root.jsbolo.Tank.encode(message.tanks[i], writer.uint32(/* id 6, wireType 2 =*/50).fork()).ldelim();
+            if (message.pillboxes != null && message.pillboxes.length)
+                for (let i = 0; i < message.pillboxes.length; ++i)
+                    $root.jsbolo.Pillbox.encode(message.pillboxes[i], writer.uint32(/* id 7, wireType 2 =*/58).fork()).ldelim();
+            if (message.bases != null && message.bases.length)
+                for (let i = 0; i < message.bases.length; ++i)
+                    $root.jsbolo.Base.encode(message.bases[i], writer.uint32(/* id 8, wireType 2 =*/66).fork()).ldelim();
+            if (message.matchEnded != null && Object.hasOwnProperty.call(message, "matchEnded"))
+                writer.uint32(/* id 9, wireType 0 =*/72).bool(message.matchEnded);
+            if (message.winningTeams != null && message.winningTeams.length) {
+                writer.uint32(/* id 10, wireType 2 =*/82).fork();
+                for (let i = 0; i < message.winningTeams.length; ++i)
+                    writer.uint32(message.winningTeams[i]);
+                writer.ldelim();
+            }
             return writer;
         };
 
@@ -4694,7 +3930,44 @@ export const jsbolo = $root.jsbolo = (() => {
                         break;
                     }
                 case 4: {
-                        message.map = $root.jsbolo.MapData.decode(reader, reader.uint32());
+                        message.mapName = reader.string();
+                        break;
+                    }
+                case 5: {
+                        message.map = $root.jsbolo.WelcomeMap.decode(reader, reader.uint32());
+                        break;
+                    }
+                case 6: {
+                        if (!(message.tanks && message.tanks.length))
+                            message.tanks = [];
+                        message.tanks.push($root.jsbolo.Tank.decode(reader, reader.uint32()));
+                        break;
+                    }
+                case 7: {
+                        if (!(message.pillboxes && message.pillboxes.length))
+                            message.pillboxes = [];
+                        message.pillboxes.push($root.jsbolo.Pillbox.decode(reader, reader.uint32()));
+                        break;
+                    }
+                case 8: {
+                        if (!(message.bases && message.bases.length))
+                            message.bases = [];
+                        message.bases.push($root.jsbolo.Base.decode(reader, reader.uint32()));
+                        break;
+                    }
+                case 9: {
+                        message.matchEnded = reader.bool();
+                        break;
+                    }
+                case 10: {
+                        if (!(message.winningTeams && message.winningTeams.length))
+                            message.winningTeams = [];
+                        if ((tag & 7) === 2) {
+                            let end2 = reader.uint32() + reader.pos;
+                            while (reader.pos < end2)
+                                message.winningTeams.push(reader.uint32());
+                        } else
+                            message.winningTeams.push(reader.uint32());
                         break;
                     }
                 default:
@@ -4732,6 +4005,7 @@ export const jsbolo = $root.jsbolo = (() => {
         WelcomeMessage.verify = function verify(message) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            let properties = {};
             if (message.playerId != null && message.hasOwnProperty("playerId"))
                 if (!$util.isInteger(message.playerId))
                     return "playerId: integer expected";
@@ -4741,10 +4015,52 @@ export const jsbolo = $root.jsbolo = (() => {
             if (message.currentTick != null && message.hasOwnProperty("currentTick"))
                 if (!$util.isInteger(message.currentTick))
                     return "currentTick: integer expected";
+            if (message.mapName != null && message.hasOwnProperty("mapName"))
+                if (!$util.isString(message.mapName))
+                    return "mapName: string expected";
             if (message.map != null && message.hasOwnProperty("map")) {
-                let error = $root.jsbolo.MapData.verify(message.map);
+                let error = $root.jsbolo.WelcomeMap.verify(message.map);
                 if (error)
                     return "map." + error;
+            }
+            if (message.tanks != null && message.hasOwnProperty("tanks")) {
+                if (!Array.isArray(message.tanks))
+                    return "tanks: array expected";
+                for (let i = 0; i < message.tanks.length; ++i) {
+                    let error = $root.jsbolo.Tank.verify(message.tanks[i]);
+                    if (error)
+                        return "tanks." + error;
+                }
+            }
+            if (message.pillboxes != null && message.hasOwnProperty("pillboxes")) {
+                if (!Array.isArray(message.pillboxes))
+                    return "pillboxes: array expected";
+                for (let i = 0; i < message.pillboxes.length; ++i) {
+                    let error = $root.jsbolo.Pillbox.verify(message.pillboxes[i]);
+                    if (error)
+                        return "pillboxes." + error;
+                }
+            }
+            if (message.bases != null && message.hasOwnProperty("bases")) {
+                if (!Array.isArray(message.bases))
+                    return "bases: array expected";
+                for (let i = 0; i < message.bases.length; ++i) {
+                    let error = $root.jsbolo.Base.verify(message.bases[i]);
+                    if (error)
+                        return "bases." + error;
+                }
+            }
+            if (message.matchEnded != null && message.hasOwnProperty("matchEnded")) {
+                properties._matchEnded = 1;
+                if (typeof message.matchEnded !== "boolean")
+                    return "matchEnded: boolean expected";
+            }
+            if (message.winningTeams != null && message.hasOwnProperty("winningTeams")) {
+                if (!Array.isArray(message.winningTeams))
+                    return "winningTeams: array expected";
+                for (let i = 0; i < message.winningTeams.length; ++i)
+                    if (!$util.isInteger(message.winningTeams[i]))
+                        return "winningTeams: integer[] expected";
             }
             return null;
         };
@@ -4767,10 +4083,51 @@ export const jsbolo = $root.jsbolo = (() => {
                 message.assignedTeam = object.assignedTeam >>> 0;
             if (object.currentTick != null)
                 message.currentTick = object.currentTick >>> 0;
+            if (object.mapName != null)
+                message.mapName = String(object.mapName);
             if (object.map != null) {
                 if (typeof object.map !== "object")
                     throw TypeError(".jsbolo.WelcomeMessage.map: object expected");
-                message.map = $root.jsbolo.MapData.fromObject(object.map);
+                message.map = $root.jsbolo.WelcomeMap.fromObject(object.map);
+            }
+            if (object.tanks) {
+                if (!Array.isArray(object.tanks))
+                    throw TypeError(".jsbolo.WelcomeMessage.tanks: array expected");
+                message.tanks = [];
+                for (let i = 0; i < object.tanks.length; ++i) {
+                    if (typeof object.tanks[i] !== "object")
+                        throw TypeError(".jsbolo.WelcomeMessage.tanks: object expected");
+                    message.tanks[i] = $root.jsbolo.Tank.fromObject(object.tanks[i]);
+                }
+            }
+            if (object.pillboxes) {
+                if (!Array.isArray(object.pillboxes))
+                    throw TypeError(".jsbolo.WelcomeMessage.pillboxes: array expected");
+                message.pillboxes = [];
+                for (let i = 0; i < object.pillboxes.length; ++i) {
+                    if (typeof object.pillboxes[i] !== "object")
+                        throw TypeError(".jsbolo.WelcomeMessage.pillboxes: object expected");
+                    message.pillboxes[i] = $root.jsbolo.Pillbox.fromObject(object.pillboxes[i]);
+                }
+            }
+            if (object.bases) {
+                if (!Array.isArray(object.bases))
+                    throw TypeError(".jsbolo.WelcomeMessage.bases: array expected");
+                message.bases = [];
+                for (let i = 0; i < object.bases.length; ++i) {
+                    if (typeof object.bases[i] !== "object")
+                        throw TypeError(".jsbolo.WelcomeMessage.bases: object expected");
+                    message.bases[i] = $root.jsbolo.Base.fromObject(object.bases[i]);
+                }
+            }
+            if (object.matchEnded != null)
+                message.matchEnded = Boolean(object.matchEnded);
+            if (object.winningTeams) {
+                if (!Array.isArray(object.winningTeams))
+                    throw TypeError(".jsbolo.WelcomeMessage.winningTeams: array expected");
+                message.winningTeams = [];
+                for (let i = 0; i < object.winningTeams.length; ++i)
+                    message.winningTeams[i] = object.winningTeams[i] >>> 0;
             }
             return message;
         };
@@ -4788,10 +4145,17 @@ export const jsbolo = $root.jsbolo = (() => {
             if (!options)
                 options = {};
             let object = {};
+            if (options.arrays || options.defaults) {
+                object.tanks = [];
+                object.pillboxes = [];
+                object.bases = [];
+                object.winningTeams = [];
+            }
             if (options.defaults) {
                 object.playerId = 0;
                 object.assignedTeam = 0;
                 object.currentTick = 0;
+                object.mapName = "";
                 object.map = null;
             }
             if (message.playerId != null && message.hasOwnProperty("playerId"))
@@ -4800,8 +4164,35 @@ export const jsbolo = $root.jsbolo = (() => {
                 object.assignedTeam = message.assignedTeam;
             if (message.currentTick != null && message.hasOwnProperty("currentTick"))
                 object.currentTick = message.currentTick;
+            if (message.mapName != null && message.hasOwnProperty("mapName"))
+                object.mapName = message.mapName;
             if (message.map != null && message.hasOwnProperty("map"))
-                object.map = $root.jsbolo.MapData.toObject(message.map, options);
+                object.map = $root.jsbolo.WelcomeMap.toObject(message.map, options);
+            if (message.tanks && message.tanks.length) {
+                object.tanks = [];
+                for (let j = 0; j < message.tanks.length; ++j)
+                    object.tanks[j] = $root.jsbolo.Tank.toObject(message.tanks[j], options);
+            }
+            if (message.pillboxes && message.pillboxes.length) {
+                object.pillboxes = [];
+                for (let j = 0; j < message.pillboxes.length; ++j)
+                    object.pillboxes[j] = $root.jsbolo.Pillbox.toObject(message.pillboxes[j], options);
+            }
+            if (message.bases && message.bases.length) {
+                object.bases = [];
+                for (let j = 0; j < message.bases.length; ++j)
+                    object.bases[j] = $root.jsbolo.Base.toObject(message.bases[j], options);
+            }
+            if (message.matchEnded != null && message.hasOwnProperty("matchEnded")) {
+                object.matchEnded = message.matchEnded;
+                if (options.oneofs)
+                    object._matchEnded = "matchEnded";
+            }
+            if (message.winningTeams && message.winningTeams.length) {
+                object.winningTeams = [];
+                for (let j = 0; j < message.winningTeams.length; ++j)
+                    object.winningTeams[j] = message.winningTeams[j];
+            }
             return object;
         };
 
@@ -4834,30 +4225,49 @@ export const jsbolo = $root.jsbolo = (() => {
         return WelcomeMessage;
     })();
 
-    jsbolo.MapData = (function() {
+    jsbolo.UpdateMessage = (function() {
 
         /**
-         * Properties of a MapData.
+         * Properties of an UpdateMessage.
          * @memberof jsbolo
-         * @interface IMapData
-         * @property {number|null} [width] MapData width
-         * @property {number|null} [height] MapData height
-         * @property {Uint8Array|null} [terrain] MapData terrain
-         * @property {Array.<jsbolo.IPillboxState>|null} [pillboxes] MapData pillboxes
-         * @property {Array.<jsbolo.IBaseState>|null} [bases] MapData bases
+         * @interface IUpdateMessage
+         * @property {number|null} [tick] UpdateMessage tick
+         * @property {Array.<jsbolo.ITank>|null} [tanks] UpdateMessage tanks
+         * @property {Array.<jsbolo.IShell>|null} [shells] UpdateMessage shells
+         * @property {Array.<jsbolo.IBuilder>|null} [builders] UpdateMessage builders
+         * @property {Array.<jsbolo.IPillbox>|null} [pillboxes] UpdateMessage pillboxes
+         * @property {Array.<jsbolo.IBase>|null} [bases] UpdateMessage bases
+         * @property {Array.<number>|null} [removedTankIds] UpdateMessage removedTankIds
+         * @property {Array.<number>|null} [removedBuilderIds] UpdateMessage removedBuilderIds
+         * @property {Array.<number>|null} [removedPillboxIds] UpdateMessage removedPillboxIds
+         * @property {Array.<number>|null} [removedBaseIds] UpdateMessage removedBaseIds
+         * @property {Array.<jsbolo.ITerrainUpdate>|null} [terrainUpdates] UpdateMessage terrainUpdates
+         * @property {Array.<jsbolo.ISoundEvent>|null} [soundEvents] UpdateMessage soundEvents
+         * @property {boolean|null} [matchEnded] UpdateMessage matchEnded
+         * @property {Array.<number>|null} [winningTeams] UpdateMessage winningTeams
          */
 
         /**
-         * Constructs a new MapData.
+         * Constructs a new UpdateMessage.
          * @memberof jsbolo
-         * @classdesc Represents a MapData.
-         * @implements IMapData
+         * @classdesc Represents an UpdateMessage.
+         * @implements IUpdateMessage
          * @constructor
-         * @param {jsbolo.IMapData=} [properties] Properties to set
+         * @param {jsbolo.IUpdateMessage=} [properties] Properties to set
          */
-        function MapData(properties) {
+        function UpdateMessage(properties) {
+            this.tanks = [];
+            this.shells = [];
+            this.builders = [];
             this.pillboxes = [];
             this.bases = [];
+            this.removedTankIds = [];
+            this.removedBuilderIds = [];
+            this.removedPillboxIds = [];
+            this.removedBaseIds = [];
+            this.terrainUpdates = [];
+            this.soundEvents = [];
+            this.winningTeams = [];
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null)
@@ -4865,139 +4275,344 @@ export const jsbolo = $root.jsbolo = (() => {
         }
 
         /**
-         * MapData width.
-         * @member {number} width
-         * @memberof jsbolo.MapData
+         * UpdateMessage tick.
+         * @member {number} tick
+         * @memberof jsbolo.UpdateMessage
          * @instance
          */
-        MapData.prototype.width = 0;
+        UpdateMessage.prototype.tick = 0;
 
         /**
-         * MapData height.
-         * @member {number} height
-         * @memberof jsbolo.MapData
+         * UpdateMessage tanks.
+         * @member {Array.<jsbolo.ITank>} tanks
+         * @memberof jsbolo.UpdateMessage
          * @instance
          */
-        MapData.prototype.height = 0;
+        UpdateMessage.prototype.tanks = $util.emptyArray;
 
         /**
-         * MapData terrain.
-         * @member {Uint8Array} terrain
-         * @memberof jsbolo.MapData
+         * UpdateMessage shells.
+         * @member {Array.<jsbolo.IShell>} shells
+         * @memberof jsbolo.UpdateMessage
          * @instance
          */
-        MapData.prototype.terrain = $util.newBuffer([]);
+        UpdateMessage.prototype.shells = $util.emptyArray;
 
         /**
-         * MapData pillboxes.
-         * @member {Array.<jsbolo.IPillboxState>} pillboxes
-         * @memberof jsbolo.MapData
+         * UpdateMessage builders.
+         * @member {Array.<jsbolo.IBuilder>} builders
+         * @memberof jsbolo.UpdateMessage
          * @instance
          */
-        MapData.prototype.pillboxes = $util.emptyArray;
+        UpdateMessage.prototype.builders = $util.emptyArray;
 
         /**
-         * MapData bases.
-         * @member {Array.<jsbolo.IBaseState>} bases
-         * @memberof jsbolo.MapData
+         * UpdateMessage pillboxes.
+         * @member {Array.<jsbolo.IPillbox>} pillboxes
+         * @memberof jsbolo.UpdateMessage
          * @instance
          */
-        MapData.prototype.bases = $util.emptyArray;
+        UpdateMessage.prototype.pillboxes = $util.emptyArray;
 
         /**
-         * Creates a new MapData instance using the specified properties.
+         * UpdateMessage bases.
+         * @member {Array.<jsbolo.IBase>} bases
+         * @memberof jsbolo.UpdateMessage
+         * @instance
+         */
+        UpdateMessage.prototype.bases = $util.emptyArray;
+
+        /**
+         * UpdateMessage removedTankIds.
+         * @member {Array.<number>} removedTankIds
+         * @memberof jsbolo.UpdateMessage
+         * @instance
+         */
+        UpdateMessage.prototype.removedTankIds = $util.emptyArray;
+
+        /**
+         * UpdateMessage removedBuilderIds.
+         * @member {Array.<number>} removedBuilderIds
+         * @memberof jsbolo.UpdateMessage
+         * @instance
+         */
+        UpdateMessage.prototype.removedBuilderIds = $util.emptyArray;
+
+        /**
+         * UpdateMessage removedPillboxIds.
+         * @member {Array.<number>} removedPillboxIds
+         * @memberof jsbolo.UpdateMessage
+         * @instance
+         */
+        UpdateMessage.prototype.removedPillboxIds = $util.emptyArray;
+
+        /**
+         * UpdateMessage removedBaseIds.
+         * @member {Array.<number>} removedBaseIds
+         * @memberof jsbolo.UpdateMessage
+         * @instance
+         */
+        UpdateMessage.prototype.removedBaseIds = $util.emptyArray;
+
+        /**
+         * UpdateMessage terrainUpdates.
+         * @member {Array.<jsbolo.ITerrainUpdate>} terrainUpdates
+         * @memberof jsbolo.UpdateMessage
+         * @instance
+         */
+        UpdateMessage.prototype.terrainUpdates = $util.emptyArray;
+
+        /**
+         * UpdateMessage soundEvents.
+         * @member {Array.<jsbolo.ISoundEvent>} soundEvents
+         * @memberof jsbolo.UpdateMessage
+         * @instance
+         */
+        UpdateMessage.prototype.soundEvents = $util.emptyArray;
+
+        /**
+         * UpdateMessage matchEnded.
+         * @member {boolean|null|undefined} matchEnded
+         * @memberof jsbolo.UpdateMessage
+         * @instance
+         */
+        UpdateMessage.prototype.matchEnded = null;
+
+        /**
+         * UpdateMessage winningTeams.
+         * @member {Array.<number>} winningTeams
+         * @memberof jsbolo.UpdateMessage
+         * @instance
+         */
+        UpdateMessage.prototype.winningTeams = $util.emptyArray;
+
+        // OneOf field names bound to virtual getters and setters
+        let $oneOfFields;
+
+        // Virtual OneOf for proto3 optional field
+        Object.defineProperty(UpdateMessage.prototype, "_matchEnded", {
+            get: $util.oneOfGetter($oneOfFields = ["matchEnded"]),
+            set: $util.oneOfSetter($oneOfFields)
+        });
+
+        /**
+         * Creates a new UpdateMessage instance using the specified properties.
          * @function create
-         * @memberof jsbolo.MapData
+         * @memberof jsbolo.UpdateMessage
          * @static
-         * @param {jsbolo.IMapData=} [properties] Properties to set
-         * @returns {jsbolo.MapData} MapData instance
+         * @param {jsbolo.IUpdateMessage=} [properties] Properties to set
+         * @returns {jsbolo.UpdateMessage} UpdateMessage instance
          */
-        MapData.create = function create(properties) {
-            return new MapData(properties);
+        UpdateMessage.create = function create(properties) {
+            return new UpdateMessage(properties);
         };
 
         /**
-         * Encodes the specified MapData message. Does not implicitly {@link jsbolo.MapData.verify|verify} messages.
+         * Encodes the specified UpdateMessage message. Does not implicitly {@link jsbolo.UpdateMessage.verify|verify} messages.
          * @function encode
-         * @memberof jsbolo.MapData
+         * @memberof jsbolo.UpdateMessage
          * @static
-         * @param {jsbolo.IMapData} message MapData message or plain object to encode
+         * @param {jsbolo.IUpdateMessage} message UpdateMessage message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
-        MapData.encode = function encode(message, writer) {
+        UpdateMessage.encode = function encode(message, writer) {
             if (!writer)
                 writer = $Writer.create();
-            if (message.width != null && Object.hasOwnProperty.call(message, "width"))
-                writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.width);
-            if (message.height != null && Object.hasOwnProperty.call(message, "height"))
-                writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.height);
-            if (message.terrain != null && Object.hasOwnProperty.call(message, "terrain"))
-                writer.uint32(/* id 3, wireType 2 =*/26).bytes(message.terrain);
+            if (message.tick != null && Object.hasOwnProperty.call(message, "tick"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.tick);
+            if (message.tanks != null && message.tanks.length)
+                for (let i = 0; i < message.tanks.length; ++i)
+                    $root.jsbolo.Tank.encode(message.tanks[i], writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
+            if (message.shells != null && message.shells.length)
+                for (let i = 0; i < message.shells.length; ++i)
+                    $root.jsbolo.Shell.encode(message.shells[i], writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
+            if (message.builders != null && message.builders.length)
+                for (let i = 0; i < message.builders.length; ++i)
+                    $root.jsbolo.Builder.encode(message.builders[i], writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
             if (message.pillboxes != null && message.pillboxes.length)
                 for (let i = 0; i < message.pillboxes.length; ++i)
-                    $root.jsbolo.PillboxState.encode(message.pillboxes[i], writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
+                    $root.jsbolo.Pillbox.encode(message.pillboxes[i], writer.uint32(/* id 5, wireType 2 =*/42).fork()).ldelim();
             if (message.bases != null && message.bases.length)
                 for (let i = 0; i < message.bases.length; ++i)
-                    $root.jsbolo.BaseState.encode(message.bases[i], writer.uint32(/* id 5, wireType 2 =*/42).fork()).ldelim();
+                    $root.jsbolo.Base.encode(message.bases[i], writer.uint32(/* id 6, wireType 2 =*/50).fork()).ldelim();
+            if (message.removedTankIds != null && message.removedTankIds.length) {
+                writer.uint32(/* id 7, wireType 2 =*/58).fork();
+                for (let i = 0; i < message.removedTankIds.length; ++i)
+                    writer.uint32(message.removedTankIds[i]);
+                writer.ldelim();
+            }
+            if (message.removedBuilderIds != null && message.removedBuilderIds.length) {
+                writer.uint32(/* id 8, wireType 2 =*/66).fork();
+                for (let i = 0; i < message.removedBuilderIds.length; ++i)
+                    writer.uint32(message.removedBuilderIds[i]);
+                writer.ldelim();
+            }
+            if (message.removedPillboxIds != null && message.removedPillboxIds.length) {
+                writer.uint32(/* id 9, wireType 2 =*/74).fork();
+                for (let i = 0; i < message.removedPillboxIds.length; ++i)
+                    writer.uint32(message.removedPillboxIds[i]);
+                writer.ldelim();
+            }
+            if (message.removedBaseIds != null && message.removedBaseIds.length) {
+                writer.uint32(/* id 10, wireType 2 =*/82).fork();
+                for (let i = 0; i < message.removedBaseIds.length; ++i)
+                    writer.uint32(message.removedBaseIds[i]);
+                writer.ldelim();
+            }
+            if (message.terrainUpdates != null && message.terrainUpdates.length)
+                for (let i = 0; i < message.terrainUpdates.length; ++i)
+                    $root.jsbolo.TerrainUpdate.encode(message.terrainUpdates[i], writer.uint32(/* id 11, wireType 2 =*/90).fork()).ldelim();
+            if (message.soundEvents != null && message.soundEvents.length)
+                for (let i = 0; i < message.soundEvents.length; ++i)
+                    $root.jsbolo.SoundEvent.encode(message.soundEvents[i], writer.uint32(/* id 12, wireType 2 =*/98).fork()).ldelim();
+            if (message.matchEnded != null && Object.hasOwnProperty.call(message, "matchEnded"))
+                writer.uint32(/* id 13, wireType 0 =*/104).bool(message.matchEnded);
+            if (message.winningTeams != null && message.winningTeams.length) {
+                writer.uint32(/* id 14, wireType 2 =*/114).fork();
+                for (let i = 0; i < message.winningTeams.length; ++i)
+                    writer.uint32(message.winningTeams[i]);
+                writer.ldelim();
+            }
             return writer;
         };
 
         /**
-         * Encodes the specified MapData message, length delimited. Does not implicitly {@link jsbolo.MapData.verify|verify} messages.
+         * Encodes the specified UpdateMessage message, length delimited. Does not implicitly {@link jsbolo.UpdateMessage.verify|verify} messages.
          * @function encodeDelimited
-         * @memberof jsbolo.MapData
+         * @memberof jsbolo.UpdateMessage
          * @static
-         * @param {jsbolo.IMapData} message MapData message or plain object to encode
+         * @param {jsbolo.IUpdateMessage} message UpdateMessage message or plain object to encode
          * @param {$protobuf.Writer} [writer] Writer to encode to
          * @returns {$protobuf.Writer} Writer
          */
-        MapData.encodeDelimited = function encodeDelimited(message, writer) {
+        UpdateMessage.encodeDelimited = function encodeDelimited(message, writer) {
             return this.encode(message, writer).ldelim();
         };
 
         /**
-         * Decodes a MapData message from the specified reader or buffer.
+         * Decodes an UpdateMessage message from the specified reader or buffer.
          * @function decode
-         * @memberof jsbolo.MapData
+         * @memberof jsbolo.UpdateMessage
          * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
          * @param {number} [length] Message length if known beforehand
-         * @returns {jsbolo.MapData} MapData
+         * @returns {jsbolo.UpdateMessage} UpdateMessage
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        MapData.decode = function decode(reader, length, error) {
+        UpdateMessage.decode = function decode(reader, length, error) {
             if (!(reader instanceof $Reader))
                 reader = $Reader.create(reader);
-            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.jsbolo.MapData();
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.jsbolo.UpdateMessage();
             while (reader.pos < end) {
                 let tag = reader.uint32();
                 if (tag === error)
                     break;
                 switch (tag >>> 3) {
                 case 1: {
-                        message.width = reader.uint32();
+                        message.tick = reader.uint32();
                         break;
                     }
                 case 2: {
-                        message.height = reader.uint32();
+                        if (!(message.tanks && message.tanks.length))
+                            message.tanks = [];
+                        message.tanks.push($root.jsbolo.Tank.decode(reader, reader.uint32()));
                         break;
                     }
                 case 3: {
-                        message.terrain = reader.bytes();
+                        if (!(message.shells && message.shells.length))
+                            message.shells = [];
+                        message.shells.push($root.jsbolo.Shell.decode(reader, reader.uint32()));
                         break;
                     }
                 case 4: {
-                        if (!(message.pillboxes && message.pillboxes.length))
-                            message.pillboxes = [];
-                        message.pillboxes.push($root.jsbolo.PillboxState.decode(reader, reader.uint32()));
+                        if (!(message.builders && message.builders.length))
+                            message.builders = [];
+                        message.builders.push($root.jsbolo.Builder.decode(reader, reader.uint32()));
                         break;
                     }
                 case 5: {
+                        if (!(message.pillboxes && message.pillboxes.length))
+                            message.pillboxes = [];
+                        message.pillboxes.push($root.jsbolo.Pillbox.decode(reader, reader.uint32()));
+                        break;
+                    }
+                case 6: {
                         if (!(message.bases && message.bases.length))
                             message.bases = [];
-                        message.bases.push($root.jsbolo.BaseState.decode(reader, reader.uint32()));
+                        message.bases.push($root.jsbolo.Base.decode(reader, reader.uint32()));
+                        break;
+                    }
+                case 7: {
+                        if (!(message.removedTankIds && message.removedTankIds.length))
+                            message.removedTankIds = [];
+                        if ((tag & 7) === 2) {
+                            let end2 = reader.uint32() + reader.pos;
+                            while (reader.pos < end2)
+                                message.removedTankIds.push(reader.uint32());
+                        } else
+                            message.removedTankIds.push(reader.uint32());
+                        break;
+                    }
+                case 8: {
+                        if (!(message.removedBuilderIds && message.removedBuilderIds.length))
+                            message.removedBuilderIds = [];
+                        if ((tag & 7) === 2) {
+                            let end2 = reader.uint32() + reader.pos;
+                            while (reader.pos < end2)
+                                message.removedBuilderIds.push(reader.uint32());
+                        } else
+                            message.removedBuilderIds.push(reader.uint32());
+                        break;
+                    }
+                case 9: {
+                        if (!(message.removedPillboxIds && message.removedPillboxIds.length))
+                            message.removedPillboxIds = [];
+                        if ((tag & 7) === 2) {
+                            let end2 = reader.uint32() + reader.pos;
+                            while (reader.pos < end2)
+                                message.removedPillboxIds.push(reader.uint32());
+                        } else
+                            message.removedPillboxIds.push(reader.uint32());
+                        break;
+                    }
+                case 10: {
+                        if (!(message.removedBaseIds && message.removedBaseIds.length))
+                            message.removedBaseIds = [];
+                        if ((tag & 7) === 2) {
+                            let end2 = reader.uint32() + reader.pos;
+                            while (reader.pos < end2)
+                                message.removedBaseIds.push(reader.uint32());
+                        } else
+                            message.removedBaseIds.push(reader.uint32());
+                        break;
+                    }
+                case 11: {
+                        if (!(message.terrainUpdates && message.terrainUpdates.length))
+                            message.terrainUpdates = [];
+                        message.terrainUpdates.push($root.jsbolo.TerrainUpdate.decode(reader, reader.uint32()));
+                        break;
+                    }
+                case 12: {
+                        if (!(message.soundEvents && message.soundEvents.length))
+                            message.soundEvents = [];
+                        message.soundEvents.push($root.jsbolo.SoundEvent.decode(reader, reader.uint32()));
+                        break;
+                    }
+                case 13: {
+                        message.matchEnded = reader.bool();
+                        break;
+                    }
+                case 14: {
+                        if (!(message.winningTeams && message.winningTeams.length))
+                            message.winningTeams = [];
+                        if ((tag & 7) === 2) {
+                            let end2 = reader.uint32() + reader.pos;
+                            while (reader.pos < end2)
+                                message.winningTeams.push(reader.uint32());
+                        } else
+                            message.winningTeams.push(reader.uint32());
                         break;
                     }
                 default:
@@ -5009,46 +4624,68 @@ export const jsbolo = $root.jsbolo = (() => {
         };
 
         /**
-         * Decodes a MapData message from the specified reader or buffer, length delimited.
+         * Decodes an UpdateMessage message from the specified reader or buffer, length delimited.
          * @function decodeDelimited
-         * @memberof jsbolo.MapData
+         * @memberof jsbolo.UpdateMessage
          * @static
          * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
-         * @returns {jsbolo.MapData} MapData
+         * @returns {jsbolo.UpdateMessage} UpdateMessage
          * @throws {Error} If the payload is not a reader or valid buffer
          * @throws {$protobuf.util.ProtocolError} If required fields are missing
          */
-        MapData.decodeDelimited = function decodeDelimited(reader) {
+        UpdateMessage.decodeDelimited = function decodeDelimited(reader) {
             if (!(reader instanceof $Reader))
                 reader = new $Reader(reader);
             return this.decode(reader, reader.uint32());
         };
 
         /**
-         * Verifies a MapData message.
+         * Verifies an UpdateMessage message.
          * @function verify
-         * @memberof jsbolo.MapData
+         * @memberof jsbolo.UpdateMessage
          * @static
          * @param {Object.<string,*>} message Plain object to verify
          * @returns {string|null} `null` if valid, otherwise the reason why it is not
          */
-        MapData.verify = function verify(message) {
+        UpdateMessage.verify = function verify(message) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
-            if (message.width != null && message.hasOwnProperty("width"))
-                if (!$util.isInteger(message.width))
-                    return "width: integer expected";
-            if (message.height != null && message.hasOwnProperty("height"))
-                if (!$util.isInteger(message.height))
-                    return "height: integer expected";
-            if (message.terrain != null && message.hasOwnProperty("terrain"))
-                if (!(message.terrain && typeof message.terrain.length === "number" || $util.isString(message.terrain)))
-                    return "terrain: buffer expected";
+            let properties = {};
+            if (message.tick != null && message.hasOwnProperty("tick"))
+                if (!$util.isInteger(message.tick))
+                    return "tick: integer expected";
+            if (message.tanks != null && message.hasOwnProperty("tanks")) {
+                if (!Array.isArray(message.tanks))
+                    return "tanks: array expected";
+                for (let i = 0; i < message.tanks.length; ++i) {
+                    let error = $root.jsbolo.Tank.verify(message.tanks[i]);
+                    if (error)
+                        return "tanks." + error;
+                }
+            }
+            if (message.shells != null && message.hasOwnProperty("shells")) {
+                if (!Array.isArray(message.shells))
+                    return "shells: array expected";
+                for (let i = 0; i < message.shells.length; ++i) {
+                    let error = $root.jsbolo.Shell.verify(message.shells[i]);
+                    if (error)
+                        return "shells." + error;
+                }
+            }
+            if (message.builders != null && message.hasOwnProperty("builders")) {
+                if (!Array.isArray(message.builders))
+                    return "builders: array expected";
+                for (let i = 0; i < message.builders.length; ++i) {
+                    let error = $root.jsbolo.Builder.verify(message.builders[i]);
+                    if (error)
+                        return "builders." + error;
+                }
+            }
             if (message.pillboxes != null && message.hasOwnProperty("pillboxes")) {
                 if (!Array.isArray(message.pillboxes))
                     return "pillboxes: array expected";
                 for (let i = 0; i < message.pillboxes.length; ++i) {
-                    let error = $root.jsbolo.PillboxState.verify(message.pillboxes[i]);
+                    let error = $root.jsbolo.Pillbox.verify(message.pillboxes[i]);
                     if (error)
                         return "pillboxes." + error;
                 }
@@ -5057,132 +4694,322 @@ export const jsbolo = $root.jsbolo = (() => {
                 if (!Array.isArray(message.bases))
                     return "bases: array expected";
                 for (let i = 0; i < message.bases.length; ++i) {
-                    let error = $root.jsbolo.BaseState.verify(message.bases[i]);
+                    let error = $root.jsbolo.Base.verify(message.bases[i]);
                     if (error)
                         return "bases." + error;
                 }
+            }
+            if (message.removedTankIds != null && message.hasOwnProperty("removedTankIds")) {
+                if (!Array.isArray(message.removedTankIds))
+                    return "removedTankIds: array expected";
+                for (let i = 0; i < message.removedTankIds.length; ++i)
+                    if (!$util.isInteger(message.removedTankIds[i]))
+                        return "removedTankIds: integer[] expected";
+            }
+            if (message.removedBuilderIds != null && message.hasOwnProperty("removedBuilderIds")) {
+                if (!Array.isArray(message.removedBuilderIds))
+                    return "removedBuilderIds: array expected";
+                for (let i = 0; i < message.removedBuilderIds.length; ++i)
+                    if (!$util.isInteger(message.removedBuilderIds[i]))
+                        return "removedBuilderIds: integer[] expected";
+            }
+            if (message.removedPillboxIds != null && message.hasOwnProperty("removedPillboxIds")) {
+                if (!Array.isArray(message.removedPillboxIds))
+                    return "removedPillboxIds: array expected";
+                for (let i = 0; i < message.removedPillboxIds.length; ++i)
+                    if (!$util.isInteger(message.removedPillboxIds[i]))
+                        return "removedPillboxIds: integer[] expected";
+            }
+            if (message.removedBaseIds != null && message.hasOwnProperty("removedBaseIds")) {
+                if (!Array.isArray(message.removedBaseIds))
+                    return "removedBaseIds: array expected";
+                for (let i = 0; i < message.removedBaseIds.length; ++i)
+                    if (!$util.isInteger(message.removedBaseIds[i]))
+                        return "removedBaseIds: integer[] expected";
+            }
+            if (message.terrainUpdates != null && message.hasOwnProperty("terrainUpdates")) {
+                if (!Array.isArray(message.terrainUpdates))
+                    return "terrainUpdates: array expected";
+                for (let i = 0; i < message.terrainUpdates.length; ++i) {
+                    let error = $root.jsbolo.TerrainUpdate.verify(message.terrainUpdates[i]);
+                    if (error)
+                        return "terrainUpdates." + error;
+                }
+            }
+            if (message.soundEvents != null && message.hasOwnProperty("soundEvents")) {
+                if (!Array.isArray(message.soundEvents))
+                    return "soundEvents: array expected";
+                for (let i = 0; i < message.soundEvents.length; ++i) {
+                    let error = $root.jsbolo.SoundEvent.verify(message.soundEvents[i]);
+                    if (error)
+                        return "soundEvents." + error;
+                }
+            }
+            if (message.matchEnded != null && message.hasOwnProperty("matchEnded")) {
+                properties._matchEnded = 1;
+                if (typeof message.matchEnded !== "boolean")
+                    return "matchEnded: boolean expected";
+            }
+            if (message.winningTeams != null && message.hasOwnProperty("winningTeams")) {
+                if (!Array.isArray(message.winningTeams))
+                    return "winningTeams: array expected";
+                for (let i = 0; i < message.winningTeams.length; ++i)
+                    if (!$util.isInteger(message.winningTeams[i]))
+                        return "winningTeams: integer[] expected";
             }
             return null;
         };
 
         /**
-         * Creates a MapData message from a plain object. Also converts values to their respective internal types.
+         * Creates an UpdateMessage message from a plain object. Also converts values to their respective internal types.
          * @function fromObject
-         * @memberof jsbolo.MapData
+         * @memberof jsbolo.UpdateMessage
          * @static
          * @param {Object.<string,*>} object Plain object
-         * @returns {jsbolo.MapData} MapData
+         * @returns {jsbolo.UpdateMessage} UpdateMessage
          */
-        MapData.fromObject = function fromObject(object) {
-            if (object instanceof $root.jsbolo.MapData)
+        UpdateMessage.fromObject = function fromObject(object) {
+            if (object instanceof $root.jsbolo.UpdateMessage)
                 return object;
-            let message = new $root.jsbolo.MapData();
-            if (object.width != null)
-                message.width = object.width >>> 0;
-            if (object.height != null)
-                message.height = object.height >>> 0;
-            if (object.terrain != null)
-                if (typeof object.terrain === "string")
-                    $util.base64.decode(object.terrain, message.terrain = $util.newBuffer($util.base64.length(object.terrain)), 0);
-                else if (object.terrain.length >= 0)
-                    message.terrain = object.terrain;
+            let message = new $root.jsbolo.UpdateMessage();
+            if (object.tick != null)
+                message.tick = object.tick >>> 0;
+            if (object.tanks) {
+                if (!Array.isArray(object.tanks))
+                    throw TypeError(".jsbolo.UpdateMessage.tanks: array expected");
+                message.tanks = [];
+                for (let i = 0; i < object.tanks.length; ++i) {
+                    if (typeof object.tanks[i] !== "object")
+                        throw TypeError(".jsbolo.UpdateMessage.tanks: object expected");
+                    message.tanks[i] = $root.jsbolo.Tank.fromObject(object.tanks[i]);
+                }
+            }
+            if (object.shells) {
+                if (!Array.isArray(object.shells))
+                    throw TypeError(".jsbolo.UpdateMessage.shells: array expected");
+                message.shells = [];
+                for (let i = 0; i < object.shells.length; ++i) {
+                    if (typeof object.shells[i] !== "object")
+                        throw TypeError(".jsbolo.UpdateMessage.shells: object expected");
+                    message.shells[i] = $root.jsbolo.Shell.fromObject(object.shells[i]);
+                }
+            }
+            if (object.builders) {
+                if (!Array.isArray(object.builders))
+                    throw TypeError(".jsbolo.UpdateMessage.builders: array expected");
+                message.builders = [];
+                for (let i = 0; i < object.builders.length; ++i) {
+                    if (typeof object.builders[i] !== "object")
+                        throw TypeError(".jsbolo.UpdateMessage.builders: object expected");
+                    message.builders[i] = $root.jsbolo.Builder.fromObject(object.builders[i]);
+                }
+            }
             if (object.pillboxes) {
                 if (!Array.isArray(object.pillboxes))
-                    throw TypeError(".jsbolo.MapData.pillboxes: array expected");
+                    throw TypeError(".jsbolo.UpdateMessage.pillboxes: array expected");
                 message.pillboxes = [];
                 for (let i = 0; i < object.pillboxes.length; ++i) {
                     if (typeof object.pillboxes[i] !== "object")
-                        throw TypeError(".jsbolo.MapData.pillboxes: object expected");
-                    message.pillboxes[i] = $root.jsbolo.PillboxState.fromObject(object.pillboxes[i]);
+                        throw TypeError(".jsbolo.UpdateMessage.pillboxes: object expected");
+                    message.pillboxes[i] = $root.jsbolo.Pillbox.fromObject(object.pillboxes[i]);
                 }
             }
             if (object.bases) {
                 if (!Array.isArray(object.bases))
-                    throw TypeError(".jsbolo.MapData.bases: array expected");
+                    throw TypeError(".jsbolo.UpdateMessage.bases: array expected");
                 message.bases = [];
                 for (let i = 0; i < object.bases.length; ++i) {
                     if (typeof object.bases[i] !== "object")
-                        throw TypeError(".jsbolo.MapData.bases: object expected");
-                    message.bases[i] = $root.jsbolo.BaseState.fromObject(object.bases[i]);
+                        throw TypeError(".jsbolo.UpdateMessage.bases: object expected");
+                    message.bases[i] = $root.jsbolo.Base.fromObject(object.bases[i]);
                 }
+            }
+            if (object.removedTankIds) {
+                if (!Array.isArray(object.removedTankIds))
+                    throw TypeError(".jsbolo.UpdateMessage.removedTankIds: array expected");
+                message.removedTankIds = [];
+                for (let i = 0; i < object.removedTankIds.length; ++i)
+                    message.removedTankIds[i] = object.removedTankIds[i] >>> 0;
+            }
+            if (object.removedBuilderIds) {
+                if (!Array.isArray(object.removedBuilderIds))
+                    throw TypeError(".jsbolo.UpdateMessage.removedBuilderIds: array expected");
+                message.removedBuilderIds = [];
+                for (let i = 0; i < object.removedBuilderIds.length; ++i)
+                    message.removedBuilderIds[i] = object.removedBuilderIds[i] >>> 0;
+            }
+            if (object.removedPillboxIds) {
+                if (!Array.isArray(object.removedPillboxIds))
+                    throw TypeError(".jsbolo.UpdateMessage.removedPillboxIds: array expected");
+                message.removedPillboxIds = [];
+                for (let i = 0; i < object.removedPillboxIds.length; ++i)
+                    message.removedPillboxIds[i] = object.removedPillboxIds[i] >>> 0;
+            }
+            if (object.removedBaseIds) {
+                if (!Array.isArray(object.removedBaseIds))
+                    throw TypeError(".jsbolo.UpdateMessage.removedBaseIds: array expected");
+                message.removedBaseIds = [];
+                for (let i = 0; i < object.removedBaseIds.length; ++i)
+                    message.removedBaseIds[i] = object.removedBaseIds[i] >>> 0;
+            }
+            if (object.terrainUpdates) {
+                if (!Array.isArray(object.terrainUpdates))
+                    throw TypeError(".jsbolo.UpdateMessage.terrainUpdates: array expected");
+                message.terrainUpdates = [];
+                for (let i = 0; i < object.terrainUpdates.length; ++i) {
+                    if (typeof object.terrainUpdates[i] !== "object")
+                        throw TypeError(".jsbolo.UpdateMessage.terrainUpdates: object expected");
+                    message.terrainUpdates[i] = $root.jsbolo.TerrainUpdate.fromObject(object.terrainUpdates[i]);
+                }
+            }
+            if (object.soundEvents) {
+                if (!Array.isArray(object.soundEvents))
+                    throw TypeError(".jsbolo.UpdateMessage.soundEvents: array expected");
+                message.soundEvents = [];
+                for (let i = 0; i < object.soundEvents.length; ++i) {
+                    if (typeof object.soundEvents[i] !== "object")
+                        throw TypeError(".jsbolo.UpdateMessage.soundEvents: object expected");
+                    message.soundEvents[i] = $root.jsbolo.SoundEvent.fromObject(object.soundEvents[i]);
+                }
+            }
+            if (object.matchEnded != null)
+                message.matchEnded = Boolean(object.matchEnded);
+            if (object.winningTeams) {
+                if (!Array.isArray(object.winningTeams))
+                    throw TypeError(".jsbolo.UpdateMessage.winningTeams: array expected");
+                message.winningTeams = [];
+                for (let i = 0; i < object.winningTeams.length; ++i)
+                    message.winningTeams[i] = object.winningTeams[i] >>> 0;
             }
             return message;
         };
 
         /**
-         * Creates a plain object from a MapData message. Also converts values to other types if specified.
+         * Creates a plain object from an UpdateMessage message. Also converts values to other types if specified.
          * @function toObject
-         * @memberof jsbolo.MapData
+         * @memberof jsbolo.UpdateMessage
          * @static
-         * @param {jsbolo.MapData} message MapData
+         * @param {jsbolo.UpdateMessage} message UpdateMessage
          * @param {$protobuf.IConversionOptions} [options] Conversion options
          * @returns {Object.<string,*>} Plain object
          */
-        MapData.toObject = function toObject(message, options) {
+        UpdateMessage.toObject = function toObject(message, options) {
             if (!options)
                 options = {};
             let object = {};
             if (options.arrays || options.defaults) {
+                object.tanks = [];
+                object.shells = [];
+                object.builders = [];
                 object.pillboxes = [];
                 object.bases = [];
+                object.removedTankIds = [];
+                object.removedBuilderIds = [];
+                object.removedPillboxIds = [];
+                object.removedBaseIds = [];
+                object.terrainUpdates = [];
+                object.soundEvents = [];
+                object.winningTeams = [];
             }
-            if (options.defaults) {
-                object.width = 0;
-                object.height = 0;
-                if (options.bytes === String)
-                    object.terrain = "";
-                else {
-                    object.terrain = [];
-                    if (options.bytes !== Array)
-                        object.terrain = $util.newBuffer(object.terrain);
-                }
+            if (options.defaults)
+                object.tick = 0;
+            if (message.tick != null && message.hasOwnProperty("tick"))
+                object.tick = message.tick;
+            if (message.tanks && message.tanks.length) {
+                object.tanks = [];
+                for (let j = 0; j < message.tanks.length; ++j)
+                    object.tanks[j] = $root.jsbolo.Tank.toObject(message.tanks[j], options);
             }
-            if (message.width != null && message.hasOwnProperty("width"))
-                object.width = message.width;
-            if (message.height != null && message.hasOwnProperty("height"))
-                object.height = message.height;
-            if (message.terrain != null && message.hasOwnProperty("terrain"))
-                object.terrain = options.bytes === String ? $util.base64.encode(message.terrain, 0, message.terrain.length) : options.bytes === Array ? Array.prototype.slice.call(message.terrain) : message.terrain;
+            if (message.shells && message.shells.length) {
+                object.shells = [];
+                for (let j = 0; j < message.shells.length; ++j)
+                    object.shells[j] = $root.jsbolo.Shell.toObject(message.shells[j], options);
+            }
+            if (message.builders && message.builders.length) {
+                object.builders = [];
+                for (let j = 0; j < message.builders.length; ++j)
+                    object.builders[j] = $root.jsbolo.Builder.toObject(message.builders[j], options);
+            }
             if (message.pillboxes && message.pillboxes.length) {
                 object.pillboxes = [];
                 for (let j = 0; j < message.pillboxes.length; ++j)
-                    object.pillboxes[j] = $root.jsbolo.PillboxState.toObject(message.pillboxes[j], options);
+                    object.pillboxes[j] = $root.jsbolo.Pillbox.toObject(message.pillboxes[j], options);
             }
             if (message.bases && message.bases.length) {
                 object.bases = [];
                 for (let j = 0; j < message.bases.length; ++j)
-                    object.bases[j] = $root.jsbolo.BaseState.toObject(message.bases[j], options);
+                    object.bases[j] = $root.jsbolo.Base.toObject(message.bases[j], options);
+            }
+            if (message.removedTankIds && message.removedTankIds.length) {
+                object.removedTankIds = [];
+                for (let j = 0; j < message.removedTankIds.length; ++j)
+                    object.removedTankIds[j] = message.removedTankIds[j];
+            }
+            if (message.removedBuilderIds && message.removedBuilderIds.length) {
+                object.removedBuilderIds = [];
+                for (let j = 0; j < message.removedBuilderIds.length; ++j)
+                    object.removedBuilderIds[j] = message.removedBuilderIds[j];
+            }
+            if (message.removedPillboxIds && message.removedPillboxIds.length) {
+                object.removedPillboxIds = [];
+                for (let j = 0; j < message.removedPillboxIds.length; ++j)
+                    object.removedPillboxIds[j] = message.removedPillboxIds[j];
+            }
+            if (message.removedBaseIds && message.removedBaseIds.length) {
+                object.removedBaseIds = [];
+                for (let j = 0; j < message.removedBaseIds.length; ++j)
+                    object.removedBaseIds[j] = message.removedBaseIds[j];
+            }
+            if (message.terrainUpdates && message.terrainUpdates.length) {
+                object.terrainUpdates = [];
+                for (let j = 0; j < message.terrainUpdates.length; ++j)
+                    object.terrainUpdates[j] = $root.jsbolo.TerrainUpdate.toObject(message.terrainUpdates[j], options);
+            }
+            if (message.soundEvents && message.soundEvents.length) {
+                object.soundEvents = [];
+                for (let j = 0; j < message.soundEvents.length; ++j)
+                    object.soundEvents[j] = $root.jsbolo.SoundEvent.toObject(message.soundEvents[j], options);
+            }
+            if (message.matchEnded != null && message.hasOwnProperty("matchEnded")) {
+                object.matchEnded = message.matchEnded;
+                if (options.oneofs)
+                    object._matchEnded = "matchEnded";
+            }
+            if (message.winningTeams && message.winningTeams.length) {
+                object.winningTeams = [];
+                for (let j = 0; j < message.winningTeams.length; ++j)
+                    object.winningTeams[j] = message.winningTeams[j];
             }
             return object;
         };
 
         /**
-         * Converts this MapData to JSON.
+         * Converts this UpdateMessage to JSON.
          * @function toJSON
-         * @memberof jsbolo.MapData
+         * @memberof jsbolo.UpdateMessage
          * @instance
          * @returns {Object.<string,*>} JSON object
          */
-        MapData.prototype.toJSON = function toJSON() {
+        UpdateMessage.prototype.toJSON = function toJSON() {
             return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
         };
 
         /**
-         * Gets the default type url for MapData
+         * Gets the default type url for UpdateMessage
          * @function getTypeUrl
-         * @memberof jsbolo.MapData
+         * @memberof jsbolo.UpdateMessage
          * @static
          * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
          * @returns {string} The default type url
          */
-        MapData.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+        UpdateMessage.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
             if (typeUrlPrefix === undefined) {
                 typeUrlPrefix = "type.googleapis.com";
             }
-            return typeUrlPrefix + "/jsbolo.MapData";
+            return typeUrlPrefix + "/jsbolo.UpdateMessage";
         };
 
-        return MapData;
+        return UpdateMessage;
     })();
 
     jsbolo.ClientMessage = (function() {
@@ -5216,20 +5043,6 @@ export const jsbolo = $root.jsbolo = (() => {
          * @instance
          */
         ClientMessage.prototype.input = null;
-
-        // OneOf field names bound to virtual getters and setters
-        let $oneOfFields;
-
-        /**
-         * ClientMessage message.
-         * @member {"input"|undefined} message
-         * @memberof jsbolo.ClientMessage
-         * @instance
-         */
-        Object.defineProperty(ClientMessage.prototype, "message", {
-            get: $util.oneOfGetter($oneOfFields = ["input"]),
-            set: $util.oneOfSetter($oneOfFields)
-        });
 
         /**
          * Creates a new ClientMessage instance using the specified properties.
@@ -5332,14 +5145,10 @@ export const jsbolo = $root.jsbolo = (() => {
         ClientMessage.verify = function verify(message) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
-            let properties = {};
             if (message.input != null && message.hasOwnProperty("input")) {
-                properties.message = 1;
-                {
-                    let error = $root.jsbolo.PlayerInput.verify(message.input);
-                    if (error)
-                        return "input." + error;
-                }
+                let error = $root.jsbolo.PlayerInput.verify(message.input);
+                if (error)
+                    return "input." + error;
             }
             return null;
         };
@@ -5377,11 +5186,10 @@ export const jsbolo = $root.jsbolo = (() => {
             if (!options)
                 options = {};
             let object = {};
-            if (message.input != null && message.hasOwnProperty("input")) {
+            if (options.defaults)
+                object.input = null;
+            if (message.input != null && message.hasOwnProperty("input"))
                 object.input = $root.jsbolo.PlayerInput.toObject(message.input, options);
-                if (options.oneofs)
-                    object.message = "input";
-            }
             return object;
         };
 
@@ -5421,9 +5229,7 @@ export const jsbolo = $root.jsbolo = (() => {
          * @memberof jsbolo
          * @interface IServerMessage
          * @property {jsbolo.IWelcomeMessage|null} [welcome] ServerMessage welcome
-         * @property {jsbolo.IServerUpdate|null} [update] ServerMessage update
-         * @property {jsbolo.ICreateEntity|null} [create] ServerMessage create
-         * @property {jsbolo.IDestroyEntity|null} [destroy] ServerMessage destroy
+         * @property {jsbolo.IUpdateMessage|null} [update] ServerMessage update
          */
 
         /**
@@ -5451,39 +5257,23 @@ export const jsbolo = $root.jsbolo = (() => {
 
         /**
          * ServerMessage update.
-         * @member {jsbolo.IServerUpdate|null|undefined} update
+         * @member {jsbolo.IUpdateMessage|null|undefined} update
          * @memberof jsbolo.ServerMessage
          * @instance
          */
         ServerMessage.prototype.update = null;
-
-        /**
-         * ServerMessage create.
-         * @member {jsbolo.ICreateEntity|null|undefined} create
-         * @memberof jsbolo.ServerMessage
-         * @instance
-         */
-        ServerMessage.prototype.create = null;
-
-        /**
-         * ServerMessage destroy.
-         * @member {jsbolo.IDestroyEntity|null|undefined} destroy
-         * @memberof jsbolo.ServerMessage
-         * @instance
-         */
-        ServerMessage.prototype.destroy = null;
 
         // OneOf field names bound to virtual getters and setters
         let $oneOfFields;
 
         /**
          * ServerMessage message.
-         * @member {"welcome"|"update"|"create"|"destroy"|undefined} message
+         * @member {"welcome"|"update"|undefined} message
          * @memberof jsbolo.ServerMessage
          * @instance
          */
         Object.defineProperty(ServerMessage.prototype, "message", {
-            get: $util.oneOfGetter($oneOfFields = ["welcome", "update", "create", "destroy"]),
+            get: $util.oneOfGetter($oneOfFields = ["welcome", "update"]),
             set: $util.oneOfSetter($oneOfFields)
         });
 
@@ -5514,11 +5304,7 @@ export const jsbolo = $root.jsbolo = (() => {
             if (message.welcome != null && Object.hasOwnProperty.call(message, "welcome"))
                 $root.jsbolo.WelcomeMessage.encode(message.welcome, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
             if (message.update != null && Object.hasOwnProperty.call(message, "update"))
-                $root.jsbolo.ServerUpdate.encode(message.update, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
-            if (message.create != null && Object.hasOwnProperty.call(message, "create"))
-                $root.jsbolo.CreateEntity.encode(message.create, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
-            if (message.destroy != null && Object.hasOwnProperty.call(message, "destroy"))
-                $root.jsbolo.DestroyEntity.encode(message.destroy, writer.uint32(/* id 4, wireType 2 =*/34).fork()).ldelim();
+                $root.jsbolo.UpdateMessage.encode(message.update, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
             return writer;
         };
 
@@ -5560,15 +5346,7 @@ export const jsbolo = $root.jsbolo = (() => {
                         break;
                     }
                 case 2: {
-                        message.update = $root.jsbolo.ServerUpdate.decode(reader, reader.uint32());
-                        break;
-                    }
-                case 3: {
-                        message.create = $root.jsbolo.CreateEntity.decode(reader, reader.uint32());
-                        break;
-                    }
-                case 4: {
-                        message.destroy = $root.jsbolo.DestroyEntity.decode(reader, reader.uint32());
+                        message.update = $root.jsbolo.UpdateMessage.decode(reader, reader.uint32());
                         break;
                     }
                 default:
@@ -5620,29 +5398,9 @@ export const jsbolo = $root.jsbolo = (() => {
                     return "message: multiple values";
                 properties.message = 1;
                 {
-                    let error = $root.jsbolo.ServerUpdate.verify(message.update);
+                    let error = $root.jsbolo.UpdateMessage.verify(message.update);
                     if (error)
                         return "update." + error;
-                }
-            }
-            if (message.create != null && message.hasOwnProperty("create")) {
-                if (properties.message === 1)
-                    return "message: multiple values";
-                properties.message = 1;
-                {
-                    let error = $root.jsbolo.CreateEntity.verify(message.create);
-                    if (error)
-                        return "create." + error;
-                }
-            }
-            if (message.destroy != null && message.hasOwnProperty("destroy")) {
-                if (properties.message === 1)
-                    return "message: multiple values";
-                properties.message = 1;
-                {
-                    let error = $root.jsbolo.DestroyEntity.verify(message.destroy);
-                    if (error)
-                        return "destroy." + error;
                 }
             }
             return null;
@@ -5668,17 +5426,7 @@ export const jsbolo = $root.jsbolo = (() => {
             if (object.update != null) {
                 if (typeof object.update !== "object")
                     throw TypeError(".jsbolo.ServerMessage.update: object expected");
-                message.update = $root.jsbolo.ServerUpdate.fromObject(object.update);
-            }
-            if (object.create != null) {
-                if (typeof object.create !== "object")
-                    throw TypeError(".jsbolo.ServerMessage.create: object expected");
-                message.create = $root.jsbolo.CreateEntity.fromObject(object.create);
-            }
-            if (object.destroy != null) {
-                if (typeof object.destroy !== "object")
-                    throw TypeError(".jsbolo.ServerMessage.destroy: object expected");
-                message.destroy = $root.jsbolo.DestroyEntity.fromObject(object.destroy);
+                message.update = $root.jsbolo.UpdateMessage.fromObject(object.update);
             }
             return message;
         };
@@ -5702,19 +5450,9 @@ export const jsbolo = $root.jsbolo = (() => {
                     object.message = "welcome";
             }
             if (message.update != null && message.hasOwnProperty("update")) {
-                object.update = $root.jsbolo.ServerUpdate.toObject(message.update, options);
+                object.update = $root.jsbolo.UpdateMessage.toObject(message.update, options);
                 if (options.oneofs)
                     object.message = "update";
-            }
-            if (message.create != null && message.hasOwnProperty("create")) {
-                object.create = $root.jsbolo.CreateEntity.toObject(message.create, options);
-                if (options.oneofs)
-                    object.message = "create";
-            }
-            if (message.destroy != null && message.hasOwnProperty("destroy")) {
-                object.destroy = $root.jsbolo.DestroyEntity.toObject(message.destroy, options);
-                if (options.oneofs)
-                    object.message = "destroy";
             }
             return object;
         };

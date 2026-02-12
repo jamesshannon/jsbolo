@@ -2,7 +2,7 @@
  * Game server - WebSocket server managing game sessions
  */
 
-import {WebSocketServer, type WebSocket} from 'ws';
+import {WebSocketServer, type RawData, type WebSocket} from 'ws';
 import {GameSession} from './game-session.js';
 import {decodeClientMessage, type ClientMessage} from '@jsbolo/shared';
 
@@ -37,7 +37,7 @@ export class GameServer {
         this.session.start();
       }
 
-      ws.on('message', (data: Buffer) => {
+      ws.on('message', (data: RawData) => {
         this.handleMessage(ws, data);
       });
 
@@ -51,14 +51,15 @@ export class GameServer {
     });
   }
 
-  private handleMessage(ws: WebSocket, data: Buffer): void {
+  private handleMessage(ws: WebSocket, data: RawData): void {
     const conn = this.connections.get(ws);
     if (!conn) {
       return;
     }
 
     try {
-      const message: ClientMessage = decodeClientMessage(data.toString());
+      const payload = Array.isArray(data) ? Buffer.concat(data) : data;
+      const message: ClientMessage = decodeClientMessage(payload as Uint8Array);
 
       if (message.type === 'input' && message.input) {
         if (message.input.accelerating || message.input.braking) {
