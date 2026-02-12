@@ -26,6 +26,7 @@ import {DebugOverlay} from '../debug/debug-overlay.js';
 import {SoundManager} from '../audio/sound-manager.js';
 import {toNetworkInput} from './input-mapping.js';
 import {applyNetworkEntityUpdate} from './network-entity-state.js';
+import {applyNetworkWorldEffects} from './network-world-effects.js';
 
 export class MultiplayerGame {
   private readonly input: KeyboardInput;
@@ -180,35 +181,12 @@ export class MultiplayerGame {
           },
         }
       );
-      if (update.terrainUpdates) {
-        for (const terrainUpdate of update.terrainUpdates) {
-          // DEBUG: Log terrain updates received
-          const oldCell = this.world.getCellAt(terrainUpdate.x, terrainUpdate.y);
-          console.log(`[CLIENT] Received terrain update: (${terrainUpdate.x}, ${terrainUpdate.y}) ${oldCell?.terrain} -> ${terrainUpdate.terrain}`);
-
-          this.world.updateCell(terrainUpdate.x, terrainUpdate.y, {
-            terrain: terrainUpdate.terrain,
-            terrainLife: terrainUpdate.terrainLife,
-            ...(terrainUpdate.direction !== undefined && { direction: terrainUpdate.direction }),
-          });
-        }
-      }
-
-      // Handle sound events
-      if (update.soundEvents && this.playerId !== null) {
-        const myTank = this.tanks.get(this.playerId);
-        if (myTank && myTank.x !== undefined && myTank.y !== undefined) {
-          for (const soundEvent of update.soundEvents) {
-            // Check if this sound is from the player's own tank (within 128 world units)
-            const dx = soundEvent.x - myTank.x;
-            const dy = soundEvent.y - myTank.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            const isOwnTank = distance < 128; // Half a tile
-
-            this.soundManager.playSound(soundEvent, myTank.x, myTank.y, isOwnTank);
-          }
-        }
-      }
+      applyNetworkWorldEffects(update, {
+        world: this.world,
+        playerId: this.playerId,
+        tanks: this.tanks,
+        soundPlayback: this.soundManager,
+      });
     });
   }
 
