@@ -46,6 +46,7 @@ import {ServerShell} from './simulation/shell.js';
 import {ServerPillbox} from './simulation/pillbox.js';
 import {ServerBase} from './simulation/base.js';
 import {ServerBuilder} from './simulation/builder.js';
+import {MatchStateSystem} from './systems/match-state-system.js';
 import type {WebSocket} from 'ws';
 
 interface Player {
@@ -54,11 +55,6 @@ interface Player {
   tank: ServerTank;
   lastInput: PlayerInput;
   respawnAtTick?: number;
-}
-
-interface MineVisibilityRecord {
-  ownerTeam: number;
-  visibleToTeams: Set<number>;
 }
 
 export class GameSession {
@@ -70,15 +66,11 @@ export class GameSession {
   private readonly terrainChanges = new Set<string>(); // Track terrain changes as "x,y"
   private readonly soundEvents: SoundEvent[] = [];
   private readonly forestRegrowthTimers = new Map<string, number>(); // Track forest regrowth as "x,y" -> remaining ticks
-  private readonly alliances = new Map<number, Set<number>>();
-  private readonly pendingAllianceRequests = new Set<string>();
-  private readonly mineVisibility = new Map<string, MineVisibilityRecord>();
+  private readonly matchState = new MatchStateSystem();
   private nextPlayerId = 1;
   private tick = 0;
   private running = false;
   private tickInterval?: NodeJS.Timeout;
-  private matchEnded = false;
-  private winningTeams: number[] = [];
   private matchEndAnnounced = false;
 
   // Network optimization: throttle broadcasts and track state changes
@@ -476,7 +468,7 @@ export class GameSession {
           const worldX = (mine.x + 0.5) * TILE_SIZE_WORLD;
           const worldY = (mine.y + 0.5) * TILE_SIZE_WORLD;
           this.emitSound(SOUND_MINE_EXPLOSION, worldX, worldY);
-          this.mineVisibility.delete(`${mine.x},${mine.y}`);
+          this.matchState.clearMineVisibilityAt(mine.x, mine.y);
         }
 
         // Damage tanks in radius of each exploded mine
@@ -645,11 +637,9 @@ export class GameSession {
       }
     }
 
-    if (!this.matchEnded) {
-      const winner = this.calculateWinningTeams();
-      if (winner.length > 0) {
-        this.matchEnded = true;
-        this.winningTeams = winner;
+    if (!this.matchState.isMatchEnded()) {
+      const didEnd = this.matchState.evaluateWinCondition(this.bases.values());
+      if (didEnd) {
         this.matchEndAnnounced = false;
       }
     }
@@ -1194,7 +1184,10 @@ export class GameSession {
       tanks,
       pillboxes,
       bases,
-      ...(this.matchEnded && { matchEnded: this.matchEnded, winningTeams: this.winningTeams }),
+      ...(this.matchState.isMatchEnded() && {
+        matchEnded: this.matchState.isMatchEnded(),
+        winningTeams: this.matchState.getWinningTeams(),
+      }),
     };
 
     const message = encodeServerMessage(welcome);
@@ -1368,10 +1361,10 @@ export class GameSession {
       ...(terrainUpdates.length > 0 && { terrainUpdates }),
       ...(this.soundEvents.length > 0 && { soundEvents: this.soundEvents }),
       ...(
-        this.matchEnded &&
+        this.matchState.isMatchEnded() &&
         !this.matchEndAnnounced && {
-          matchEnded: this.matchEnded,
-          winningTeams: this.winningTeams,
+          matchEnded: this.matchState.isMatchEnded(),
+          winningTeams: this.matchState.getWinningTeams(),
         }
       ),
     };
@@ -1384,7 +1377,7 @@ export class GameSession {
                        bases.length > 0 ||
                        terrainUpdates.length > 0 ||
                        this.soundEvents.length > 0 ||
-                       (this.matchEnded && !this.matchEndAnnounced);
+                       (this.matchState.isMatchEnded() && !this.matchEndAnnounced);
 
     if (!hasChanges) {
       return; // No changes, skip broadcast entirely
@@ -1399,7 +1392,7 @@ export class GameSession {
       }
     }
 
-    if (this.matchEnded) {
+    if (this.matchState.isMatchEnded()) {
       this.matchEndAnnounced = true;
     }
   }
@@ -1430,105 +1423,28 @@ export class GameSession {
     delete player.respawnAtTick;
   }
 
-  private calculateWinningTeams(): number[] {
-    const bases = Array.from(this.bases.values());
-    if (bases.length === 0) {
-      return [];
-    }
-
-    const firstOwner = bases[0]!.ownerTeam;
-    if (firstOwner === NEUTRAL_TEAM) {
-      return [];
-    }
-
-    for (const base of bases) {
-      if (base.ownerTeam === NEUTRAL_TEAM) {
-        return [];
-      }
-      // ASSUMPTION: alliance checks are direct pair membership.
-      // Transitive alliance resolution (A-B and B-C implies A-C) is not applied yet.
-      if (!this.areTeamsAllied(firstOwner, base.ownerTeam)) {
-        return [];
-      }
-    }
-
-    return this.getAllianceMembers(firstOwner);
-  }
-
-  private getAllianceMembers(team: number): number[] {
-    const members = new Set<number>([team]);
-    const allies = this.alliances.get(team);
-    if (allies) {
-      for (const ally of allies) {
-        members.add(ally);
-      }
-    }
-    return Array.from(members).sort((a, b) => a - b);
-  }
-
-  private getAllianceKey(fromTeam: number, toTeam: number): string {
-    return `${fromTeam}->${toTeam}`;
-  }
-
   public requestAlliance(fromTeam: number, toTeam: number): boolean {
-    if (fromTeam === toTeam || this.areTeamsAllied(fromTeam, toTeam)) {
-      return false;
-    }
-    this.pendingAllianceRequests.add(this.getAllianceKey(fromTeam, toTeam));
-    return true;
+    return this.matchState.requestAlliance(fromTeam, toTeam);
   }
 
   public acceptAlliance(toTeam: number, fromTeam: number): boolean {
-    const key = this.getAllianceKey(fromTeam, toTeam);
-    if (!this.pendingAllianceRequests.has(key)) {
-      return false;
-    }
-
-    this.pendingAllianceRequests.delete(key);
-    this.createAlliance(fromTeam, toTeam);
-    return true;
+    return this.matchState.acceptAlliance(toTeam, fromTeam);
   }
 
   public createAlliance(teamA: number, teamB: number): void {
-    if (teamA === teamB) {
-      return;
-    }
-
-    const alliesA = this.alliances.get(teamA) ?? new Set<number>();
-    alliesA.add(teamB);
-    this.alliances.set(teamA, alliesA);
-
-    const alliesB = this.alliances.get(teamB) ?? new Set<number>();
-    alliesB.add(teamA);
-    this.alliances.set(teamB, alliesB);
+    this.matchState.createAlliance(teamA, teamB);
   }
 
   public breakAlliance(teamA: number, teamB: number): void {
-    this.alliances.get(teamA)?.delete(teamB);
-    this.alliances.get(teamB)?.delete(teamA);
+    this.matchState.breakAlliance(teamA, teamB);
   }
 
   public leaveAlliance(team: number): void {
-    const allies = this.alliances.get(team);
-    if (!allies) {
-      return;
-    }
-
-    for (const ally of allies) {
-      this.alliances.get(ally)?.delete(team);
-    }
-    this.alliances.delete(team);
+    this.matchState.leaveAlliance(team);
   }
 
   public areTeamsAllied(teamA: number, teamB: number): boolean {
-    if (teamA === teamB) {
-      return true;
-    }
-    if (teamA === NEUTRAL_TEAM || teamB === NEUTRAL_TEAM) {
-      return false;
-    }
-    // ASSUMPTION: alliance graph is non-transitive for now (direct links only).
-    return this.alliances.get(teamA)?.has(teamB) ?? false;
+    return this.matchState.areTeamsAllied(teamA, teamB);
   }
 
   public getVisibleMineTilesForPlayer(playerId: number): Array<{x: number; y: number}> {
@@ -1537,60 +1453,19 @@ export class GameSession {
       return [];
     }
 
-    const playerTeam = player.tank.team;
-    const visible: Array<{x: number; y: number}> = [];
-    const mapData = this.world.getMapData();
-    for (let y = 0; y < mapData.length; y++) {
-      const row = mapData[y]!;
-      for (let x = 0; x < row.length; x++) {
-        const cell = row[x]!;
-        if (!cell.hasMine) {
-          continue;
-        }
-
-        const visibility = this.mineVisibility.get(`${x},${y}`);
-        // ASSUMPTION: mines without visibility metadata (for example map-loaded mines)
-        // are treated as globally visible for compatibility.
-        if (!visibility || visibility.visibleToTeams.has(playerTeam)) {
-          visible.push({x, y});
-        }
-      }
-    }
-    return visible;
+    return this.matchState.getVisibleMineTilesForTeam(player.tank.team, this.world);
   }
 
   public placeMineForTeam(team: number, tileX: number, tileY: number): boolean {
-    if (this.world.hasMineAt(tileX, tileY)) {
-      return false;
-    }
-
-    this.world.setMineAt(tileX, tileY, true);
-    this.mineVisibility.set(`${tileX},${tileY}`, {
-      ownerTeam: team,
-      // ASSUMPTION: mine visibility is snapshot-based at placement time.
-      // Pre-alliance mines are not retro-shared; post-break sharing applies only to new mines.
-      visibleToTeams: this.getMineVisibilityTeams(team),
-    });
-    return true;
-  }
-
-  private getMineVisibilityTeams(team: number): Set<number> {
-    const visibleToTeams = new Set<number>([team]);
-    const allies = this.alliances.get(team);
-    if (allies) {
-      for (const ally of allies) {
-        visibleToTeams.add(ally);
-      }
-    }
-    return visibleToTeams;
+    return this.matchState.placeMineForTeam(team, tileX, tileY, this.world);
   }
 
   public isMatchEnded(): boolean {
-    return this.matchEnded;
+    return this.matchState.isMatchEnded();
   }
 
   public getWinningTeams(): number[] {
-    return [...this.winningTeams];
+    return this.matchState.getWinningTeams();
   }
 
   getPlayerCount(): number {
