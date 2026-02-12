@@ -473,7 +473,14 @@ BOT_COUNT=4
 
 # Optional startup profile for BOT_COUNT spawns (default: tactical)
 BOT_PROFILE=tactical
+
+# Optional: allow bots to keep simulating with no humans connected (default: false)
+ALLOW_BOT_ONLY_SIM=false
 ```
+
+Simulation behavior:
+- Default (`ALLOW_BOT_ONLY_SIM=false`): session pauses when the last human disconnects, even if bots remain.
+- Enabled (`ALLOW_BOT_ONLY_SIM=true`): bots continue simulating in bot-only sessions.
 
 Endpoints:
 

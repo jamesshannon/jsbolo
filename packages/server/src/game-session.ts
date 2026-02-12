@@ -71,7 +71,7 @@ export class GameSession {
   private botAllianceTeam: number | null = null;
   private tick = 0;
   private running = false;
-  private tickInterval?: NodeJS.Timeout;
+  private tickInterval: NodeJS.Timeout | undefined;
   private matchEndAnnounced = false;
 
   // Network optimization: throttle broadcasts and track state changes
@@ -123,10 +123,28 @@ export class GameSession {
     console.log('Game session started');
   }
 
+  /**
+   * Pause ticking without tearing down bot runtime/session state.
+   * Used when no humans are connected but bots remain in the session.
+   */
+  pause(): void {
+    if (!this.running) {
+      return;
+    }
+
+    this.running = false;
+    if (this.tickInterval) {
+      clearInterval(this.tickInterval);
+      this.tickInterval = undefined;
+    }
+    console.log('Game session paused');
+  }
+
   stop(): void {
     this.running = false;
     if (this.tickInterval) {
       clearInterval(this.tickInterval);
+      this.tickInterval = undefined;
     }
     this.botInputSystem.shutdown();
     console.log('Game session stopped');

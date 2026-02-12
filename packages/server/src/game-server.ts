@@ -18,12 +18,14 @@ interface GameServerOptions {
   mapPath?: string;
   session?: GameSession;
   createWebSocketServer?: (port: number) => WebSocketServerLike;
+  allowBotOnlySimulation?: boolean;
 }
 
 export class GameServer {
   private readonly wss: WebSocketServerLike;
   private readonly session: GameSession; // Single session for Phase 2
   private readonly connections = new Map<WebSocket, PlayerConnection>();
+  private readonly allowBotOnlySimulation: boolean;
 
   constructor(port: number, mapPathOrOptions?: string | GameServerOptions, maybeOptions?: GameServerOptions) {
     const options = typeof mapPathOrOptions === 'string'
@@ -37,6 +39,7 @@ export class GameServer {
       ? options.createWebSocketServer(port)
       : new WebSocketServer({port});
     this.session = options?.session ?? new GameSession(mapPath);
+    this.allowBotOnlySimulation = options?.allowBotOnlySimulation ?? false;
 
     this.setupEventHandlers();
     console.log(`WebSocket server listening on port ${port}`);
@@ -50,8 +53,8 @@ export class GameServer {
       const playerId = this.session.addPlayer(ws);
       this.connections.set(ws, {playerId, session: this.session});
 
-      // Start session if first player
-      if (this.session.getPlayerCount() === 1) {
+      // Start or resume on first active human connection.
+      if (this.connections.size === 1) {
         this.session.start();
       }
 
@@ -95,6 +98,13 @@ export class GameServer {
     if (conn) {
       conn.session.removePlayer(conn.playerId);
       this.connections.delete(ws);
+      if (
+        this.connections.size === 0 &&
+        conn.session.getPlayerCount() > 0 &&
+        !this.allowBotOnlySimulation
+      ) {
+        conn.session.pause();
+      }
     }
     console.log('WebSocket disconnected');
   }
@@ -124,9 +134,7 @@ export class GameServer {
       return {ok: false, reason: 'Bot policy rejected add request (allowBots/maxBots).'};
     }
 
-    // Keep bot-only sessions alive: first bot should start authoritative ticking
-    // even before any human WebSocket client connects.
-    if (this.session.getPlayerCount() === 1) {
+    if (this.allowBotOnlySimulation && this.session.getPlayerCount() === 1) {
       this.session.start();
     }
 

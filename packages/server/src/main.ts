@@ -14,6 +14,7 @@ const PORT = process.env['PORT'] ? parseInt(process.env['PORT'], 10) : 8080;
 const CONTROL_PORT = process.env['CONTROL_PORT'] ? parseInt(process.env['CONTROL_PORT'], 10) : 8081;
 const ENABLE_BOT_CONTROL =
   process.env['ENABLE_BOT_CONTROL'] !== 'false' && process.env['NODE_ENV'] !== 'production';
+const ALLOW_BOT_ONLY_SIM = process.env['ALLOW_BOT_ONLY_SIM'] === 'true';
 
 // Get directory of current module (for resolving map path)
 const moduleFileName = fileURLToPath(import.meta.url);
@@ -29,7 +30,10 @@ function main(): void {
   const session = new GameSession(DEFAULT_MAP, {
     botPolicy: parseBotPolicyFromEnv(),
   });
-  const server = new GameServer(PORT, {session});
+  const server = new GameServer(PORT, {
+    session,
+    allowBotOnlySimulation: ALLOW_BOT_ONLY_SIM,
+  });
 
   const startupProfiles = resolveStartupBotProfiles(server.listAvailableBotProfiles());
   for (const profile of startupProfiles) {
