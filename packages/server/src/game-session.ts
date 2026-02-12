@@ -19,6 +19,7 @@ import {ServerBase} from './simulation/base.js';
 import {RespawnSystem} from './systems/respawn-system.js';
 import {SessionUpdatePipeline} from './systems/session-update-pipeline.js';
 import {SessionStateBroadcaster} from './systems/session-state-broadcaster.js';
+import {SessionWelcomeBuilder} from './systems/session-welcome-builder.js';
 import type {WebSocket} from 'ws';
 
 interface Player {
@@ -40,6 +41,7 @@ export class GameSession {
   private readonly respawnSystem = new RespawnSystem();
   private readonly updatePipeline = new SessionUpdatePipeline();
   private readonly broadcaster = new SessionStateBroadcaster();
+  private readonly welcomeBuilder = new SessionWelcomeBuilder();
   private readonly matchState = this.updatePipeline.getMatchState();
   // Compatibility exposure for existing tests that manually seed regrowth tracking.
   public readonly terrainEffects = this.updatePipeline.getTerrainEffects();
@@ -335,90 +337,17 @@ export class GameSession {
   }
 
   private sendWelcome(player: Player): void {
-    const mapData = this.world.getMapData();
-
-    // Pack terrain data as flat arrays
-    const terrain: number[] = [];
-    const terrainLife: number[] = [];
-    for (let y = 0; y < 256; y++) {
-      for (let x = 0; x < 256; x++) {
-        const cell = mapData[y]![x]!;
-        terrain.push(cell.terrain);
-        terrainLife.push(cell.terrainLife);
-      }
-    }
-
-    // Diagnostic: Count non-deep-sea terrain in sent data
-    const terrainHistogram = new Map<number, number>();
-    for (let i = 0; i < terrain.length; i++) {
-      const t = terrain[i]!;
-      terrainHistogram.set(t, (terrainHistogram.get(t) || 0) + 1);
-    }
-    console.log('Sending terrain histogram:', Object.fromEntries(terrainHistogram));
-
-    // Sample some specific rows to verify data
-    console.log('Sample terrain at row 102:', terrain.slice(102 * 256, 102 * 256 + 10));
-    console.log('Sample terrain at row 241:', terrain.slice(241 * 256, 241 * 256 + 10));
-
-    // Collect all tanks
-    const tanks = Array.from(this.players.values()).map(p => ({
-      id: p.tank.id,
-      team: p.tank.team,
-      x: p.tank.x,
-      y: p.tank.y,
-      direction: p.tank.direction,
-      speed: p.tank.speed,
-      armor: p.tank.armor,
-      shells: p.tank.shells,
-      mines: p.tank.mines,
-      trees: p.tank.trees,
-      onBoat: p.tank.onBoat,
-      reload: p.tank.reload,
-      firingRange: p.tank.firingRange,
-      carriedPillbox: p.tank.carriedPillbox?.id ?? null,
-    }));
-
-    // Collect all pillboxes
-    const pillboxes = Array.from(this.pillboxes.values()).map(pb => ({
-      id: pb.id,
-      tileX: pb.tileX,
-      tileY: pb.tileY,
-      armor: pb.armor,
-      ownerTeam: pb.ownerTeam,
-      inTank: pb.inTank,
-    }));
-
-    // Collect all bases
-    const bases = Array.from(this.bases.values()).map(base => ({
-      id: base.id,
-      tileX: base.tileX,
-      tileY: base.tileY,
-      armor: base.armor,
-      shells: base.shells,
-      mines: base.mines,
-      ownerTeam: base.ownerTeam,
-    }));
-
-    const welcome: WelcomeMessage = {
-      type: 'welcome',
+    const welcome: WelcomeMessage = this.welcomeBuilder.buildWelcome({
       playerId: player.id,
       assignedTeam: player.tank.team,
       currentTick: this.tick,
-      mapName: this.world.getMapName(),
-      map: {
-        width: 256,
-        height: 256,
-        terrain,
-        terrainLife,
-      },
-      tanks,
-      pillboxes,
-      bases,
-      ...(this.matchState.isMatchEnded() && {
-        matchEnded: this.matchState.isMatchEnded(),
-        winningTeams: this.matchState.getWinningTeams(),
-      }),
-    };
+      world: this.world,
+      players: this.players.values(),
+      pillboxes: this.pillboxes.values(),
+      bases: this.bases.values(),
+      matchEnded: this.matchState.isMatchEnded(),
+      winningTeams: this.matchState.getWinningTeams(),
+    });
 
     const message = encodeServerMessage(welcome);
     player.ws.send(message);
