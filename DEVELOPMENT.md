@@ -175,7 +175,7 @@ pnpm dev
 
 #### 1. Multiplayer Network Protocol ✅
 - WebSocket-based server on port 8080
-- JSON protocol for state synchronization
+- Protocol Buffers binary protocol for state synchronization
 - Delta compression for efficient updates
 - Player connection/disconnection handling
 - State hash-based change detection
@@ -379,7 +379,7 @@ pnpm dev
 - Proper camera offset handling in all conversions
 
 **Network Protocol:**
-- JSON-based (not Protocol Buffers - simpler for now)
+- Protocol Buffers binary payloads for client/server messages
 - Delta updates: only changed entities sent
 - State hashing for change detection
 - Efficient terrain update tracking via Set
@@ -453,7 +453,6 @@ tail -f logs/client.log
 
 **Technical Debt:**
 - Some skipped tests for alliances and win conditions
-- Network protocol could use Protocol Buffers for efficiency
 - Client prediction could be more sophisticated
 - Some edge cases in terrain flooding
 

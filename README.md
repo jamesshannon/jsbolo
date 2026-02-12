@@ -19,7 +19,7 @@ Current implementation includes multiplayer server simulation, tank combat, buil
 - Shared protocol/types: workspace package (`@jsbolo/shared`)
 - Package manager: pnpm workspaces
 
-Networking currently uses JSON messages. Protocol Buffers artifacts exist in the repo for future optimization work.
+Networking now uses Protocol Buffers (binary WebSocket payloads) via `@jsbolo/shared`.
 
 ## Project Structure
 
