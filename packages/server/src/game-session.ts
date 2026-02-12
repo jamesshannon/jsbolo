@@ -9,8 +9,6 @@ import {
   type PlayerInput,
   encodeServerMessage,
   type WelcomeMessage,
-  type UpdateMessage,
-  type TerrainUpdate,
   type SoundEvent,
 } from '@jsbolo/shared';
 import {ServerTank} from './simulation/tank.js';
@@ -18,9 +16,9 @@ import {ServerWorld} from './simulation/world.js';
 import {ServerShell} from './simulation/shell.js';
 import {ServerPillbox} from './simulation/pillbox.js';
 import {ServerBase} from './simulation/base.js';
-import {ServerBuilder} from './simulation/builder.js';
 import {RespawnSystem} from './systems/respawn-system.js';
 import {SessionUpdatePipeline} from './systems/session-update-pipeline.js';
+import {SessionStateBroadcaster} from './systems/session-state-broadcaster.js';
 import type {WebSocket} from 'ws';
 
 interface Player {
@@ -41,6 +39,7 @@ export class GameSession {
   private readonly soundEvents: SoundEvent[] = [];
   private readonly respawnSystem = new RespawnSystem();
   private readonly updatePipeline = new SessionUpdatePipeline();
+  private readonly broadcaster = new SessionStateBroadcaster();
   private readonly matchState = this.updatePipeline.getMatchState();
   // Compatibility exposure for existing tests that manually seed regrowth tracking.
   public readonly terrainEffects = this.updatePipeline.getTerrainEffects();
@@ -52,14 +51,6 @@ export class GameSession {
 
   // Network optimization: throttle broadcasts and track state changes
   private readonly broadcastInterval = 2; // Broadcast every 2 ticks (25 Hz instead of 50 Hz)
-  private previousState = {
-    tanks: new Map<number, string>(), // tankId -> state hash
-    shells: new Set<number>(), // Track which shells existed last broadcast
-    builders: new Map<number, string>(),
-    pillboxes: new Map<number, string>(),
-    bases: new Map<number, string>(),
-  };
-
   /**
    * Create a new game session, optionally loading a map file.
    *
@@ -433,251 +424,21 @@ export class GameSession {
     player.ws.send(message);
   }
 
-  /**
-   * Generate a state hash for an entity to detect changes.
-   * Only includes mutable fields that clients need to know about.
-   */
-  private getTankStateHash(tank: ServerTank): string {
-    return `${Math.round(tank.x)},${Math.round(tank.y)},${tank.direction},${tank.speed},${tank.armor},${tank.shells},${tank.mines},${tank.trees},${tank.onBoat},${tank.reload},${tank.firingRange},${tank.carriedPillbox?.id ?? 'null'}`;
-  }
-
-  private getBuilderStateHash(builder: ServerBuilder): string {
-    return `${Math.round(builder.x)},${Math.round(builder.y)},${Math.round(builder.targetX)},${Math.round(builder.targetY)},${builder.order},${builder.trees},${builder.hasMine},${builder.hasPillbox},${builder.respawnCounter}`;
-  }
-
-  private getPillboxStateHash(pillbox: ServerPillbox): string {
-    return `${pillbox.armor},${pillbox.ownerTeam},${pillbox.inTank}`;
-  }
-
-  private getBaseStateHash(base: ServerBase): string {
-    return `${base.armor},${base.shells},${base.mines},${base.ownerTeam}`;
-  }
-
   private broadcastState(): void {
-    // Delta compression: only send entities that changed since last broadcast
-    const tanks = [];
-    const builders = [];
-    const currentTankIds = new Set<number>();
-    const currentBuilderIds = new Set<number>();
-
-    for (const player of this.players.values()) {
-      const tank = player.tank;
-      currentTankIds.add(tank.id);
-      const currentHash = this.getTankStateHash(tank);
-      const previousHash = this.previousState.tanks.get(tank.id);
-
-      // Include tank if it changed or is new
-      if (currentHash !== previousHash) {
-        tanks.push({
-          id: tank.id,
-          x: Math.round(tank.x),
-          y: Math.round(tank.y),
-          direction: tank.direction,
-          speed: tank.speed,
-          armor: tank.armor,
-          shells: tank.shells,
-          mines: tank.mines,
-          trees: tank.trees,
-          team: tank.team,
-          onBoat: tank.onBoat,
-          reload: tank.reload,
-          firingRange: tank.firingRange,
-          carriedPillbox: tank.carriedPillbox?.id ?? null,
-        });
-        this.previousState.tanks.set(tank.id, currentHash);
-      }
-
-      // Check builder changes
-      const builder = tank.builder;
-      currentBuilderIds.add(builder.id);
-      const builderHash = this.getBuilderStateHash(builder);
-      const previousBuilderHash = this.previousState.builders.get(builder.id);
-
-      if (builderHash !== previousBuilderHash) {
-        builders.push({
-          id: builder.id,
-          ownerTankId: builder.ownerTankId,
-          x: Math.round(builder.x),
-          y: Math.round(builder.y),
-          targetX: Math.round(builder.targetX),
-          targetY: Math.round(builder.targetY),
-          order: builder.order,
-          trees: builder.trees,
-          hasMine: builder.hasMine,
-          hasPillbox: builder.hasPillbox,
-          team: builder.team,
-          respawnCounter: builder.respawnCounter,
-        });
-        this.previousState.builders.set(builder.id, builderHash);
-      }
-    }
-
-    const removedTankIds: number[] = [];
-    for (const previousTankId of this.previousState.tanks.keys()) {
-      if (!currentTankIds.has(previousTankId)) {
-        removedTankIds.push(previousTankId);
-        this.previousState.tanks.delete(previousTankId);
-      }
-    }
-
-    const removedBuilderIds: number[] = [];
-    for (const previousBuilderId of this.previousState.builders.keys()) {
-      if (!currentBuilderIds.has(previousBuilderId)) {
-        removedBuilderIds.push(previousBuilderId);
-        this.previousState.builders.delete(previousBuilderId);
-      }
-    }
-
-    // Shells: Always include all shells since they move every tick
-    // Also track which shells existed for removed shell detection
-    const shells = [];
-    const currentShellIds = new Set<number>();
-    for (const shell of this.shells.values()) {
-      shells.push({
-        id: shell.id,
-        x: Math.round(shell.x),
-        y: Math.round(shell.y),
-        direction: shell.direction,
-        ownerTankId: shell.ownerTankId,
-      });
-      currentShellIds.add(shell.id);
-    }
-    this.previousState.shells = currentShellIds;
-
-    // Pillboxes: Only send if changed
-    const pillboxes = [];
-    const currentPillboxIds = new Set<number>();
-    for (const pillbox of this.pillboxes.values()) {
-      currentPillboxIds.add(pillbox.id);
-      const currentHash = this.getPillboxStateHash(pillbox);
-      const previousHash = this.previousState.pillboxes.get(pillbox.id);
-
-      if (currentHash !== previousHash) {
-        pillboxes.push({
-          id: pillbox.id,
-          tileX: pillbox.tileX,
-          tileY: pillbox.tileY,
-          armor: pillbox.armor,
-          ownerTeam: pillbox.ownerTeam,
-          inTank: pillbox.inTank,
-        });
-        this.previousState.pillboxes.set(pillbox.id, currentHash);
-      }
-    }
-    const removedPillboxIds: number[] = [];
-    for (const previousPillboxId of this.previousState.pillboxes.keys()) {
-      if (!currentPillboxIds.has(previousPillboxId)) {
-        removedPillboxIds.push(previousPillboxId);
-        this.previousState.pillboxes.delete(previousPillboxId);
-      }
-    }
-
-    // Bases: Only send if changed
-    const bases = [];
-    const currentBaseIds = new Set<number>();
-    for (const base of this.bases.values()) {
-      currentBaseIds.add(base.id);
-      const currentHash = this.getBaseStateHash(base);
-      const previousHash = this.previousState.bases.get(base.id);
-
-      if (currentHash !== previousHash) {
-        bases.push({
-          id: base.id,
-          tileX: base.tileX,
-          tileY: base.tileY,
-          armor: base.armor,
-          shells: base.shells,
-          mines: base.mines,
-          ownerTeam: base.ownerTeam,
-        });
-        this.previousState.bases.set(base.id, currentHash);
-      }
-    }
-    const removedBaseIds: number[] = [];
-    for (const previousBaseId of this.previousState.bases.keys()) {
-      if (!currentBaseIds.has(previousBaseId)) {
-        removedBaseIds.push(previousBaseId);
-        this.previousState.bases.delete(previousBaseId);
-      }
-    }
-
-    // Collect terrain updates
-    const terrainUpdates: TerrainUpdate[] = [];
-    const mapData = this.world.getMapData();
-    for (const key of this.terrainChanges) {
-      const [xStr, yStr] = key.split(',');
-      const x = Number(xStr);
-      const y = Number(yStr);
-      const cell = mapData[y]![x]!;
-
-      // DEBUG: Log terrain updates being broadcast
-      console.log(`[DEBUG] Broadcasting terrain update: (${x}, ${y}) terrain=${cell.terrain} (was potentially road)`);
-
-      terrainUpdates.push({
-        x,
-        y,
-        terrain: cell.terrain,
-        terrainLife: cell.terrainLife,
-        ...(cell.direction !== undefined && { direction: cell.direction }),
-      });
-    }
-    this.terrainChanges.clear(); // Clear for next update
-
-    // Build update message with only changed entities
-    // Skip empty arrays to reduce message size (EXCEPT shells - always send shells to clear dead ones on client)
-    const update: UpdateMessage = {
-      type: 'update',
+    const result = this.broadcaster.broadcastState({
       tick: this.tick,
-      shells, // Always include shells (even if empty) so client can clear dead shells
-      ...(tanks.length > 0 && { tanks }),
-      ...(builders.length > 0 && { builders }),
-      ...(pillboxes.length > 0 && { pillboxes }),
-      ...(bases.length > 0 && { bases }),
-      ...(removedTankIds.length > 0 && { removedTankIds }),
-      ...(removedBuilderIds.length > 0 && { removedBuilderIds }),
-      ...(removedPillboxIds.length > 0 && { removedPillboxIds }),
-      ...(removedBaseIds.length > 0 && { removedBaseIds }),
-      ...(terrainUpdates.length > 0 && { terrainUpdates }),
-      ...(this.soundEvents.length > 0 && { soundEvents: this.soundEvents }),
-      ...(
-        this.matchState.isMatchEnded() &&
-        !this.matchEndAnnounced && {
-          matchEnded: this.matchState.isMatchEnded(),
-          winningTeams: this.matchState.getWinningTeams(),
-        }
-      ),
-    };
-
-    // Skip broadcast if nothing changed (rare but possible when idle)
-    const hasChanges = tanks.length > 0 ||
-                       shells.length > 0 ||
-                       builders.length > 0 ||
-                       pillboxes.length > 0 ||
-                       bases.length > 0 ||
-                       removedTankIds.length > 0 ||
-                       removedBuilderIds.length > 0 ||
-                       removedPillboxIds.length > 0 ||
-                       removedBaseIds.length > 0 ||
-                       terrainUpdates.length > 0 ||
-                       this.soundEvents.length > 0 ||
-                       (this.matchState.isMatchEnded() && !this.matchEndAnnounced);
-
-    if (!hasChanges) {
-      return; // No changes, skip broadcast entirely
-    }
-
-    const message = encodeServerMessage(update);
-
-    // Send to all players
-    for (const player of this.players.values()) {
-      if (player.ws.readyState === 1) { // OPEN
-        player.ws.send(message);
-      }
-    }
-
-    if (this.matchState.isMatchEnded()) {
-      this.matchEndAnnounced = true;
-    }
+      players: this.players.values(),
+      shells: this.shells.values(),
+      pillboxes: this.pillboxes.values(),
+      bases: this.bases.values(),
+      world: this.world,
+      terrainChanges: this.terrainChanges,
+      soundEvents: this.soundEvents,
+      matchEnded: this.matchState.isMatchEnded(),
+      winningTeams: this.matchState.getWinningTeams(),
+      matchEndAnnounced: this.matchEndAnnounced,
+    });
+    this.matchEndAnnounced = result.matchEndAnnounced;
   }
 
   private emitSound(soundId: number, x: number, y: number): void {
