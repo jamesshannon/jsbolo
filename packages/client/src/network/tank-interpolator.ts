@@ -81,6 +81,10 @@ export class TankInterpolator {
     this.snapshots.clear();
   }
 
+  removeTank(tankId: number): void {
+    this.snapshots.delete(tankId);
+  }
+
   private lerp(start: number, end: number, alpha: number): number {
     return start + (end - start) * alpha;
   }

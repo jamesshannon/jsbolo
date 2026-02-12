@@ -207,6 +207,9 @@ export class MultiplayerGame {
         pillboxes: this.pillboxes,
         bases: this.bases,
       });
+      for (const tankId of update.removedTankIds ?? []) {
+        this.tankInterpolator.removeTank(tankId);
+      }
       if (update.terrainUpdates) {
         for (const terrainUpdate of update.terrainUpdates) {
           // DEBUG: Log terrain updates received

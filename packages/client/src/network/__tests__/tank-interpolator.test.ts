@@ -59,4 +59,13 @@ describe('TankInterpolator', () => {
     const result = interpolator.getInterpolatedTank(1, 1150);
     expect(result?.direction).toBeCloseTo(2);
   });
+
+  it('should remove snapshots for deleted tanks', () => {
+    const interpolator = new TankInterpolator(100);
+    interpolator.pushSnapshot(createTank(1, 100, 100), 10, 1000);
+
+    expect(interpolator.getInterpolatedTank(1, 1100)).toBeDefined();
+    interpolator.removeTank(1);
+    expect(interpolator.getInterpolatedTank(1, 1100)).toBeUndefined();
+  });
 });
