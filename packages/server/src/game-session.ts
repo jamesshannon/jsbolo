@@ -47,6 +47,7 @@ import {ServerPillbox} from './simulation/pillbox.js';
 import {ServerBase} from './simulation/base.js';
 import {ServerBuilder} from './simulation/builder.js';
 import {MatchStateSystem} from './systems/match-state-system.js';
+import {TerrainEffectsSystem} from './systems/terrain-effects-system.js';
 import type {WebSocket} from 'ws';
 
 interface Player {
@@ -65,7 +66,9 @@ export class GameSession {
   private readonly bases = new Map<number, ServerBase>();
   private readonly terrainChanges = new Set<string>(); // Track terrain changes as "x,y"
   private readonly soundEvents: SoundEvent[] = [];
-  private readonly forestRegrowthTimers = new Map<string, number>(); // Track forest regrowth as "x,y" -> remaining ticks
+  private readonly terrainEffects = new TerrainEffectsSystem();
+  // Test compatibility shim: some specs access this via (session as any).
+  private readonly forestRegrowthTimers = this.terrainEffects.getRegrowthTimersForDebug();
   private readonly matchState = new MatchStateSystem();
   private nextPlayerId = 1;
   private tick = 0;
@@ -459,7 +462,7 @@ export class GameSession {
           // Start regrowth timer if a forest was destroyed
           if (tile.originalTerrain === TerrainType.FOREST) {
             const tileKey = `${tile.x},${tile.y}`;
-            this.forestRegrowthTimers.set(tileKey, FOREST_REGROWTH_TICKS);
+            this.terrainEffects.trackForestRegrowth(tileKey);
           }
         }
 
@@ -543,7 +546,7 @@ export class GameSession {
           // Start regrowth timer if a forest was destroyed
           if (originalTerrain === TerrainType.FOREST) {
             const tileKey = `${tilePos.x},${tilePos.y}`;
-            this.forestRegrowthTimers.set(tileKey, FOREST_REGROWTH_TICKS);
+            this.terrainEffects.trackForestRegrowth(tileKey);
           }
         } else {
           console.log(`[DEBUG] Shell ${shell.id} removed by collision at (${tilePos.x}, ${tilePos.y}), terrain=${terrain}`);
@@ -644,25 +647,13 @@ export class GameSession {
       }
     }
 
-    // Check for crater flooding every 10 ticks
-    if (this.tick % 10 === 0) {
-      const floodedCraters = this.world.checkCraterFlooding();
-
-      for (const crater of floodedCraters) {
-        this.terrainChanges.add(`${crater.x},${crater.y}`);
-
-        const worldX = (crater.x + 0.5) * TILE_SIZE_WORLD;
-        const worldY = (crater.y + 0.5) * TILE_SIZE_WORLD;
-        this.emitSound(SOUND_BUBBLES, worldX, worldY);
-      }
-
-      if (floodedCraters.length > 0) {
-        console.log(`Flooded ${floodedCraters.length} craters adjacent to water`);
-      }
+    const terrainEffects = this.terrainEffects.update(this.tick, this.world);
+    for (const tileKey of terrainEffects.terrainChanges) {
+      this.terrainChanges.add(tileKey);
     }
-
-    // Update forest regrowth
-    this.updateForestRegrowth();
+    for (const pos of terrainEffects.bubbleSoundPositions) {
+      this.emitSound(SOUND_BUBBLES, pos.x, pos.y);
+    }
 
     // Broadcast state to all players (throttled to reduce CPU usage)
     if (this.tick % this.broadcastInterval === 0) {
@@ -883,7 +874,7 @@ export class GameSession {
               const tileKey = `${builderTile.x},${builderTile.y}`;
               this.terrainChanges.add(tileKey);
               // Start regrowth timer for this tile
-              this.forestRegrowthTimers.set(tileKey, FOREST_REGROWTH_TICKS);
+              this.terrainEffects.trackForestRegrowth(tileKey);
               console.log(`[REGROWTH] Started regrowth timer for (${builderTile.x}, ${builderTile.y}) with ${FOREST_REGROWTH_TICKS} ticks`);
             }
           } else {
@@ -1057,50 +1048,6 @@ export class GameSession {
           // Other orders not yet implemented
           break;
       }
-    }
-  }
-
-  /**
-   * Update forest regrowth timers and convert grass back to forest
-   */
-  private updateForestRegrowth(): void {
-    const tilesToRegrow: string[] = [];
-
-    // Decrement all regrowth timers
-    for (const [tileKey, remainingTicks] of this.forestRegrowthTimers) {
-      const newRemainingTicks = remainingTicks - 1;
-
-      if (newRemainingTicks <= 0) {
-        // Timer expired - regrow forest
-        console.log(`[REGROWTH] Timer expired for ${tileKey}, will regrow`);
-        tilesToRegrow.push(tileKey);
-      } else {
-        // Update timer
-        this.forestRegrowthTimers.set(tileKey, newRemainingTicks);
-        if (newRemainingTicks % 100 === 0) {
-          console.log(`[REGROWTH] Timer for ${tileKey}: ${newRemainingTicks} ticks remaining`);
-        }
-      }
-    }
-
-    // Regrow forests
-    for (const tileKey of tilesToRegrow) {
-      const [xStr, yStr] = tileKey.split(',');
-      const x = Number(xStr);
-      const y = Number(yStr);
-      const terrain = this.world.getTerrainAt(x, y);
-
-      console.log(`[REGROWTH] Attempting to regrow ${tileKey}, current terrain=${terrain}`);
-
-      // Regrow forest if tile is still grass or crater (might have been built on)
-      if (terrain === TerrainType.GRASS || terrain === TerrainType.CRATER) {
-        this.world.setTerrainAt(x, y, TerrainType.FOREST);
-        this.terrainChanges.add(tileKey);
-        console.log(`[REGROWTH] Regrew forest at ${tileKey}`);
-      }
-
-      // Remove timer regardless of whether we regrowed (tile might have changed)
-      this.forestRegrowthTimers.delete(tileKey);
     }
   }
 
