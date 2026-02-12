@@ -19,22 +19,21 @@ import type {World} from '../world/world.js';
 import type {Tank} from '../entities/tank.js';
 
 /**
- * Simple terrain tile mapping for Phase 1
- * Coordinates from Orona retiling logic (see map.coffee lines 117-124)
- * TODO: Implement proper auto-tiling based on neighbors in Phase 3
+ * Terrain tile defaults.
+ * Auto-tilers override these for neighbor-sensitive terrain.
  */
 const TERRAIN_TILES: Record<TerrainType, {x: number; y: number}> = {
   [TerrainType.GRASS]: {x: 2, y: 1},         // '.' - green grass
-  [TerrainType.FOREST]: {x: 3, y: 1},        // '#' - dense forest tile (default before auto-tiling)
+  [TerrainType.FOREST]: {x: 3, y: 1},        // '#' - dense forest tile fallback
   [TerrainType.SWAMP]: {x: 7, y: 1},         // '~' - swamp
-  [TerrainType.RIVER]: {x: 1, y: 0},         // ' ' - water (default from Orona line 261)
-  [TerrainType.ROAD]: {x: 0, y: 1},          // '=' - horizontal road tile (default before auto-tiling)
-  [TerrainType.CRATER]: {x: 5, y: 1},        // '%' - crater
-  [TerrainType.BUILDING]: {x: 6, y: 1},      // '|' - isolated building
+  [TerrainType.RIVER]: {x: 1, y: 0},         // ' ' - river fallback
+  [TerrainType.ROAD]: {x: 0, y: 1},          // '=' - road fallback
+  [TerrainType.CRATER]: {x: 5, y: 1},        // '%' - crater/rubble center
+  [TerrainType.BUILDING]: {x: 6, y: 1},      // '|' - isolated wall/building fallback
   [TerrainType.RUBBLE]: {x: 4, y: 1},        // ':' - rubble
-  [TerrainType.SHOT_BUILDING]: {x: 8, y: 1}, // '}' - damaged building
-  [TerrainType.BOAT]: {x: 11, y: 6},         // 'b' - boat surrounded by water (Orona line 360)
-  [TerrainType.DEEP_SEA]: {x: 0, y: 0},      // '^' - deep sea base tile
+  [TerrainType.SHOT_BUILDING]: {x: 8, y: 1}, // '}' - damaged building (intentionally non-autotiled)
+  [TerrainType.BOAT]: {x: 11, y: 6},         // 'b' - boat fallback (autotiled by direction when available)
+  [TerrainType.DEEP_SEA]: {x: 0, y: 0},      // '^' - deep sea fallback
 };
 
 export class Renderer {
@@ -128,6 +127,12 @@ export class Renderer {
       } else if (cell.terrain === TerrainType.ROAD) {
         const neighbors = world.getNeighbors(tileX, tileY);
         tileDef = AutoTiler.getRoadTile(neighbors);
+      } else if (cell.terrain === TerrainType.RIVER) {
+        const neighbors = world.getNeighbors(tileX, tileY);
+        tileDef = AutoTiler.getRiverTile(neighbors);
+      } else if (cell.terrain === TerrainType.DEEP_SEA) {
+        const neighbors = world.getNeighbors(tileX, tileY);
+        tileDef = AutoTiler.getDeepSeaTile(neighbors);
       } else if (cell.terrain === TerrainType.BUILDING) {
         const neighbors = world.getNeighbors(tileX, tileY);
         tileDef = AutoTiler.getBuildingTile(neighbors);

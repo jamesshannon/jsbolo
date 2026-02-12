@@ -340,7 +340,7 @@ describe('AutoTiler - Road Tiling', () => {
 });
 
 describe('AutoTiler - Building Tiling', () => {
-  it('should return isolated building (placeholder implementation)', () => {
+  it('should return isolated building when no adjacent walls', () => {
     const neighbors = [
       TerrainType.GRASS, null, TerrainType.GRASS, null,
       TerrainType.GRASS, null, TerrainType.GRASS, null
@@ -349,14 +349,69 @@ describe('AutoTiler - Building Tiling', () => {
     expect(tile).toEqual({x: 6, y: 1});
   });
 
-  it('should return isolated building even when surrounded by buildings', () => {
+  it('should return dense interior tile when surrounded by buildings', () => {
     const neighbors = [
       TerrainType.BUILDING, null, TerrainType.BUILDING, null,
       TerrainType.BUILDING, null, TerrainType.BUILDING, null
     ];
     const tile = AutoTiler.getBuildingTile(neighbors);
-    // TODO: This should return a different tile once full building auto-tiling is implemented
-    expect(tile).toEqual({x: 6, y: 1});
+    expect(tile).toEqual({x: 30, y: 1});
+  });
+
+  it('should return horizontal segment when west and east are connected', () => {
+    const neighbors = [
+      TerrainType.GRASS, null, TerrainType.BUILDING, null,
+      TerrainType.GRASS, null, TerrainType.BUILDING, null
+    ];
+    const tile = AutoTiler.getBuildingTile(neighbors);
+    expect(tile).toEqual({x: 11, y: 1});
+  });
+
+  it('should treat shot-building neighbors as connected', () => {
+    const neighbors = [
+      TerrainType.SHOT_BUILDING, null, TerrainType.GRASS, null,
+      TerrainType.SHOT_BUILDING, null, TerrainType.GRASS, null
+    ];
+    const tile = AutoTiler.getBuildingTile(neighbors);
+    expect(tile).toEqual({x: 12, y: 1});
+  });
+});
+
+describe('AutoTiler - Shoreline Tiling', () => {
+  it('should select deep-sea corner when NW opens to land', () => {
+    const neighbors = [
+      TerrainType.GRASS, null, TerrainType.DEEP_SEA, null,
+      TerrainType.DEEP_SEA, null, TerrainType.GRASS, null
+    ];
+    const tile = AutoTiler.getDeepSeaTile(neighbors);
+    expect(tile).toEqual({x: 10, y: 3});
+  });
+
+  it('should select deep-sea river edge when west is river and east is sea', () => {
+    const neighbors = [
+      TerrainType.DEEP_SEA, null, TerrainType.DEEP_SEA, null,
+      TerrainType.DEEP_SEA, null, TerrainType.RIVER, null
+    ];
+    const tile = AutoTiler.getDeepSeaTile(neighbors);
+    expect(tile).toEqual({x: 14, y: 3});
+  });
+
+  it('should select river-lake tile when surrounded by land', () => {
+    const neighbors = [
+      TerrainType.GRASS, null, TerrainType.GRASS, null,
+      TerrainType.GRASS, null, TerrainType.GRASS, null
+    ];
+    const tile = AutoTiler.getRiverTile(neighbors);
+    expect(tile).toEqual({x: 30, y: 2});
+  });
+
+  it('should select vertical river channel when north and south are land', () => {
+    const neighbors = [
+      TerrainType.GRASS, null, TerrainType.RIVER, null,
+      TerrainType.GRASS, null, TerrainType.RIVER, null
+    ];
+    const tile = AutoTiler.getRiverTile(neighbors);
+    expect(tile).toEqual({x: 0, y: 3});
   });
 });
 
