@@ -5,7 +5,6 @@
 import {
   TICK_LENGTH_MS,
   TANK_RESPAWN_TICKS,
-  SOUND_BUBBLES,
   TerrainType,
   type PlayerInput,
   encodeServerMessage,
@@ -20,13 +19,8 @@ import {ServerShell} from './simulation/shell.js';
 import {ServerPillbox} from './simulation/pillbox.js';
 import {ServerBase} from './simulation/base.js';
 import {ServerBuilder} from './simulation/builder.js';
-import {CombatSystem} from './systems/combat-system.js';
-import {MatchStateSystem} from './systems/match-state-system.js';
 import {RespawnSystem} from './systems/respawn-system.js';
-import {TerrainEffectsSystem} from './systems/terrain-effects-system.js';
-import {BuilderSystem} from './systems/builder-system.js';
-import {PlayerSimulationSystem} from './systems/player-simulation-system.js';
-import {StructureSimulationSystem} from './systems/structure-simulation-system.js';
+import {SessionUpdatePipeline} from './systems/session-update-pipeline.js';
 import type {WebSocket} from 'ws';
 
 interface Player {
@@ -45,13 +39,11 @@ export class GameSession {
   private readonly bases = new Map<number, ServerBase>();
   private readonly terrainChanges = new Set<string>(); // Track terrain changes as "x,y"
   private readonly soundEvents: SoundEvent[] = [];
-  private readonly combatSystem = new CombatSystem();
-  private readonly terrainEffects = new TerrainEffectsSystem();
   private readonly respawnSystem = new RespawnSystem();
-  private readonly matchState = new MatchStateSystem();
-  private readonly builderSystem = new BuilderSystem();
-  private readonly playerSimulation = new PlayerSimulationSystem();
-  private readonly structureSimulation = new StructureSimulationSystem();
+  private readonly updatePipeline = new SessionUpdatePipeline();
+  private readonly matchState = this.updatePipeline.getMatchState();
+  // Compatibility exposure for existing tests that manually seed regrowth tracking.
+  public readonly terrainEffects = this.updatePipeline.getTerrainEffects();
   private nextPlayerId = 1;
   private tick = 0;
   private running = false;
@@ -292,92 +284,33 @@ export class GameSession {
     this.tick++;
     this.soundEvents.length = 0; // Clear sound events from previous tick
 
-    this.playerSimulation.updatePlayers(
-      this.tick,
+    this.updatePipeline.runTick(
       {
+        tick: this.tick,
         world: this.world,
-        players: this.players.values(),
-        pillboxes: this.pillboxes.values(),
+        players: this.players,
+        shells: this.shells,
+        pillboxes: this.pillboxes,
+        bases: this.bases,
+        terrainChanges: this.terrainChanges,
       },
       {
-        tryRespawn: (player) => this.tryRespawnTank(player),
+        tryRespawnTank: (player) => this.tryRespawnTank(player),
         emitSound: (soundId, x, y) => this.emitSound(soundId, x, y),
-        onTerrainChanged: (tileX, tileY) => this.terrainChanges.add(`${tileX},${tileY}`),
-        onForestDestroyed: (tileX, tileY) =>
-          this.terrainEffects.trackForestRegrowth(`${tileX},${tileY}`),
         scheduleTankRespawn: (tankId) => this.scheduleTankRespawn(tankId),
-        onMineExploded: (tileX, tileY) =>
+        placeMineForTeam: (team, tileX, tileY) =>
+          this.placeMineForTeam(team, tileX, tileY),
+        clearMineVisibilityAt: (tileX, tileY) =>
           this.matchState.clearMineVisibilityAt(tileX, tileY),
+        areTeamsAllied: (teamA, teamB) => this.areTeamsAllied(teamA, teamB),
         spawnShell: (tank) => this.spawnShell(tank),
-        updateBuilder: (tank, tick) =>
-          this.builderSystem.update(
-            tank,
-            tick,
-            {
-              world: this.world,
-              pillboxes: this.pillboxes.values(),
-            },
-            {
-              emitSound: (soundId, x, y) => this.emitSound(soundId, x, y),
-              onTerrainChanged: (tileX, tileY) =>
-                this.terrainChanges.add(`${tileX},${tileY}`),
-              onTrackForestRegrowth: (tileX, tileY) =>
-                this.terrainEffects.trackForestRegrowth(`${tileX},${tileY}`),
-              onPlaceMine: (team, tileX, tileY) =>
-                this.placeMineForTeam(team, tileX, tileY),
-              onCreatePillbox: (pillbox) => this.pillboxes.set(pillbox.id, pillbox),
-            }
-          ),
-      }
-    );
-
-    this.combatSystem.updateShells(
-      this.shells,
-      {
-        world: this.world,
-        players: this.players.values(),
-        getPlayerByTankId: (tankId: number) => this.players.get(tankId),
-        pillboxes: this.pillboxes.values(),
-        bases: this.bases.values(),
-      },
-      {
-        areTeamsAllied: (teamA, teamB) => this.areTeamsAllied(teamA, teamB),
-        emitSound: (soundId, x, y) => this.emitSound(soundId, x, y),
-        scheduleTankRespawn: (tankId) => this.scheduleTankRespawn(tankId),
-        onTerrainChanged: (tileX, tileY) => this.terrainChanges.add(`${tileX},${tileY}`),
-        onForestDestroyed: (tileX, tileY) =>
-          this.terrainEffects.trackForestRegrowth(`${tileX},${tileY}`),
-      }
-    );
-
-    this.structureSimulation.updateStructures(
-      {
-        world: this.world,
-        players: this.players.values(),
-        pillboxes: this.pillboxes.values(),
-        bases: this.bases.values(),
-      },
-      {
-        areTeamsAllied: (teamA, teamB) => this.areTeamsAllied(teamA, teamB),
         spawnShellFromPillbox: (pillboxId, x, y, direction) =>
           this.spawnShellFromPillbox(pillboxId, x, y, direction),
+        onMatchEnded: () => {
+          this.matchEndAnnounced = false;
+        },
       }
     );
-
-    if (!this.matchState.isMatchEnded()) {
-      const didEnd = this.matchState.evaluateWinCondition(this.bases.values());
-      if (didEnd) {
-        this.matchEndAnnounced = false;
-      }
-    }
-
-    const terrainEffects = this.terrainEffects.update(this.tick, this.world);
-    for (const tileKey of terrainEffects.terrainChanges) {
-      this.terrainChanges.add(tileKey);
-    }
-    for (const pos of terrainEffects.bubbleSoundPositions) {
-      this.emitSound(SOUND_BUBBLES, pos.x, pos.y);
-    }
 
     // Broadcast state to all players (throttled to reduce CPU usage)
     if (this.tick % this.broadcastInterval === 0) {
@@ -757,7 +690,7 @@ export class GameSession {
     this.respawnSystem.schedule(tankId, this.tick, TANK_RESPAWN_TICKS);
   }
 
-  private tryRespawnTank(player: Player): void {
+  private tryRespawnTank(player: Pick<Player, 'id' | 'tank'>): void {
     if (!this.respawnSystem.shouldRespawn(player.id, this.tick)) {
       return;
     }
