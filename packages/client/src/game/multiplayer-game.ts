@@ -25,7 +25,7 @@ import {TankInterpolator} from '../network/tank-interpolator.js';
 import {DebugOverlay} from '../debug/debug-overlay.js';
 import {SoundManager} from '../audio/sound-manager.js';
 import {toNetworkInput} from './input-mapping.js';
-import {applyRemovedEntityIds} from './entity-delta.js';
+import {applyNetworkEntityUpdate} from './network-entity-state.js';
 
 export class MultiplayerGame {
   private readonly input: KeyboardInput;
@@ -160,56 +160,26 @@ export class MultiplayerGame {
     });
 
     this.network.onUpdate(update => {
-      // Delta updates: merge changed entities instead of replacing all state
-      if (update.tanks) {
-        const now = performance.now();
-        for (const tank of update.tanks) {
-          if (tank.id !== undefined) {
-            this.tanks.set(tank.id, tank);
-            this.tankInterpolator.pushSnapshot(tank, update.tick, now);
-          }
+      const now = performance.now();
+      applyNetworkEntityUpdate(
+        update,
+        {
+          tanks: this.tanks,
+          shells: this.shells,
+          builders: this.builders,
+          pillboxes: this.pillboxes,
+          bases: this.bases,
+        },
+        now,
+        {
+          onTankUpdated: (tank, tick, receivedAtMs) => {
+            this.tankInterpolator.pushSnapshot(tank, tick, receivedAtMs);
+          },
+          onTankRemoved: tankId => {
+            this.tankInterpolator.removeTank(tankId);
+          },
         }
-      }
-      if (update.shells) {
-        // Shells are always included when they exist (they move every tick)
-        // So we can safely replace the entire collection
-        this.shells.clear();
-        for (const shell of update.shells) {
-          if (shell.id !== undefined) {
-            this.shells.set(shell.id, shell);
-          }
-        }
-      }
-      if (update.builders) {
-        for (const builder of update.builders) {
-          if (builder.id !== undefined) {
-            this.builders.set(builder.id, builder);
-          }
-        }
-      }
-      if (update.pillboxes) {
-        for (const pillbox of update.pillboxes) {
-          if (pillbox.id !== undefined) {
-            this.pillboxes.set(pillbox.id, pillbox);
-          }
-        }
-      }
-      if (update.bases) {
-        for (const base of update.bases) {
-          if (base.id !== undefined) {
-            this.bases.set(base.id, base);
-          }
-        }
-      }
-      applyRemovedEntityIds(update, {
-        tanks: this.tanks,
-        builders: this.builders,
-        pillboxes: this.pillboxes,
-        bases: this.bases,
-      });
-      for (const tankId of update.removedTankIds ?? []) {
-        this.tankInterpolator.removeTank(tankId);
-      }
+      );
       if (update.terrainUpdates) {
         for (const terrainUpdate of update.terrainUpdates) {
           // DEBUG: Log terrain updates received

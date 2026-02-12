@@ -55,8 +55,14 @@ export class TankInterpolator {
       return;
     }
 
-    const dx = nextSnapshot.tank.x - pair.current.tank.x;
-    const dy = nextSnapshot.tank.y - pair.current.tank.y;
+    const current = pair.current;
+    if (!current) {
+      pair.current = nextSnapshot;
+      return;
+    }
+
+    const dx = nextSnapshot.tank.x - current.tank.x;
+    const dy = nextSnapshot.tank.y - current.tank.y;
     const jumpDistance = Math.sqrt((dx * dx) + (dy * dy));
     if (jumpDistance > TankInterpolator.SNAP_DISTANCE_WORLD) {
       pair.previous = null;
