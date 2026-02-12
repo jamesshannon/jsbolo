@@ -6,7 +6,6 @@ import {
   TICK_LENGTH_MS,
   TILE_SIZE_WORLD,
   PIXEL_SIZE_WORLD,
-  TILE_SIZE_PIXELS,
   RangeAdjustment,
 } from '@shared';
 import {KeyboardInput} from '../input/keyboard.js';

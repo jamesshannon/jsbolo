@@ -15,6 +15,8 @@ import {
   WATER_MINES_DRAINED,
   BUILDER_WALL_COST,
   BUILDER_BOAT_COST,
+  BUILDER_PILLBOX_COST,
+  PILLBOX_MAX_ARMOR,
   FOREST_REGROWTH_TICKS,
   SOUND_SHOOTING,
   SOUND_SHOT_BUILDING,
@@ -1061,7 +1063,9 @@ export class GameSession {
 
     // Regrow forests
     for (const tileKey of tilesToRegrow) {
-      const [x, y] = tileKey.split(',').map(Number);
+      const [xStr, yStr] = tileKey.split(',');
+      const x = Number(xStr);
+      const y = Number(yStr);
       const terrain = this.world.getTerrainAt(x, y);
 
       console.log(`[REGROWTH] Attempting to regrow ${tileKey}, current terrain=${terrain}`);

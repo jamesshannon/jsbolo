@@ -648,7 +648,7 @@ export class ServerWorld {
    */
   isTankConcealedInForest(tileX: number, tileY: number): boolean {
     // Check all 8 adjacent tiles
-    const offsets = [
+    const offsets: Array<readonly [number, number]> = [
       [-1, -1],
       [0, -1],
       [1, -1], // Top row
