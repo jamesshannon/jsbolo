@@ -122,6 +122,7 @@ This file is the forward plan for the project. It assumes active development, wi
 - UX polish:
   - HUD refinements
   - Better feedback for builder/actions/combat events
+  - `HUD-TODO`: add scrolling message when player drives over a disabled pillbox while already carrying one (pickup blocked by single-pillbox carry limit)
   - Optional accessibility and input quality improvements
 - Content and tooling:
   - Map workflow improvements (selection/validation/editor groundwork)
