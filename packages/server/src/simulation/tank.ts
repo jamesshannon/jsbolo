@@ -87,9 +87,6 @@ export class ServerTank {
       this.firingRange = Math.max(1, this.firingRange - 0.5);
     }
 
-    // Update builder
-    this.builder.update(this.x, this.y);
-
     // Handle builder orders
     if (input.buildOrder) {
       console.log(`[BUILD ORDER] Tank ${this.id} sending builder to (${input.buildOrder.targetX}, ${input.buildOrder.targetY}) with action ${input.buildOrder.action}`);

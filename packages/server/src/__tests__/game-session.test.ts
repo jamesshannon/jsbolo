@@ -387,4 +387,34 @@ describe('GameSession Integration', () => {
       expect(player.tank.speed).toBe(0);
     });
   });
+
+  describe('Builder Update Lifecycle', () => {
+    it('should update builder movement exactly once per tick', () => {
+      const ws = createMockWebSocket();
+      const playerId = session.addPlayer(ws);
+
+      const players = (session as any).players;
+      const player = players.get(playerId);
+      const builder = player.tank.builder;
+
+      const originalUpdate = builder.update.bind(builder);
+      const updateSpy = vi.fn(originalUpdate);
+      builder.update = updateSpy;
+
+      player.lastInput = {
+        sequence: 1,
+        tick: 1,
+        accelerating: false,
+        braking: false,
+        turningClockwise: false,
+        turningCounterClockwise: false,
+        shooting: false,
+        rangeAdjustment: 0,
+      };
+
+      (session as any).update();
+
+      expect(updateSpy).toHaveBeenCalledTimes(1);
+    });
+  });
 });
