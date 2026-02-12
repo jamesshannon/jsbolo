@@ -413,6 +413,60 @@ describe('AutoTiler - Shoreline Tiling', () => {
     const tile = AutoTiler.getRiverTile(neighbors);
     expect(tile).toEqual({x: 0, y: 3});
   });
+
+  it('should select horizontal river channel when west and east are land', () => {
+    const neighbors = [
+      TerrainType.RIVER, null, TerrainType.GRASS, null,
+      TerrainType.RIVER, null, TerrainType.GRASS, null
+    ];
+    const tile = AutoTiler.getRiverTile(neighbors);
+    expect(tile).toEqual({x: 1, y: 3});
+  });
+
+  it('should select river edge opening north when only north is land', () => {
+    const neighbors = [
+      TerrainType.GRASS, null, TerrainType.RIVER, null,
+      TerrainType.RIVER, null, TerrainType.RIVER, null
+    ];
+    const tile = AutoTiler.getRiverTile(neighbors);
+    expect(tile).toEqual({x: 5, y: 3});
+  });
+
+  it('should select deep-sea corner when north-east opens to land', () => {
+    const neighbors = [
+      TerrainType.GRASS, null, TerrainType.GRASS, null,
+      TerrainType.DEEP_SEA, null, TerrainType.DEEP_SEA, null
+    ];
+    const tile = AutoTiler.getDeepSeaTile(neighbors);
+    expect(tile).toEqual({x: 11, y: 3});
+  });
+
+  it('should select deep-sea corner when south-east opens to land', () => {
+    const neighbors = [
+      TerrainType.DEEP_SEA, null, TerrainType.GRASS, null,
+      TerrainType.GRASS, null, TerrainType.DEEP_SEA, null
+    ];
+    const tile = AutoTiler.getDeepSeaTile(neighbors);
+    expect(tile).toEqual({x: 13, y: 3});
+  });
+
+  it('should select deep-sea corner when south-west opens to land', () => {
+    const neighbors = [
+      TerrainType.DEEP_SEA, null, TerrainType.DEEP_SEA, null,
+      TerrainType.GRASS, null, TerrainType.GRASS, null
+    ];
+    const tile = AutoTiler.getDeepSeaTile(neighbors);
+    expect(tile).toEqual({x: 12, y: 3});
+  });
+
+  it('should select default deep-sea tile when fully surrounded by deep-sea', () => {
+    const neighbors = [
+      TerrainType.DEEP_SEA, TerrainType.DEEP_SEA, TerrainType.DEEP_SEA, TerrainType.DEEP_SEA,
+      TerrainType.DEEP_SEA, TerrainType.DEEP_SEA, TerrainType.DEEP_SEA, TerrainType.DEEP_SEA
+    ];
+    const tile = AutoTiler.getDeepSeaTile(neighbors);
+    expect(tile).toEqual({x: 0, y: 0});
+  });
 });
 
 describe('AutoTiler - Boat Direction', () => {
