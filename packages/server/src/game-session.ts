@@ -47,6 +47,7 @@ import {ServerPillbox} from './simulation/pillbox.js';
 import {ServerBase} from './simulation/base.js';
 import {ServerBuilder} from './simulation/builder.js';
 import {MatchStateSystem} from './systems/match-state-system.js';
+import {RespawnSystem} from './systems/respawn-system.js';
 import {TerrainEffectsSystem} from './systems/terrain-effects-system.js';
 import type {WebSocket} from 'ws';
 
@@ -67,6 +68,7 @@ export class GameSession {
   private readonly terrainChanges = new Set<string>(); // Track terrain changes as "x,y"
   private readonly soundEvents: SoundEvent[] = [];
   private readonly terrainEffects = new TerrainEffectsSystem();
+  private readonly respawnSystem = new RespawnSystem();
   // Test compatibility shim: some specs access this via (session as any).
   private readonly forestRegrowthTimers = this.terrainEffects.getRegrowthTimersForDebug();
   private readonly matchState = new MatchStateSystem();
@@ -1354,11 +1356,13 @@ export class GameSession {
       return;
     }
 
+    this.respawnSystem.schedule(tankId, this.tick, TANK_RESPAWN_TICKS);
+    // Compatibility mirror for existing integration tests and debug inspection.
     player.respawnAtTick = this.tick + TANK_RESPAWN_TICKS;
   }
 
   private tryRespawnTank(player: Player): void {
-    if (player.respawnAtTick === undefined || this.tick < player.respawnAtTick) {
+    if (!this.respawnSystem.shouldRespawn(player.id, this.tick)) {
       return;
     }
 
@@ -1367,6 +1371,7 @@ export class GameSession {
     const spawnX = 128 + Math.floor(Math.random() * 20);
     const spawnY = 128 + Math.floor(Math.random() * 20);
     player.tank.respawn(spawnX, spawnY);
+    this.respawnSystem.clear(player.id);
     delete player.respawnAtTick;
   }
 
