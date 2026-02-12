@@ -46,6 +46,7 @@ import {ServerShell} from './simulation/shell.js';
 import {ServerPillbox} from './simulation/pillbox.js';
 import {ServerBase} from './simulation/base.js';
 import {ServerBuilder} from './simulation/builder.js';
+import {CombatSystem} from './systems/combat-system.js';
 import {MatchStateSystem} from './systems/match-state-system.js';
 import {RespawnSystem} from './systems/respawn-system.js';
 import {TerrainEffectsSystem} from './systems/terrain-effects-system.js';
@@ -66,6 +67,7 @@ export class GameSession {
   private readonly bases = new Map<number, ServerBase>();
   private readonly terrainChanges = new Set<string>(); // Track terrain changes as "x,y"
   private readonly soundEvents: SoundEvent[] = [];
+  private readonly combatSystem = new CombatSystem();
   private readonly terrainEffects = new TerrainEffectsSystem();
   private readonly respawnSystem = new RespawnSystem();
   private readonly matchState = new MatchStateSystem();
@@ -502,57 +504,24 @@ export class GameSession {
       }
     }
 
-    // Update all shells
-    for (const shell of this.shells.values()) {
-      shell.update();
-
-      // Check collisions with terrain (solid objects)
-      if (shell.alive) {
-        this.checkShellTerrainCollision(shell);
+    this.combatSystem.updateShells(
+      this.shells,
+      {
+        world: this.world,
+        players: this.players.values(),
+        getPlayerByTankId: (tankId: number) => this.players.get(tankId),
+        pillboxes: this.pillboxes.values(),
+        bases: this.bases.values(),
+      },
+      {
+        areTeamsAllied: (teamA, teamB) => this.areTeamsAllied(teamA, teamB),
+        emitSound: (soundId, x, y) => this.emitSound(soundId, x, y),
+        scheduleTankRespawn: (tankId) => this.scheduleTankRespawn(tankId),
+        onTerrainChanged: (tileX, tileY) => this.terrainChanges.add(`${tileX},${tileY}`),
+        onForestDestroyed: (tileX, tileY) =>
+          this.terrainEffects.trackForestRegrowth(`${tileX},${tileY}`),
       }
-
-      // Check collisions with tanks
-      if (shell.alive) {
-        this.checkShellCollisions(shell);
-      }
-
-      // Check collisions with pillboxes
-      if (shell.alive) {
-        this.checkShellPillboxCollisions(shell);
-      }
-
-      // Check collisions with bases
-      if (shell.alive) {
-        this.checkShellBaseCollisions(shell);
-      }
-
-      // Check collisions with builders
-      if (shell.alive) {
-        this.checkShellBuilderCollisions(shell);
-      }
-
-      // Handle dead shells
-      if (!shell.alive) {
-        const tilePos = shell.getTilePosition();
-        const terrain = this.world.getTerrainAt(tilePos.x, tilePos.y);
-
-        // If shell should explode (end-of-range), damage terrain beneath it
-        if (shell.shouldExplode) {
-          console.log(`[DEBUG] Shell ${shell.id} exploded at (${tilePos.x}, ${tilePos.y}), terrain=${terrain}, distance=${shell.distanceTraveled}/${shell.range}`);
-          const originalTerrain = this.world.damageTerrainFromExplosion(tilePos.x, tilePos.y);
-          this.terrainChanges.add(`${tilePos.x},${tilePos.y}`);
-
-          // Start regrowth timer if a forest was destroyed
-          if (originalTerrain === TerrainType.FOREST) {
-            const tileKey = `${tilePos.x},${tilePos.y}`;
-            this.terrainEffects.trackForestRegrowth(tileKey);
-          }
-        } else {
-          console.log(`[DEBUG] Shell ${shell.id} removed by collision at (${tilePos.x}, ${tilePos.y}), terrain=${terrain}`);
-        }
-        this.shells.delete(shell.id);
-      }
-    }
+    );
 
     // Update all pillboxes
     for (const pillbox of this.pillboxes.values()) {
