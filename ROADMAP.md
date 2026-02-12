@@ -126,6 +126,7 @@ Status: Completed on February 12, 2026.
   - Better feedback for builder/actions/combat events
   - `HUD-TODO`: add scrolling message when player drives over a disabled pillbox while already carrying one (pickup blocked by single-pillbox carry limit)
   - Optional accessibility and input quality improvements
+  - Brains/Bot implementation plan in `docs/bot-architecture.md`
 - Content and tooling:
   - Map workflow improvements (selection/validation/editor groundwork)
   - Replay/diagnostic tooling (if in scope)
