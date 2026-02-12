@@ -4,24 +4,7 @@
 
 import {
   TICK_LENGTH_MS,
-  SHELL_DAMAGE,
-  PILLBOX_RANGE,
-  BASE_REFUEL_RANGE,
-  MINE_EXPLOSION_RADIUS_TILES,
-  MINE_DAMAGE,
-  TILE_SIZE_WORLD,
-  WATER_DRAIN_INTERVAL_TICKS,
-  WATER_SHELLS_DRAINED,
-  WATER_MINES_DRAINED,
   TANK_RESPAWN_TICKS,
-  NEUTRAL_TEAM,
-  SOUND_SHOOTING,
-  SOUND_SHOT_BUILDING,
-  SOUND_SHOT_TREE,
-  SOUND_HIT_TANK,
-  SOUND_TANK_SINKING,
-  SOUND_MINE_EXPLOSION,
-  SOUND_MAN_DYING,
   SOUND_BUBBLES,
   TerrainType,
   type PlayerInput,
@@ -43,6 +26,7 @@ import {RespawnSystem} from './systems/respawn-system.js';
 import {TerrainEffectsSystem} from './systems/terrain-effects-system.js';
 import {BuilderSystem} from './systems/builder-system.js';
 import {PlayerSimulationSystem} from './systems/player-simulation-system.js';
+import {StructureSimulationSystem} from './systems/structure-simulation-system.js';
 import type {WebSocket} from 'ws';
 
 interface Player {
@@ -67,6 +51,7 @@ export class GameSession {
   private readonly matchState = new MatchStateSystem();
   private readonly builderSystem = new BuilderSystem();
   private readonly playerSimulation = new PlayerSimulationSystem();
+  private readonly structureSimulation = new StructureSimulationSystem();
   private nextPlayerId = 1;
   private tick = 0;
   private running = false;
@@ -365,90 +350,19 @@ export class GameSession {
       }
     );
 
-    // Update all pillboxes
-    for (const pillbox of this.pillboxes.values()) {
-      if (pillbox.isDead()) {
-        continue;
+    this.structureSimulation.updateStructures(
+      {
+        world: this.world,
+        players: this.players.values(),
+        pillboxes: this.pillboxes.values(),
+        bases: this.bases.values(),
+      },
+      {
+        areTeamsAllied: (teamA, teamB) => this.areTeamsAllied(teamA, teamB),
+        spawnShellFromPillbox: (pillboxId, x, y, direction) =>
+          this.spawnShellFromPillbox(pillboxId, x, y, direction),
       }
-
-      pillbox.update();
-
-      // Pillboxes auto-fire at enemy tanks
-      if (pillbox.canShoot()) {
-        const tanks = Array.from(this.players.values()).map(p => ({
-          id: p.tank.id,
-          x: p.tank.x,
-          y: p.tank.y,
-          direction: p.tank.direction,
-          speed: p.tank.speed,
-          team: p.tank.team,
-          armor: p.tank.armor,
-        }));
-
-        const target = pillbox.findTarget(
-          tanks.filter(
-            tank => !this.areTeamsAllied(tank.team, pillbox.ownerTeam)
-          ),
-          PILLBOX_RANGE,
-          (tileX, tileY) => this.world.isTankConcealedInForest(tileX, tileY)
-        );
-        if (target) {
-          // Shoot returns true if it actually fires (handles acquisition delay)
-          if (pillbox.shoot()) {
-            // Calculate predicted position based on target's movement
-            const pos = pillbox.getWorldPosition();
-            const dx = target.x - pos.x;
-            const dy = target.y - pos.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-
-            // Predict where target will be (Orona algorithm)
-            const radians = ((256 - target.direction) * 2 * Math.PI) / 256;
-            const predictedX =
-              target.x +
-              (distance / 32) * Math.round(Math.cos(radians) * Math.ceil(target.speed));
-            const predictedY =
-              target.y +
-              (distance / 32) * Math.round(Math.sin(radians) * Math.ceil(target.speed));
-
-            const direction = pillbox.getDirectionTo(predictedX, predictedY);
-            this.spawnShellFromPillbox(pillbox.id, pos.x, pos.y, direction);
-          }
-        } else {
-          // No target in range - lose target
-          pillbox.loseTarget();
-        }
-      }
-    }
-
-    // Update all bases
-    for (const base of this.bases.values()) {
-      base.update();
-
-      // Check for tanks in range to refuel
-      for (const player of this.players.values()) {
-        const tank = player.tank;
-        if (tank.isDead()) {
-          continue;
-        }
-
-        if (base.isTankInRange(tank.x, tank.y, BASE_REFUEL_RANGE)) {
-          // ASSUMPTION: "drive-over" is implemented as BASE_REFUEL_RANGE proximity,
-          // not strict same-tile overlap.
-          // Drive-over capture: neutral bases are captured on contact.
-          if (base.ownerTeam === NEUTRAL_TEAM) {
-            base.capture(tank.team);
-          } else if (
-            base.armor <= 0 &&
-            !this.areTeamsAllied(base.ownerTeam, tank.team)
-          ) {
-            // Armor-gated capture: enemy can drive over and capture a depleted base.
-            base.capture(tank.team);
-          }
-
-          base.refuelTank(tank);
-        }
-      }
-    }
+    );
 
     if (!this.matchState.isMatchEnded()) {
       const didEnd = this.matchState.evaluateWinCondition(this.bases.values());
@@ -496,170 +410,6 @@ export class GameSession {
       7 // Default range
     );
     this.shells.set(shell.id, shell);
-  }
-
-  private checkShellTerrainCollision(shell: ServerShell): void {
-    const tilePos = shell.getTilePosition();
-
-    // DEBUG: Check terrain BEFORE collision check
-    const terrainBeforeCheck = this.world.getTerrainAt(tilePos.x, tilePos.y);
-    console.log(`[DEBUG] Checking shell ${shell.id} at (${tilePos.x}, ${tilePos.y}), terrain BEFORE=${terrainBeforeCheck}`);
-
-    // Check if shell hit solid terrain
-    if (this.world.checkShellTerrainCollision(tilePos.x, tilePos.y)) {
-      console.log(`[DEBUG] COLLISION DETECTED! Shell ${shell.id} hit terrain at (${tilePos.x}, ${tilePos.y}), terrain=${terrainBeforeCheck} - THIS SHOULD NOT HAPPEN FOR ROADS!`);
-
-      // Emit sound based on terrain type
-      const worldX = (tilePos.x + 0.5) * TILE_SIZE_WORLD;
-      const worldY = (tilePos.y + 0.5) * TILE_SIZE_WORLD;
-      if (terrainBeforeCheck === TerrainType.FOREST) {
-        this.emitSound(SOUND_SHOT_TREE, worldX, worldY);
-      } else {
-        this.emitSound(SOUND_SHOT_BUILDING, worldX, worldY);
-      }
-
-      // Damage terrain and kill shell
-      const destroyed = this.world.damageTerrainFromCollision(tilePos.x, tilePos.y);
-      this.terrainChanges.add(`${tilePos.x},${tilePos.y}`);
-      shell.killByCollision(); // Collision kills don't explode
-      console.log(`Shell ${shell.id} hit terrain at (${tilePos.x}, ${tilePos.y}), terrain destroyed: ${destroyed}`);
-
-      // Start regrowth timer if a forest was destroyed
-      if (terrainBeforeCheck === TerrainType.FOREST) {
-        const tileKey = `${tilePos.x},${tilePos.y}`;
-        this.terrainEffects.trackForestRegrowth(tileKey);
-      }
-    }
-  }
-
-  private checkShellCollisions(shell: ServerShell): void {
-    for (const player of this.players.values()) {
-      const tank = player.tank;
-
-      // Skip dead tanks and owner
-      if (tank.isDead() || tank.id === shell.ownerTankId) {
-        continue;
-      }
-
-      // Check distance
-      const dx = shell.x - tank.x;
-      const dy = shell.y - tank.y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-
-      // Hit detection (128 world units = 16 pixels = half a tile)
-      if (distance < 128) {
-        shell.killByCollision();
-        const killed = tank.takeDamage(SHELL_DAMAGE);
-        this.emitSound(SOUND_HIT_TANK, tank.x, tank.y);
-
-        if (killed) {
-          console.log(`Tank ${tank.id} destroyed by tank ${shell.ownerTankId}`);
-          this.emitSound(SOUND_TANK_SINKING, tank.x, tank.y);
-          this.scheduleTankRespawn(tank.id);
-        }
-        break;
-      }
-    }
-  }
-
-  private checkShellPillboxCollisions(shell: ServerShell): void {
-    for (const pillbox of this.pillboxes.values()) {
-      if (pillbox.isDead() || pillbox.inTank) {
-        continue;
-      }
-
-      // Skip if shell was fired by this pillbox (negative owner ID = -pillboxId)
-      if (shell.ownerTankId === -pillbox.id) {
-        continue;
-      }
-
-      const pillboxPos = pillbox.getWorldPosition();
-      const dx = shell.x - pillboxPos.x;
-      const dy = shell.y - pillboxPos.y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-
-      // Hit detection
-      if (distance < 128) {
-        shell.killByCollision();
-        const destroyed = pillbox.takeDamage(SHELL_DAMAGE);
-
-        if (destroyed) {
-          console.log(`Pillbox ${pillbox.id} destroyed`);
-        } else {
-          // If hit by friendly tank, capture it
-          if (shell.ownerTankId > 0) {
-            const player = this.players.get(shell.ownerTankId);
-            if (
-              player &&
-              !this.areTeamsAllied(player.tank.team, pillbox.ownerTeam)
-            ) {
-              pillbox.capture(player.tank.team);
-              console.log(
-                `Pillbox ${pillbox.id} captured by team ${player.tank.team}`
-              );
-            }
-          }
-        }
-        break;
-      }
-    }
-  }
-
-  private checkShellBaseCollisions(shell: ServerShell): void {
-    for (const base of this.bases.values()) {
-      const basePos = base.getWorldPosition();
-      const dx = shell.x - basePos.x;
-      const dy = shell.y - basePos.y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-
-      // Hit detection
-      if (distance < 128) {
-        shell.killByCollision();
-        const destroyed = base.takeDamage(SHELL_DAMAGE);
-
-        if (destroyed) {
-          console.log(`Base ${base.id} destroyed`);
-        }
-
-        // If hit by tank, capture unless owner is allied.
-        if (shell.ownerTankId > 0) {
-          const player = this.players.get(shell.ownerTankId);
-          if (
-            player &&
-            !this.areTeamsAllied(player.tank.team, base.ownerTeam)
-          ) {
-            base.capture(player.tank.team);
-            console.log(`Base ${base.id} captured by team ${player.tank.team}`);
-          }
-        }
-        break;
-      }
-    }
-  }
-
-  private checkShellBuilderCollisions(shell: ServerShell): void {
-    for (const player of this.players.values()) {
-      const builder = player.tank.builder;
-
-      // Skip if builder is dead, inside tank, or owned by same player
-      if (builder.isDead() || !builder.isOutsideTank() || player.tank.id === shell.ownerTankId) {
-        continue;
-      }
-
-      // Check distance
-      const dx = shell.x - builder.x;
-      const dy = shell.y - builder.y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-
-      // Hit detection (smaller radius for builder - 64 world units = 8 pixels)
-      if (distance < 64) {
-        shell.killByCollision();
-        builder.kill();
-        this.emitSound(SOUND_MAN_DYING, builder.x, builder.y);
-        console.log(`Builder ${builder.id} killed by shell from tank ${shell.ownerTankId}`);
-        break;
-      }
-    }
   }
 
   private sendWelcome(player: Player): void {
@@ -776,7 +526,6 @@ export class GameSession {
     // Delta compression: only send entities that changed since last broadcast
     const tanks = [];
     const builders = [];
-    const changedTankIds = new Set<number>();
     const currentTankIds = new Set<number>();
     const currentBuilderIds = new Set<number>();
 
@@ -805,7 +554,6 @@ export class GameSession {
           carriedPillbox: tank.carriedPillbox?.id ?? null,
         });
         this.previousState.tanks.set(tank.id, currentHash);
-        changedTankIds.add(tank.id);
       }
 
       // Check builder changes
