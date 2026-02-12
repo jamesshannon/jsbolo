@@ -23,13 +23,13 @@ export class BuilderInput {
 
   private setupEventListeners(): void {
     // Keyboard for selecting action
-    window.addEventListener('keydown', this.handleKeyDown.bind(this));
+    window.addEventListener('keydown', this.handleKeyDown);
 
     // Mouse for selecting target tile
-    this.canvas.addEventListener('click', this.handleClick.bind(this));
+    this.canvas.addEventListener('click', this.handleClick);
   }
 
-  private handleKeyDown(event: KeyboardEvent): void {
+  private readonly handleKeyDown = (event: KeyboardEvent): void => {
     switch (event.key.toLowerCase()) {
       case 't':
         this.pendingAction = BuildAction.FOREST; // Harvest trees
@@ -67,9 +67,9 @@ export class BuilderInput {
         // TODO: Send recall command
         break;
     }
-  }
+  };
 
-  private handleClick(event: MouseEvent): void {
+  private readonly handleClick = (event: MouseEvent): void => {
     if (this.pendingAction === BuildAction.NONE) {
       return;
     }
@@ -95,7 +95,7 @@ export class BuilderInput {
 
     // NOTE: Action stays active (sticky mode) until changed by another key
     // User can click multiple tiles with the same action without re-pressing the key
-  }
+  };
 
   /**
    * Set callback for build commands
@@ -114,7 +114,7 @@ export class BuilderInput {
   }
 
   destroy(): void {
-    window.removeEventListener('keydown', this.handleKeyDown.bind(this));
-    this.canvas.removeEventListener('click', this.handleClick.bind(this));
+    window.removeEventListener('keydown', this.handleKeyDown);
+    this.canvas.removeEventListener('click', this.handleClick);
   }
 }

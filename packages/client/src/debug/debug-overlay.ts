@@ -49,13 +49,15 @@ export class DebugOverlay {
   }
 
   private setupEventListeners(): void {
-    window.addEventListener('keydown', (e) => {
-      if (e.key === 'F3') {
-        e.preventDefault();
-        this.toggle();
-      }
-    });
+    window.addEventListener('keydown', this.handleKeyDown);
   }
+
+  private readonly handleKeyDown = (event: KeyboardEvent): void => {
+    if (event.key === 'F3') {
+      event.preventDefault();
+      this.toggle();
+    }
+  };
 
   toggle(): void {
     this.enabled = !this.enabled;
@@ -203,6 +205,7 @@ export class DebugOverlay {
   }
 
   destroy(): void {
+    window.removeEventListener('keydown', this.handleKeyDown);
     this.overlayElement.remove();
   }
 }

@@ -56,33 +56,33 @@ export class KeyboardInput {
   }
 
   private setupEventListeners(): void {
-    window.addEventListener('keydown', this.handleKeyDown.bind(this));
-    window.addEventListener('keyup', this.handleKeyUp.bind(this));
+    window.addEventListener('keydown', this.handleKeyDown);
+    window.addEventListener('keyup', this.handleKeyUp);
   }
 
-  private handleKeyDown(event: KeyboardEvent): void {
+  private readonly handleKeyDown = (event: KeyboardEvent): void => {
     const action = this.keyMap[event.code as keyof typeof this.keyMap];
     if (action) {
       event.preventDefault();
       this.state[action] = true;
       console.log(`Key down: ${event.code} -> ${action} = true`);
     }
-  }
+  };
 
-  private handleKeyUp(event: KeyboardEvent): void {
+  private readonly handleKeyUp = (event: KeyboardEvent): void => {
     const action = this.keyMap[event.code as keyof typeof this.keyMap];
     if (action) {
       event.preventDefault();
       this.state[action] = false;
     }
-  }
+  };
 
   getState(): Readonly<InputState> {
     return this.state;
   }
 
   destroy(): void {
-    window.removeEventListener('keydown', this.handleKeyDown.bind(this));
-    window.removeEventListener('keyup', this.handleKeyUp.bind(this));
+    window.removeEventListener('keydown', this.handleKeyDown);
+    window.removeEventListener('keyup', this.handleKeyUp);
   }
 }
