@@ -72,13 +72,53 @@ describe('Bolo Manual Spec: 5. Mines', () => {
     });
 
     // "Your computer informs your allies' computers whenever you lay mines"
-    it.skip('should share mine locations with allies during alliance', () => {
-      // Alliance mine sharing not yet implemented
+    it('should share mine locations with allies during alliance', () => {
+      const session = new GameSession();
+      const ws1 = { send: () => {}, readyState: 1 } as any;
+      const ws2 = { send: () => {}, readyState: 1 } as any;
+      const player1Id = session.addPlayer(ws1);
+      const player2Id = session.addPlayer(ws2);
+
+      session.createAlliance(0, 1);
+      session.placeMineForTeam(0, 60, 60);
+
+      const visible1 = session.getVisibleMineTilesForPlayer(player1Id);
+      const visible2 = session.getVisibleMineTilesForPlayer(player2Id);
+      expect(visible1).toContainEqual({x: 60, y: 60});
+      expect(visible2).toContainEqual({x: 60, y: 60});
     });
 
     // "any mines you lay after the alliance is broken are not shown on their maps"
-    it.skip('should not share pre-alliance or post-alliance mine locations', () => {
-      // Alliance mine sharing not yet implemented
+    it('should not share pre-alliance or post-alliance mine locations', () => {
+      const session = new GameSession();
+      const ws = { send: () => {}, readyState: 1 } as any;
+      session.addPlayer(ws); // team 0
+      session.addPlayer(ws); // team 1
+      const player2Id = session.addPlayer(ws); // team 2
+      const player3Id = session.addPlayer(ws); // team 3
+
+      // Team 2 mine before alliance with team 3: not shared retroactively
+      session.placeMineForTeam(2, 61, 60);
+      session.createAlliance(2, 3);
+      const visibleDuringAlliance = session.getVisibleMineTilesForPlayer(player3Id);
+      expect(visibleDuringAlliance).not.toContainEqual({x: 61, y: 60});
+
+      // Team 2 mine while allied with team 3: shared
+      session.placeMineForTeam(2, 62, 60);
+      const visibleShared = session.getVisibleMineTilesForPlayer(player3Id);
+      expect(visibleShared).toContainEqual({x: 62, y: 60});
+
+      // After alliance break, new mines should no longer be shared
+      session.breakAlliance(2, 3);
+      session.placeMineForTeam(2, 63, 60);
+      const visibleAfterBreak = session.getVisibleMineTilesForPlayer(player3Id);
+      expect(visibleAfterBreak).not.toContainEqual({x: 63, y: 60});
+
+      // Team 2 still sees all of its own mines
+      const visibleOwner = session.getVisibleMineTilesForPlayer(player2Id);
+      expect(visibleOwner).toContainEqual({x: 61, y: 60});
+      expect(visibleOwner).toContainEqual({x: 62, y: 60});
+      expect(visibleOwner).toContainEqual({x: 63, y: 60});
     });
   });
 

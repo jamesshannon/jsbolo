@@ -56,6 +56,11 @@ interface Player {
   respawnAtTick?: number;
 }
 
+interface MineVisibilityRecord {
+  ownerTeam: number;
+  visibleToTeams: Set<number>;
+}
+
 export class GameSession {
   private readonly world: ServerWorld;
   private readonly players = new Map<number, Player>();
@@ -67,6 +72,7 @@ export class GameSession {
   private readonly forestRegrowthTimers = new Map<string, number>(); // Track forest regrowth as "x,y" -> remaining ticks
   private readonly alliances = new Map<number, Set<number>>();
   private readonly pendingAllianceRequests = new Set<string>();
+  private readonly mineVisibility = new Map<string, MineVisibilityRecord>();
   private nextPlayerId = 1;
   private tick = 0;
   private running = false;
@@ -470,6 +476,7 @@ export class GameSession {
           const worldX = (mine.x + 0.5) * TILE_SIZE_WORLD;
           const worldY = (mine.y + 0.5) * TILE_SIZE_WORLD;
           this.emitSound(SOUND_MINE_EXPLOSION, worldX, worldY);
+          this.mineVisibility.delete(`${mine.x},${mine.y}`);
         }
 
         // Damage tanks in radius of each exploded mine
@@ -943,7 +950,7 @@ export class GameSession {
         case BuilderOrder.LAYING_MINE:
           if (builder.hasMine && !this.world.hasMineAt(builderTile.x, builderTile.y)) {
             if (this.tick % 10 === 0) {
-              this.world.setMineAt(builderTile.x, builderTile.y, true);
+              this.placeMineForTeam(tank.team, builderTile.x, builderTile.y);
               builder.hasMine = false;
               tank.mines = Math.max(0, tank.mines - 1);
               builder.recallToTank(tank.x, tank.y);
@@ -1523,6 +1530,7 @@ export class GameSession {
       return [];
     }
 
+    const playerTeam = player.tank.team;
     const visible: Array<{x: number; y: number}> = [];
     const mapData = this.world.getMapData();
     for (let y = 0; y < mapData.length; y++) {
@@ -1533,12 +1541,37 @@ export class GameSession {
           continue;
         }
 
-        // For now, mines are team-agnostic in world state. Alliance-aware sharing
-        // returns all known mines for team members and allies.
-        visible.push({x, y});
+        const visibility = this.mineVisibility.get(`${x},${y}`);
+        if (!visibility || visibility.visibleToTeams.has(playerTeam)) {
+          visible.push({x, y});
+        }
       }
     }
     return visible;
+  }
+
+  public placeMineForTeam(team: number, tileX: number, tileY: number): boolean {
+    if (this.world.hasMineAt(tileX, tileY)) {
+      return false;
+    }
+
+    this.world.setMineAt(tileX, tileY, true);
+    this.mineVisibility.set(`${tileX},${tileY}`, {
+      ownerTeam: team,
+      visibleToTeams: this.getMineVisibilityTeams(team),
+    });
+    return true;
+  }
+
+  private getMineVisibilityTeams(team: number): Set<number> {
+    const visibleToTeams = new Set<number>([team]);
+    const allies = this.alliances.get(team);
+    if (allies) {
+      for (const ally of allies) {
+        visibleToTeams.add(ally);
+      }
+    }
+    return visibleToTeams;
   }
 
   public isMatchEnded(): boolean {

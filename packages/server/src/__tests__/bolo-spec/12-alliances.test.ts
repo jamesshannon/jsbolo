@@ -46,10 +46,9 @@ describe('Bolo Manual Spec: 12. Alliances', () => {
     const ws2 = { send: () => {}, readyState: 1 } as any;
     const player1Id = session.addPlayer(ws1);
     const player2Id = session.addPlayer(ws2);
-    const world = (session as any).world;
 
     session.createAlliance(0, 1);
-    world.setMineAt(10, 10, true);
+    session.placeMineForTeam(0, 10, 10);
 
     const visible1 = session.getVisibleMineTilesForPlayer(player1Id);
     const visible2 = session.getVisibleMineTilesForPlayer(player2Id);
