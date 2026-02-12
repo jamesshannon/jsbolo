@@ -42,8 +42,10 @@ export class StructureSimulationSystem {
     context: StructureContext,
     callbacks: StructureCallbacks
   ): void {
-    this.updatePillboxes(context, callbacks);
-    this.updateBases(context, callbacks);
+    // Materialize players once because `Map#values()` iterators are single-use.
+    const players = Array.from(context.players);
+    this.updatePillboxes({...context, players}, callbacks);
+    this.updateBases({...context, players}, callbacks);
   }
 
   private updatePillboxes(

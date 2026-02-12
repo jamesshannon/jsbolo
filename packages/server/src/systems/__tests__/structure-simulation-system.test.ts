@@ -77,4 +77,56 @@ describe('StructureSimulationSystem', () => {
     expect(fired[0]?.pillboxId).toBe(pillbox.id);
     expect(typeof fired[0]?.direction).toBe('number');
   });
+
+  it('should allow later pillboxes to target players when players iterable is single-use', () => {
+    const system = new StructureSimulationSystem();
+    const outOfRangePillbox = new ServerPillbox(10, 10, 1);
+    const inRangePillbox = new ServerPillbox(40, 40, 1);
+    const enemyTank = new ServerTank(2, 2, 40, 41);
+    const fired: Array<{pillboxId: number; x: number; y: number; direction: number}> = [];
+
+    // Prime both pillboxes to be ready, then acquire targets.
+    (outOfRangePillbox as any).reload = (outOfRangePillbox as any).speed;
+    (inRangePillbox as any).reload = (inRangePillbox as any).speed;
+
+    const playersIterableFactory = () => new Map<number, {tank: ServerTank}>([[enemyTank.id, {tank: enemyTank}]]);
+
+    system.updateStructures(
+      {
+        world: {
+          isTankConcealedInForest: () => false,
+        },
+        players: playersIterableFactory().values(),
+        pillboxes: [outOfRangePillbox, inRangePillbox],
+        bases: [],
+      },
+      {
+        areTeamsAllied: () => false,
+        spawnShellFromPillbox: (pillboxId, x, y, direction) =>
+          fired.push({pillboxId, x, y, direction}),
+      }
+    );
+
+    // Second tick should produce exactly one shot from the in-range pillbox.
+    (outOfRangePillbox as any).reload = (outOfRangePillbox as any).speed;
+    (inRangePillbox as any).reload = (inRangePillbox as any).speed;
+    system.updateStructures(
+      {
+        world: {
+          isTankConcealedInForest: () => false,
+        },
+        players: playersIterableFactory().values(),
+        pillboxes: [outOfRangePillbox, inRangePillbox],
+        bases: [],
+      },
+      {
+        areTeamsAllied: () => false,
+        spawnShellFromPillbox: (pillboxId, x, y, direction) =>
+          fired.push({pillboxId, x, y, direction}),
+      }
+    );
+
+    expect(fired.length).toBe(1);
+    expect(fired[0]?.pillboxId).toBe(inRangePillbox.id);
+  });
 });
