@@ -38,24 +38,24 @@ export class NetworkClient {
         this.ws = new WebSocket(url);
         this.ws.binaryType = 'arraybuffer';
 
-        this.ws.onopen = () => {
+        this.ws.onopen = (): void => {
           this.state.connected = true;
           console.log('Connected to server');
           resolve();
         };
 
-        this.ws.onerror = (error) => {
+        this.ws.onerror = (error): void => {
           console.error('WebSocket error:', error);
           reject(error);
         };
 
-        this.ws.onclose = () => {
+        this.ws.onclose = (): void => {
           this.state.connected = false;
           this.state.playerId = null;
           console.log('Disconnected from server');
         };
 
-        this.ws.onmessage = (event: MessageEvent<string>) => {
+        this.ws.onmessage = (event: MessageEvent<string>): void => {
           this.handleMessage(event.data);
         };
       } catch (error) {

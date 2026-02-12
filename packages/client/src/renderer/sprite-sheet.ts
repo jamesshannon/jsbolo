@@ -20,11 +20,11 @@ export class SpriteSheet {
   async load(): Promise<void> {
     return new Promise((resolve, reject) => {
       this.image = new Image();
-      this.image.onload = () => {
+      this.image.onload = (): void => {
         this.loaded = true;
         resolve();
       };
-      this.image.onerror = () => {
+      this.image.onerror = (): void => {
         reject(new Error(`Failed to load sprite sheet: ${this.imagePath}`));
       };
       this.image.src = this.imagePath;
