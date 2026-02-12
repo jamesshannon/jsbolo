@@ -9,8 +9,8 @@ echo "🛑 Stopping all existing dev servers..."
 echo "   Killing processes on ports 3000-3009 (client)..."
 lsof -ti:3000,3001,3002,3003,3004,3005,3006,3007,3008,3009 2>/dev/null | xargs kill -9 2>/dev/null || true
 
-echo "   Killing processes on port 3001 (server)..."
-lsof -ti:3001 2>/dev/null | xargs kill -9 2>/dev/null || true
+echo "   Killing processes on ports 8080-8081 (server)..."
+lsof -ti:8080,8081 2>/dev/null | xargs kill -9 2>/dev/null || true
 
 # Kill any node processes in this project directory
 echo "   Killing any remaining node processes from this project..."
@@ -33,11 +33,18 @@ else
     echo "   ✅ Port 3000 is free"
 fi
 
-if lsof -ti:3001 >/dev/null 2>&1; then
-    echo "   ⚠️  Port 3001 still in use!"
-    lsof -ti:3001
+if lsof -ti:8080 >/dev/null 2>&1; then
+    echo "   ⚠️  Port 8080 still in use!"
+    lsof -ti:8080
 else
-    echo "   ✅ Port 3001 is free"
+    echo "   ✅ Port 8080 is free"
+fi
+
+if lsof -ti:8081 >/dev/null 2>&1; then
+    echo "   ⚠️  Port 8081 still in use!"
+    lsof -ti:8081
+else
+    echo "   ✅ Port 8081 is free"
 fi
 
 echo ""
@@ -51,7 +58,7 @@ cd "$(dirname "$0")"
 mkdir -p logs
 
 # Start servers and capture logs
-echo "   Starting server (port 3001)..."
+echo "   Starting server (port 8080)..."
 cd packages/server
 pnpm dev > ../../logs/server.log 2>&1 &
 SERVER_PID=$!
@@ -68,7 +75,7 @@ cd ../..
 
 echo ""
 echo "✅ Servers started!"
-echo "   Server PID: $SERVER_PID (http://localhost:3001)"
+echo "   Server PID: $SERVER_PID (ws://localhost:8080)"
 echo "   Client PID: $CLIENT_PID (http://localhost:3000)"
 echo ""
 echo "📊 Watching logs (Ctrl+C to stop watching, servers will keep running)..."

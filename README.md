@@ -2,118 +2,98 @@
 
 A modern TypeScript implementation of the classic Bolo tank warfare game.
 
-## About
+## Status
 
-Bolo is a top-down tank warfare game originally created by Stuart Cheshire for the BBC Micro (1987) and later ported to Macintosh (1989-1995). This project recreates Bolo using modern web technologies while staying faithful to the original game mechanics.
+This project is actively in development.
 
-## Features (Planned)
+- `DEVELOPMENT.md` is the authoritative progress log.
+- `ROADMAP.md` contains the current four-phase plan.
 
-- **Phase 1** (Current): ✅ Basic single-player tank movement and rendering
-- **Phase 2**: Multiplayer networking with WebSockets
-- **Phase 3**: Full game mechanics (builder, pillboxes, bases, terrain modification)
-- **Phase 4**: Polish (sounds, effects, UI, lobby system)
+Current implementation includes multiplayer server simulation, tank combat, builder workflows, pillboxes, bases (partial), mines, terrain effects, and client audio/rendering support.
 
-## Technology Stack
+## Tech Stack
 
-- **Language**: TypeScript (Google Style Guide)
-- **Build**: Vite (client) + tsc (server)
-- **Networking**: WebSockets with Protocol Buffers
-- **Rendering**: HTML5 Canvas 2D
-- **Package Manager**: pnpm (workspaces)
+- Language: TypeScript
+- Client: Vite + Canvas 2D
+- Server: Node.js + WebSocket (`ws`)
+- Shared protocol/types: workspace package (`@jsbolo/shared`)
+- Package manager: pnpm workspaces
+
+Networking currently uses JSON messages. Protocol Buffers artifacts exist in the repo for future optimization work.
 
 ## Project Structure
 
-```
+```text
 jsbolo/
 ├── packages/
-│   ├── shared/    # Shared types, constants, protocol definitions
+│   ├── shared/    # Shared types, constants, protocol helpers
 │   ├── client/    # Browser game client
-│   └── server/    # Game server (multiplayer)
-├── package.json
+│   └── server/    # Multiplayer game server
+├── DEVELOPMENT.md
+├── ROADMAP.md
 └── pnpm-workspace.yaml
 ```
 
-## Development Setup
+## Prerequisites
 
-### Prerequisites
+- Node.js >= 18
+- pnpm >= 8
 
-- Node.js >= 18.0.0
-- pnpm >= 8.0.0
-
-### Installation
+## Setup
 
 ```bash
-# Install dependencies
 pnpm install
-
-# Build all packages
 pnpm build
 ```
 
-### Running
+## Running Locally
+
+### Option 1: Helper Script (client + server)
 
 ```bash
-# Development mode (client only for Phase 1)
-cd packages/client
-pnpm dev
-
-# Open browser to http://localhost:3000
+./restart-dev.sh
 ```
 
-## Controls
+### Option 2: Start Individually
 
-Following the original Bolo keybindings:
+```bash
+# Terminal 1: server
+cd packages/server
+pnpm dev
 
-- **Q**: Accelerate
-- **A**: Brake/Reverse
-- **Numpad /**: Turn left
-- **Numpad ***: Turn right
-- **Arrow Left/Right**: Alternative turning
-- **Numpad 0 / Space**: Shoot
-- **+/-**: Increase/decrease firing range
+# Terminal 2: client
+cd packages/client
+pnpm dev
+```
 
-## Credits
+### Default Ports
 
-- **Original Bolo**: © 1993 Stuart Cheshire
-- **Graphics & Sounds**: From original Bolo (GPL v2)
-- **WinBolo**: John Morrison (reference implementation)
-- **Orona**: Stéphan Kochen (browser port, used as reference)
+- Client dev server: `http://localhost:3000`
+- Backend game server: `ws://localhost:8080`
+- Alternate backend port usage during development: `8081` (if configured)
+
+## Testing
+
+```bash
+# Entire workspace
+pnpm -r test
+
+# Type-check
+pnpm -r type-check
+
+# Build
+pnpm -r build
+```
+
+## Controls (Current)
+
+- Move: `Q` / `W` / `ArrowUp`
+- Brake: `Z` / `S` / `ArrowDown`
+- Turn: `A` / `D` / `ArrowLeft` / `ArrowRight` / numpad `/` `*`
+- Shoot: `Space` / numpad `0`
+- Range: `+` / `-`
+- Builder actions: `T`, `D`, `R`, `W`, `B`, `P`, `M`, `C`/`Esc`
 
 ## License
 
-GPL-2.0 (inherited from original Bolo)
-
-## Development Status
-
-**Phase 1: Basic Single-Player** ✅ COMPLETE
-- [x] Project structure setup
-- [x] Sprite extraction and documentation
-- [x] Basic terrain rendering
-- [x] Tank sprite rendering (16 directions)
-- [x] Keyboard input
-- [x] Tank movement physics
-- [x] Camera following tank
-- [x] Game loop (fixed timestep)
-
-**Phase 2: Multiplayer Foundation** (Next)
-- [ ] Protocol Buffer implementation
-- [ ] WebSocket server
-- [ ] Client-server communication
-- [ ] Multiple tanks
-- [ ] Client-side prediction
-- [ ] Server reconciliation
-
-**Phase 3: Full Game Mechanics** (Future)
-- [ ] Builder/LGM system
-- [ ] Pillboxes
-- [ ] Bases
-- [ ] Terrain modification
-- [ ] Combat system
-- [ ] Mines
-
-**Phase 4: Polish** (Future)
-- [ ] Sound effects
-- [ ] Particle effects
-- [ ] HUD/UI
-- [ ] Lobby system
-- [ ] Map editor
+GPL-2.0 (inherited from original Bolo ecosystem assets and project direction).
