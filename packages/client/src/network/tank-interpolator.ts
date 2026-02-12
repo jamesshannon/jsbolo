@@ -1,4 +1,4 @@
-import type {Tank} from '@shared';
+import {TILE_SIZE_WORLD, type Tank} from '@shared';
 
 interface TankSnapshot {
   tank: Tank;
@@ -12,6 +12,9 @@ interface TankSnapshotPair {
 }
 
 export class TankInterpolator {
+  // ASSUMPTION: position jumps larger than 4 tiles are teleports/respawns, not
+  // physically interpolable movement. Snap to the new authoritative state.
+  private static readonly SNAP_DISTANCE_WORLD = TILE_SIZE_WORLD * 4;
   private readonly snapshots = new Map<number, TankSnapshotPair>();
 
   /**
@@ -48,6 +51,15 @@ export class TankInterpolator {
     // This avoids creating a fake interpolation window between two samples
     // that represent the same simulation tick.
     if (pair.current && tick === pair.current.tick) {
+      pair.current = nextSnapshot;
+      return;
+    }
+
+    const dx = nextSnapshot.tank.x - pair.current.tank.x;
+    const dy = nextSnapshot.tank.y - pair.current.tank.y;
+    const jumpDistance = Math.sqrt((dx * dx) + (dy * dy));
+    if (jumpDistance > TankInterpolator.SNAP_DISTANCE_WORLD) {
+      pair.previous = null;
       pair.current = nextSnapshot;
       return;
     }

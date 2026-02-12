@@ -71,6 +71,20 @@ describe('TankInterpolator', () => {
     expect(result?.direction).toBe(96);
   });
 
+  it('should snap instead of interpolate across teleport-sized jumps', () => {
+    const interpolator = new TankInterpolator(100);
+    interpolator.pushSnapshot(createTank(1, 100, 100), 30, 3000);
+    interpolator.pushSnapshot(createTank(1, 200, 100), 31, 3100);
+
+    // Simulate authoritative respawn/teleport to a far position.
+    interpolator.pushSnapshot(createTank(1, 2600, 2600), 32, 3200);
+
+    // If interpolation were used, this would return a midpoint.
+    const result = interpolator.getInterpolatedTank(1, 3250);
+    expect(result?.x).toBe(2600);
+    expect(result?.y).toBe(2600);
+  });
+
   it('should interpolate direction across 0/255 wrap using shortest path', () => {
     const interpolator = new TankInterpolator(100);
     interpolator.pushSnapshot(createTank(1, 0, 0, 250), 10, 1000);
