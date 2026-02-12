@@ -18,7 +18,7 @@
     "copy-generated": "cp -r src/generated dist/",
     "clean": "rm -rf dist src/generated",
     "type-check": "tsc --noEmit",
-    "lint": "eslint src"
+    "lint": "eslint src --ext .ts --ignore-pattern \"src/generated/**\" --ignore-pattern \"src/**/*.d.ts\" --ignore-pattern \"src/**/*.js\""
   },
   "dependencies": {
     "protobufjs": "^7.2.6"
