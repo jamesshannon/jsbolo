@@ -439,12 +439,12 @@ tail -f logs/server.log
 tail -f logs/client.log
 ```
 
-### Bot Control API (Dev)
+### Bot Status API (Dev)
 
-The server now exposes a dev-only HTTP API for runtime bot management.
+The server exposes a dev-only HTTP API for bot status inspection.
 
 - WebSocket gameplay server: `ws://localhost:8080`
-- Bot control API: `http://localhost:8081`
+- Bot status API: `http://localhost:8081`
 
 By default, control API is enabled when `NODE_ENV` is not `production`.
 You can override with:
@@ -493,14 +493,6 @@ curl http://localhost:8081/bots/profiles
 
 # List active bots
 curl http://localhost:8081/bots
-
-# Add a bot (idle, patrol, or tactical)
-curl -X POST http://localhost:8081/bots \
-  -H 'Content-Type: application/json' \
-  -d '{"profile":"tactical"}'
-
-# Remove a bot by player id
-curl -X DELETE http://localhost:8081/bots/3
 ```
 
 ### Known Issues / Future Work

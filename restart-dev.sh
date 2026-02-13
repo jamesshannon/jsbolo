@@ -57,9 +57,24 @@ cd "$(dirname "$0")"
 # Create logs directory if it doesn't exist
 mkdir -p logs
 
+# Optional bot startup defaults for local dev.
+# Override by exporting env vars before running this script.
+: "${ALLOW_BOTS:=true}"
+: "${MAX_BOTS:=4}"
+: "${BOT_ALLIANCE_MODE:=all-bots}"
+: "${BOT_COUNT:=0}"
+: "${BOT_PROFILE:=tactical}"
+: "${ALLOW_BOT_ONLY_SIM:=false}"
+
 # Start servers and capture logs
 echo "   Starting server (port 8080)..."
 cd packages/server
+ALLOW_BOTS="$ALLOW_BOTS" \
+MAX_BOTS="$MAX_BOTS" \
+BOT_ALLIANCE_MODE="$BOT_ALLIANCE_MODE" \
+BOT_COUNT="$BOT_COUNT" \
+BOT_PROFILE="$BOT_PROFILE" \
+ALLOW_BOT_ONLY_SIM="$ALLOW_BOT_ONLY_SIM" \
 pnpm dev > ../../logs/server.log 2>&1 &
 SERVER_PID=$!
 cd ../..

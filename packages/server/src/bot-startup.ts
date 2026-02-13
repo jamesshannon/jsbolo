@@ -1,5 +1,11 @@
 import type {BotPolicyOptions} from './game-session.js';
 
+interface StartupBotHost {
+  listAvailableBotProfiles(): string[];
+  addBot(profile: string): {ok: true; playerId: number} | {ok: false; reason: string};
+  listBots(): Array<{playerId: number; profile: string; team: number}>;
+}
+
 /**
  * Parse startup bot policy from environment variables.
  *
@@ -60,4 +66,30 @@ export function resolveStartupBotProfiles(
   }
 
   return Array.from({length: botCount}, () => profile);
+}
+
+/**
+ * Spawn startup bots from env configuration using the server bot admin surface.
+ */
+export function applyStartupBots(
+  host: StartupBotHost,
+  env: NodeJS.ProcessEnv = process.env,
+  log: (message: string) => void = console.log,
+  warn: (message: string) => void = console.warn
+): {requested: number; added: number} {
+  const startupProfiles = resolveStartupBotProfiles(host.listAvailableBotProfiles(), env);
+
+  for (const profile of startupProfiles) {
+    const result = host.addBot(profile);
+    if (!result.ok) {
+      warn(`[BOT STARTUP] Failed to add '${profile}' bot: ${result.reason}`);
+      return {requested: startupProfiles.length, added: host.listBots().length};
+    }
+  }
+
+  if (startupProfiles.length > 0) {
+    log(`[BOT STARTUP] Added ${host.listBots().length} bot(s) at startup`);
+  }
+
+  return {requested: startupProfiles.length, added: host.listBots().length};
 }
