@@ -4,6 +4,22 @@
 
 - HUD messaging and notification rules: `docs/hud-message-policy.md`
 
+## Current Focus Updates
+
+### Date: 2026-02-13
+
+- HUD message transport is now end-to-end:
+  - Server emits authoritative HUD entries in `UpdateMessage.hudMessages`.
+  - Server filters recipients before send (global/alliance/personal scope), so clients do not receive unauthorized HUD content.
+  - Client consumes server HUD entries into ticker playback.
+- Client HUD class visibility defaults now match policy:
+  - global/alliance/personal/chat: enabled
+  - system status: disabled by default
+- Added tests for:
+  - server recipient routing and broadcaster payload isolation
+  - client HUD message class filtering
+  - network decode path preserving `hudMessages` through client update callbacks
+
 ## Phase 1 Setup - Complete ✅
 
 ### Date: 2026-02-08

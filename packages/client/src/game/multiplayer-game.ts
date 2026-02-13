@@ -31,6 +31,7 @@ import {applyNetworkWorldEffects} from './network-world-effects.js';
 import {applyNetworkWelcomeState} from './network-welcome-state.js';
 import {deriveStructureHudMessages} from './hud-events.js';
 import {deriveTankHudMarkers} from './hud-tank-status.js';
+import {deriveTickerMessagesFromServerHud} from './hud-message-stream.js';
 
 export class MultiplayerGame {
   private readonly input: KeyboardInput;
@@ -156,6 +157,10 @@ export class MultiplayerGame {
         tanks: this.tanks,
         soundPlayback: this.soundManager,
       });
+      const serverHudMessages = deriveTickerMessagesFromServerHud(update.hudMessages);
+      for (const message of serverHudMessages) {
+        this.enqueueHudMessage(message);
+      }
 
       const structureMessages = deriveStructureHudMessages({
         previousPillboxes,

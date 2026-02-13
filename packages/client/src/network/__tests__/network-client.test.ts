@@ -1,5 +1,6 @@
 import {describe, expect, it, vi} from 'vitest';
 import {NetworkClient} from '../network-client.js';
+import {encodeServerMessage} from '@shared';
 
 describe('NetworkClient', () => {
   it('should ignore stale update ticks and keep latest state', () => {
@@ -101,5 +102,33 @@ describe('NetworkClient', () => {
 
     expect(client.getState().currentTick).toBe(5);
     expect(client.getState().tanks.size).toBe(0);
+  });
+
+  it('should preserve server hud messages in update callback payload', () => {
+    const client = new NetworkClient();
+    const onUpdate = vi.fn();
+    client.onUpdate(onUpdate);
+
+    const internal = client as any;
+    internal.handleMessage(
+      encodeServerMessage({
+        type: 'update',
+        tick: 1,
+        hudMessages: [{
+          id: 10,
+          tick: 1,
+          class: 'global_notification',
+          text: 'Alice joined game',
+        }],
+      })
+    );
+
+    expect(onUpdate).toHaveBeenCalledTimes(1);
+    expect(onUpdate.mock.calls[0][0].hudMessages).toEqual([{
+      id: 10,
+      tick: 1,
+      class: 'global_notification',
+      text: 'Alice joined game',
+    }]);
   });
 });
