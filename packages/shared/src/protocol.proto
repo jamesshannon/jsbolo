@@ -128,6 +128,22 @@ message SoundEvent {
   uint32 y = 3;
 }
 
+enum HudMessageClass {
+  HUD_MESSAGE_CLASS_GLOBAL_NOTIFICATION = 0;
+  HUD_MESSAGE_CLASS_ALLIANCE_NOTIFICATION = 1;
+  HUD_MESSAGE_CLASS_PERSONAL_NOTIFICATION = 2;
+  HUD_MESSAGE_CLASS_CHAT_GLOBAL = 3;
+  HUD_MESSAGE_CLASS_CHAT_ALLIANCE = 4;
+  HUD_MESSAGE_CLASS_SYSTEM_STATUS = 5;
+}
+
+message HudMessage {
+  uint64 id = 1;
+  uint32 tick = 2;
+  HudMessageClass class = 3;
+  string text = 4;
+}
+
 message WelcomeMap {
   uint32 width = 1;
   uint32 height = 2;
@@ -163,6 +179,7 @@ message UpdateMessage {
   repeated SoundEvent soundEvents = 12;
   optional bool matchEnded = 13;
   repeated uint32 winningTeams = 14;
+  repeated HudMessage hudMessages = 15;
 }
 
 message ClientMessage {

@@ -57,6 +57,21 @@ export interface SoundEvent {
   y: number;
 }
 
+export type HudMessageClass =
+  | 'global_notification'
+  | 'alliance_notification'
+  | 'personal_notification'
+  | 'chat_global'
+  | 'chat_alliance'
+  | 'system_status';
+
+export interface HudMessage {
+  id: number;
+  tick: number;
+  class: HudMessageClass;
+  text: string;
+}
+
 export interface UpdateMessage {
   type: 'update';
   tick: number;
@@ -71,6 +86,7 @@ export interface UpdateMessage {
   removedBaseIds?: number[];
   terrainUpdates?: TerrainUpdate[];
   soundEvents?: SoundEvent[];
+  hudMessages?: HudMessage[];
   matchEnded?: boolean;
   winningTeams?: number[];
 }
@@ -254,6 +270,44 @@ function toProtoWelcome(message: WelcomeMessage): proto.jsbolo.IWelcomeMessage {
   };
 }
 
+function toProtoHudMessageClass(value: HudMessageClass): proto.jsbolo.HudMessageClass {
+  switch (value) {
+    case 'alliance_notification':
+      return proto.jsbolo.HudMessageClass.HUD_MESSAGE_CLASS_ALLIANCE_NOTIFICATION;
+    case 'personal_notification':
+      return proto.jsbolo.HudMessageClass.HUD_MESSAGE_CLASS_PERSONAL_NOTIFICATION;
+    case 'chat_global':
+      return proto.jsbolo.HudMessageClass.HUD_MESSAGE_CLASS_CHAT_GLOBAL;
+    case 'chat_alliance':
+      return proto.jsbolo.HudMessageClass.HUD_MESSAGE_CLASS_CHAT_ALLIANCE;
+    case 'system_status':
+      return proto.jsbolo.HudMessageClass.HUD_MESSAGE_CLASS_SYSTEM_STATUS;
+    case 'global_notification':
+    default:
+      return proto.jsbolo.HudMessageClass.HUD_MESSAGE_CLASS_GLOBAL_NOTIFICATION;
+  }
+}
+
+function fromProtoHudMessageClass(
+  value: proto.jsbolo.HudMessageClass | null | undefined
+): HudMessageClass {
+  switch (value) {
+    case proto.jsbolo.HudMessageClass.HUD_MESSAGE_CLASS_ALLIANCE_NOTIFICATION:
+      return 'alliance_notification';
+    case proto.jsbolo.HudMessageClass.HUD_MESSAGE_CLASS_PERSONAL_NOTIFICATION:
+      return 'personal_notification';
+    case proto.jsbolo.HudMessageClass.HUD_MESSAGE_CLASS_CHAT_GLOBAL:
+      return 'chat_global';
+    case proto.jsbolo.HudMessageClass.HUD_MESSAGE_CLASS_CHAT_ALLIANCE:
+      return 'chat_alliance';
+    case proto.jsbolo.HudMessageClass.HUD_MESSAGE_CLASS_SYSTEM_STATUS:
+      return 'system_status';
+    case proto.jsbolo.HudMessageClass.HUD_MESSAGE_CLASS_GLOBAL_NOTIFICATION:
+    default:
+      return 'global_notification';
+  }
+}
+
 function toProtoUpdate(message: UpdateMessage): proto.jsbolo.IUpdateMessage {
   return {
     tick: message.tick,
@@ -276,6 +330,14 @@ function toProtoUpdate(message: UpdateMessage): proto.jsbolo.IUpdateMessage {
     ...(message.removedBaseIds !== undefined && {removedBaseIds: message.removedBaseIds}),
     ...(message.terrainUpdates !== undefined && {terrainUpdates: message.terrainUpdates}),
     ...(message.soundEvents !== undefined && {soundEvents: message.soundEvents}),
+    ...(message.hudMessages !== undefined && {
+      hudMessages: message.hudMessages.map(hud => ({
+        id: hud.id,
+        tick: hud.tick,
+        class: toProtoHudMessageClass(hud.class),
+        text: hud.text,
+      })),
+    }),
     ...(message.matchEnded !== undefined && {matchEnded: message.matchEnded}),
     ...(message.winningTeams !== undefined && {winningTeams: message.winningTeams}),
   };
@@ -347,6 +409,15 @@ function fromProtoUpdate(update: proto.jsbolo.IUpdateMessage): UpdateMessage {
       }),
     ...(update.soundEvents &&
       update.soundEvents.length > 0 && {soundEvents: [...update.soundEvents] as SoundEvent[]}),
+    ...(update.hudMessages &&
+      update.hudMessages.length > 0 && {
+        hudMessages: update.hudMessages.map(hud => ({
+          id: Number(hud.id ?? 0),
+          tick: hud.tick ?? 0,
+          class: fromProtoHudMessageClass(hud.class),
+          text: hud.text ?? '',
+        })),
+      }),
     ...(update.matchEnded !== null &&
       update.matchEnded !== undefined && {matchEnded: update.matchEnded}),
     ...(update.winningTeams && update.winningTeams.length > 0 && {

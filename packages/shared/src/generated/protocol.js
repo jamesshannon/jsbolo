@@ -3379,6 +3379,356 @@ export const jsbolo = $root.jsbolo = (() => {
         return SoundEvent;
     })();
 
+    /**
+     * HudMessageClass enum.
+     * @name jsbolo.HudMessageClass
+     * @enum {number}
+     * @property {number} HUD_MESSAGE_CLASS_GLOBAL_NOTIFICATION=0 HUD_MESSAGE_CLASS_GLOBAL_NOTIFICATION value
+     * @property {number} HUD_MESSAGE_CLASS_ALLIANCE_NOTIFICATION=1 HUD_MESSAGE_CLASS_ALLIANCE_NOTIFICATION value
+     * @property {number} HUD_MESSAGE_CLASS_PERSONAL_NOTIFICATION=2 HUD_MESSAGE_CLASS_PERSONAL_NOTIFICATION value
+     * @property {number} HUD_MESSAGE_CLASS_CHAT_GLOBAL=3 HUD_MESSAGE_CLASS_CHAT_GLOBAL value
+     * @property {number} HUD_MESSAGE_CLASS_CHAT_ALLIANCE=4 HUD_MESSAGE_CLASS_CHAT_ALLIANCE value
+     * @property {number} HUD_MESSAGE_CLASS_SYSTEM_STATUS=5 HUD_MESSAGE_CLASS_SYSTEM_STATUS value
+     */
+    jsbolo.HudMessageClass = (function() {
+        const valuesById = {}, values = Object.create(valuesById);
+        values[valuesById[0] = "HUD_MESSAGE_CLASS_GLOBAL_NOTIFICATION"] = 0;
+        values[valuesById[1] = "HUD_MESSAGE_CLASS_ALLIANCE_NOTIFICATION"] = 1;
+        values[valuesById[2] = "HUD_MESSAGE_CLASS_PERSONAL_NOTIFICATION"] = 2;
+        values[valuesById[3] = "HUD_MESSAGE_CLASS_CHAT_GLOBAL"] = 3;
+        values[valuesById[4] = "HUD_MESSAGE_CLASS_CHAT_ALLIANCE"] = 4;
+        values[valuesById[5] = "HUD_MESSAGE_CLASS_SYSTEM_STATUS"] = 5;
+        return values;
+    })();
+
+    jsbolo.HudMessage = (function() {
+
+        /**
+         * Properties of a HudMessage.
+         * @memberof jsbolo
+         * @interface IHudMessage
+         * @property {number|Long|null} [id] HudMessage id
+         * @property {number|null} [tick] HudMessage tick
+         * @property {jsbolo.HudMessageClass|null} ["class"] HudMessage class
+         * @property {string|null} [text] HudMessage text
+         */
+
+        /**
+         * Constructs a new HudMessage.
+         * @memberof jsbolo
+         * @classdesc Represents a HudMessage.
+         * @implements IHudMessage
+         * @constructor
+         * @param {jsbolo.IHudMessage=} [properties] Properties to set
+         */
+        function HudMessage(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null)
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * HudMessage id.
+         * @member {number|Long} id
+         * @memberof jsbolo.HudMessage
+         * @instance
+         */
+        HudMessage.prototype.id = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * HudMessage tick.
+         * @member {number} tick
+         * @memberof jsbolo.HudMessage
+         * @instance
+         */
+        HudMessage.prototype.tick = 0;
+
+        /**
+         * HudMessage class.
+         * @member {jsbolo.HudMessageClass} class
+         * @memberof jsbolo.HudMessage
+         * @instance
+         */
+        HudMessage.prototype["class"] = 0;
+
+        /**
+         * HudMessage text.
+         * @member {string} text
+         * @memberof jsbolo.HudMessage
+         * @instance
+         */
+        HudMessage.prototype.text = "";
+
+        /**
+         * Creates a new HudMessage instance using the specified properties.
+         * @function create
+         * @memberof jsbolo.HudMessage
+         * @static
+         * @param {jsbolo.IHudMessage=} [properties] Properties to set
+         * @returns {jsbolo.HudMessage} HudMessage instance
+         */
+        HudMessage.create = function create(properties) {
+            return new HudMessage(properties);
+        };
+
+        /**
+         * Encodes the specified HudMessage message. Does not implicitly {@link jsbolo.HudMessage.verify|verify} messages.
+         * @function encode
+         * @memberof jsbolo.HudMessage
+         * @static
+         * @param {jsbolo.IHudMessage} message HudMessage message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        HudMessage.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.id != null && Object.hasOwnProperty.call(message, "id"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint64(message.id);
+            if (message.tick != null && Object.hasOwnProperty.call(message, "tick"))
+                writer.uint32(/* id 2, wireType 0 =*/16).uint32(message.tick);
+            if (message["class"] != null && Object.hasOwnProperty.call(message, "class"))
+                writer.uint32(/* id 3, wireType 0 =*/24).int32(message["class"]);
+            if (message.text != null && Object.hasOwnProperty.call(message, "text"))
+                writer.uint32(/* id 4, wireType 2 =*/34).string(message.text);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified HudMessage message, length delimited. Does not implicitly {@link jsbolo.HudMessage.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof jsbolo.HudMessage
+         * @static
+         * @param {jsbolo.IHudMessage} message HudMessage message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        HudMessage.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a HudMessage message from the specified reader or buffer.
+         * @function decode
+         * @memberof jsbolo.HudMessage
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {jsbolo.HudMessage} HudMessage
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        HudMessage.decode = function decode(reader, length, error) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.jsbolo.HudMessage();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.id = reader.uint64();
+                        break;
+                    }
+                case 2: {
+                        message.tick = reader.uint32();
+                        break;
+                    }
+                case 3: {
+                        message["class"] = reader.int32();
+                        break;
+                    }
+                case 4: {
+                        message.text = reader.string();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a HudMessage message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof jsbolo.HudMessage
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {jsbolo.HudMessage} HudMessage
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        HudMessage.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a HudMessage message.
+         * @function verify
+         * @memberof jsbolo.HudMessage
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        HudMessage.verify = function verify(message) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (message.id != null && message.hasOwnProperty("id"))
+                if (!$util.isInteger(message.id) && !(message.id && $util.isInteger(message.id.low) && $util.isInteger(message.id.high)))
+                    return "id: integer|Long expected";
+            if (message.tick != null && message.hasOwnProperty("tick"))
+                if (!$util.isInteger(message.tick))
+                    return "tick: integer expected";
+            if (message["class"] != null && message.hasOwnProperty("class"))
+                switch (message["class"]) {
+                default:
+                    return "class: enum value expected";
+                case 0:
+                case 1:
+                case 2:
+                case 3:
+                case 4:
+                case 5:
+                    break;
+                }
+            if (message.text != null && message.hasOwnProperty("text"))
+                if (!$util.isString(message.text))
+                    return "text: string expected";
+            return null;
+        };
+
+        /**
+         * Creates a HudMessage message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof jsbolo.HudMessage
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {jsbolo.HudMessage} HudMessage
+         */
+        HudMessage.fromObject = function fromObject(object) {
+            if (object instanceof $root.jsbolo.HudMessage)
+                return object;
+            let message = new $root.jsbolo.HudMessage();
+            if (object.id != null)
+                if ($util.Long)
+                    (message.id = $util.Long.fromValue(object.id)).unsigned = true;
+                else if (typeof object.id === "string")
+                    message.id = parseInt(object.id, 10);
+                else if (typeof object.id === "number")
+                    message.id = object.id;
+                else if (typeof object.id === "object")
+                    message.id = new $util.LongBits(object.id.low >>> 0, object.id.high >>> 0).toNumber(true);
+            if (object.tick != null)
+                message.tick = object.tick >>> 0;
+            switch (object["class"]) {
+            default:
+                if (typeof object["class"] === "number") {
+                    message["class"] = object["class"];
+                    break;
+                }
+                break;
+            case "HUD_MESSAGE_CLASS_GLOBAL_NOTIFICATION":
+            case 0:
+                message["class"] = 0;
+                break;
+            case "HUD_MESSAGE_CLASS_ALLIANCE_NOTIFICATION":
+            case 1:
+                message["class"] = 1;
+                break;
+            case "HUD_MESSAGE_CLASS_PERSONAL_NOTIFICATION":
+            case 2:
+                message["class"] = 2;
+                break;
+            case "HUD_MESSAGE_CLASS_CHAT_GLOBAL":
+            case 3:
+                message["class"] = 3;
+                break;
+            case "HUD_MESSAGE_CLASS_CHAT_ALLIANCE":
+            case 4:
+                message["class"] = 4;
+                break;
+            case "HUD_MESSAGE_CLASS_SYSTEM_STATUS":
+            case 5:
+                message["class"] = 5;
+                break;
+            }
+            if (object.text != null)
+                message.text = String(object.text);
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a HudMessage message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof jsbolo.HudMessage
+         * @static
+         * @param {jsbolo.HudMessage} message HudMessage
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        HudMessage.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.id = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.id = options.longs === String ? "0" : 0;
+                object.tick = 0;
+                object["class"] = options.enums === String ? "HUD_MESSAGE_CLASS_GLOBAL_NOTIFICATION" : 0;
+                object.text = "";
+            }
+            if (message.id != null && message.hasOwnProperty("id"))
+                if (typeof message.id === "number")
+                    object.id = options.longs === String ? String(message.id) : message.id;
+                else
+                    object.id = options.longs === String ? $util.Long.prototype.toString.call(message.id) : options.longs === Number ? new $util.LongBits(message.id.low >>> 0, message.id.high >>> 0).toNumber(true) : message.id;
+            if (message.tick != null && message.hasOwnProperty("tick"))
+                object.tick = message.tick;
+            if (message["class"] != null && message.hasOwnProperty("class"))
+                object["class"] = options.enums === String ? $root.jsbolo.HudMessageClass[message["class"]] === undefined ? message["class"] : $root.jsbolo.HudMessageClass[message["class"]] : message["class"];
+            if (message.text != null && message.hasOwnProperty("text"))
+                object.text = message.text;
+            return object;
+        };
+
+        /**
+         * Converts this HudMessage to JSON.
+         * @function toJSON
+         * @memberof jsbolo.HudMessage
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        HudMessage.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for HudMessage
+         * @function getTypeUrl
+         * @memberof jsbolo.HudMessage
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        HudMessage.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/jsbolo.HudMessage";
+        };
+
+        return HudMessage;
+    })();
+
     jsbolo.WelcomeMap = (function() {
 
         /**
@@ -4245,6 +4595,7 @@ export const jsbolo = $root.jsbolo = (() => {
          * @property {Array.<jsbolo.ISoundEvent>|null} [soundEvents] UpdateMessage soundEvents
          * @property {boolean|null} [matchEnded] UpdateMessage matchEnded
          * @property {Array.<number>|null} [winningTeams] UpdateMessage winningTeams
+         * @property {Array.<jsbolo.IHudMessage>|null} [hudMessages] UpdateMessage hudMessages
          */
 
         /**
@@ -4268,6 +4619,7 @@ export const jsbolo = $root.jsbolo = (() => {
             this.terrainUpdates = [];
             this.soundEvents = [];
             this.winningTeams = [];
+            this.hudMessages = [];
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null)
@@ -4386,6 +4738,14 @@ export const jsbolo = $root.jsbolo = (() => {
          */
         UpdateMessage.prototype.winningTeams = $util.emptyArray;
 
+        /**
+         * UpdateMessage hudMessages.
+         * @member {Array.<jsbolo.IHudMessage>} hudMessages
+         * @memberof jsbolo.UpdateMessage
+         * @instance
+         */
+        UpdateMessage.prototype.hudMessages = $util.emptyArray;
+
         // OneOf field names bound to virtual getters and setters
         let $oneOfFields;
 
@@ -4474,6 +4834,9 @@ export const jsbolo = $root.jsbolo = (() => {
                     writer.uint32(message.winningTeams[i]);
                 writer.ldelim();
             }
+            if (message.hudMessages != null && message.hudMessages.length)
+                for (let i = 0; i < message.hudMessages.length; ++i)
+                    $root.jsbolo.HudMessage.encode(message.hudMessages[i], writer.uint32(/* id 15, wireType 2 =*/122).fork()).ldelim();
             return writer;
         };
 
@@ -4613,6 +4976,12 @@ export const jsbolo = $root.jsbolo = (() => {
                                 message.winningTeams.push(reader.uint32());
                         } else
                             message.winningTeams.push(reader.uint32());
+                        break;
+                    }
+                case 15: {
+                        if (!(message.hudMessages && message.hudMessages.length))
+                            message.hudMessages = [];
+                        message.hudMessages.push($root.jsbolo.HudMessage.decode(reader, reader.uint32()));
                         break;
                     }
                 default:
@@ -4757,6 +5126,15 @@ export const jsbolo = $root.jsbolo = (() => {
                     if (!$util.isInteger(message.winningTeams[i]))
                         return "winningTeams: integer[] expected";
             }
+            if (message.hudMessages != null && message.hasOwnProperty("hudMessages")) {
+                if (!Array.isArray(message.hudMessages))
+                    return "hudMessages: array expected";
+                for (let i = 0; i < message.hudMessages.length; ++i) {
+                    let error = $root.jsbolo.HudMessage.verify(message.hudMessages[i]);
+                    if (error)
+                        return "hudMessages." + error;
+                }
+            }
             return null;
         };
 
@@ -4881,6 +5259,16 @@ export const jsbolo = $root.jsbolo = (() => {
                 for (let i = 0; i < object.winningTeams.length; ++i)
                     message.winningTeams[i] = object.winningTeams[i] >>> 0;
             }
+            if (object.hudMessages) {
+                if (!Array.isArray(object.hudMessages))
+                    throw TypeError(".jsbolo.UpdateMessage.hudMessages: array expected");
+                message.hudMessages = [];
+                for (let i = 0; i < object.hudMessages.length; ++i) {
+                    if (typeof object.hudMessages[i] !== "object")
+                        throw TypeError(".jsbolo.UpdateMessage.hudMessages: object expected");
+                    message.hudMessages[i] = $root.jsbolo.HudMessage.fromObject(object.hudMessages[i]);
+                }
+            }
             return message;
         };
 
@@ -4910,6 +5298,7 @@ export const jsbolo = $root.jsbolo = (() => {
                 object.terrainUpdates = [];
                 object.soundEvents = [];
                 object.winningTeams = [];
+                object.hudMessages = [];
             }
             if (options.defaults)
                 object.tick = 0;
@@ -4979,6 +5368,11 @@ export const jsbolo = $root.jsbolo = (() => {
                 object.winningTeams = [];
                 for (let j = 0; j < message.winningTeams.length; ++j)
                     object.winningTeams[j] = message.winningTeams[j];
+            }
+            if (message.hudMessages && message.hudMessages.length) {
+                object.hudMessages = [];
+                for (let j = 0; j < message.hudMessages.length; ++j)
+                    object.hudMessages[j] = $root.jsbolo.HudMessage.toObject(message.hudMessages[j], options);
             }
             return object;
         };

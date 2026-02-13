@@ -25,8 +25,8 @@ describe('SessionStateBroadcaster', () => {
     broadcaster.broadcastState({
       tick: 1,
       players: [
-        {ws: wsA, tank: tankA},
-        {ws: wsB, tank: tankB},
+        {id: 1, ws: wsA, tank: tankA},
+        {id: 2, ws: wsB, tank: tankB},
       ],
       shells: [],
       pillboxes: [],
@@ -42,7 +42,7 @@ describe('SessionStateBroadcaster', () => {
     (wsB.send as any).mockClear();
     const result = broadcaster.broadcastState({
       tick: 2,
-      players: [{ws: wsB, tank: tankB}],
+      players: [{id: 2, ws: wsB, tank: tankB}],
       shells: [],
       pillboxes: [],
       bases: [],
@@ -71,7 +71,7 @@ describe('SessionStateBroadcaster', () => {
 
     broadcaster.broadcastState({
       tick: 10,
-      players: [{ws, tank}],
+      players: [{id: 10, ws, tank}],
       shells: [],
       pillboxes: [new ServerPillbox(10, 10, 255)],
       bases: [new ServerBase(20, 20, 255)],
@@ -98,7 +98,7 @@ describe('SessionStateBroadcaster', () => {
 
     const first = broadcaster.broadcastState({
       tick: 1,
-      players: [{ws, tank}],
+      players: [{id: 20, ws, tank}],
       shells: [],
       pillboxes: [],
       bases: [base],
@@ -117,7 +117,7 @@ describe('SessionStateBroadcaster', () => {
 
     const second = broadcaster.broadcastState({
       tick: 2,
-      players: [{ws, tank}],
+      players: [{id: 20, ws, tank}],
       shells: [],
       pillboxes: [],
       bases: [base],
@@ -131,5 +131,51 @@ describe('SessionStateBroadcaster', () => {
 
     expect(second.matchEndAnnounced).toBe(true);
     expect((ws.send as any).mock.calls.length).toBe(1);
+  });
+
+  it('should deliver HUD messages only to intended recipients', () => {
+    const broadcaster = new SessionStateBroadcaster(() => {});
+    const world = new ServerWorld();
+    const wsA = createMockWs();
+    const wsB = createMockWs();
+    const tankA = new ServerTank(30, 0, 40, 40);
+    const tankB = new ServerTank(31, 1, 45, 45);
+
+    broadcaster.broadcastState({
+      tick: 5,
+      players: [
+        {id: 30, ws: wsA, tank: tankA},
+        {id: 31, ws: wsB, tank: tankB},
+      ],
+      shells: [],
+      pillboxes: [],
+      bases: [],
+      world,
+      terrainChanges: new Set<string>(),
+      soundEvents: [],
+      matchEnded: false,
+      winningTeams: [],
+      matchEndAnnounced: false,
+      getHudMessagesForPlayer: (playerId: number) =>
+        playerId === 30
+          ? [{
+            id: 1,
+            tick: 5,
+            class: 'personal_notification',
+            text: 'private',
+          }]
+          : [],
+    });
+
+    const messageA = decodeServerMessage((wsA.send as any).mock.calls[0][0]);
+    const messageB = decodeServerMessage((wsB.send as any).mock.calls[0][0]);
+
+    expect(messageA.hudMessages).toEqual([{
+      id: 1,
+      tick: 5,
+      class: 'personal_notification',
+      text: 'private',
+    }]);
+    expect(messageB.hudMessages).toBeUndefined();
   });
 });

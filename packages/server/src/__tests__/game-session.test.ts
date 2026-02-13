@@ -535,6 +535,30 @@ describe('GameSession Integration', () => {
   });
 
   describe('Network State Synchronization', () => {
+    it('should publish global join/quit HUD notifications', () => {
+      const ws1 = createMockWebSocket();
+      const ws2 = createMockWebSocket();
+      const playerId1 = session.addPlayer(ws1);
+      session.addPlayer(ws2);
+
+      (ws1.send as any).mockClear();
+      (ws2.send as any).mockClear();
+
+      (session as any).broadcastState();
+      const joinMessage1 = decodeServerMessage((ws1.send as any).mock.calls.slice(-1)[0][0]);
+      const joinMessage2 = decodeServerMessage((ws2.send as any).mock.calls.slice(-1)[0][0]);
+
+      expect(joinMessage1.hudMessages?.some(m => m.text.includes('joined game'))).toBe(true);
+      expect(joinMessage2.hudMessages?.some(m => m.text.includes('joined game'))).toBe(true);
+
+      (ws2.send as any).mockClear();
+      session.removePlayer(playerId1);
+      (session as any).broadcastState();
+
+      const quitMessage = decodeServerMessage((ws2.send as any).mock.calls.slice(-1)[0][0]);
+      expect(quitMessage.hudMessages?.some(m => m.text.includes('has quit game'))).toBe(true);
+    });
+
     it('should send welcome message with map data', () => {
       const ws = createMockWebSocket();
       session.addPlayer(ws);

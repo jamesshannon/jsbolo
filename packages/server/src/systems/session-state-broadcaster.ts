@@ -1,4 +1,10 @@
-import {encodeServerMessage, type SoundEvent, type TerrainUpdate, type UpdateMessage} from '@jsbolo/shared';
+import {
+  encodeServerMessage,
+  type HudMessage,
+  type SoundEvent,
+  type TerrainUpdate,
+  type UpdateMessage,
+} from '@jsbolo/shared';
 import type {ServerBase} from '../simulation/base.js';
 import type {ServerBuilder} from '../simulation/builder.js';
 import type {ServerPillbox} from '../simulation/pillbox.js';
@@ -8,6 +14,7 @@ import type {ServerWorld} from '../simulation/world.js';
 import type {WebSocket} from 'ws';
 
 interface BroadcastPlayer {
+  id: number;
   ws: WebSocket;
   tank: ServerTank;
 }
@@ -32,6 +39,7 @@ export interface SessionBroadcastContext {
   matchEnded: boolean;
   winningTeams: number[];
   matchEndAnnounced: boolean;
+  getHudMessagesForPlayer?: (playerId: number) => HudMessage[];
 }
 
 export interface SessionBroadcastResult {
@@ -269,9 +277,13 @@ export class SessionStateBroadcaster {
       };
     }
 
-    const message = encodeServerMessage(update);
     for (const player of players) {
       if (player.ws.readyState === 1) {
+        const hudMessages = context.getHudMessagesForPlayer?.(player.id) ?? [];
+        const message = encodeServerMessage({
+          ...update,
+          ...(hudMessages.length > 0 && {hudMessages}),
+        });
         player.ws.send(message);
       }
     }

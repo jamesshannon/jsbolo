@@ -26,6 +26,7 @@ import {SessionWelcomeBuilder} from './systems/session-welcome-builder.js';
 import {SessionWorldBootstrap} from './systems/session-world-bootstrap.js';
 import {BotInputSystem} from './systems/bot-input-system.js';
 import {InProcessBotRuntimeAdapter} from './systems/in-process-bot-runtime-adapter.js';
+import {HudMessageService} from './systems/hud-message-service.js';
 import type {WebSocket} from 'ws';
 
 export interface BotPolicyOptions {
@@ -65,6 +66,7 @@ export class GameSession {
   private readonly welcomeBuilder = new SessionWelcomeBuilder();
   private readonly worldBootstrap = new SessionWorldBootstrap();
   private readonly botInputSystem = new BotInputSystem(new InProcessBotRuntimeAdapter());
+  private readonly hudMessages = new HudMessageService();
   private readonly matchState = this.updatePipeline.getMatchState();
   private readonly botPolicy: BotPolicyOptions;
   private readonly botPlayerIds = new Set<number>();
@@ -152,7 +154,14 @@ export class GameSession {
 
   addPlayer(ws: WebSocket, _legacyUnusedTeamOverride?: number): number {
     // NOTE: optional second arg is accepted for legacy test compatibility.
-    return this.playerManager.addPlayer(ws);
+    const playerId = this.playerManager.addPlayer(ws);
+    this.hudMessages.publishGlobal({
+      tick: this.tick,
+      text: `Player ${playerId} joined game`,
+      players: this.players.values(),
+      class: 'global_notification',
+    });
+    return playerId;
   }
 
   removePlayer(playerId: number): void {
@@ -166,6 +175,14 @@ export class GameSession {
     }
 
     const result = this.playerManager.removePlayer(playerId);
+    if (result.removed) {
+      this.hudMessages.publishGlobal({
+        tick: this.tick,
+        text: `Player ${playerId} has quit game`,
+        players: this.players.values(),
+        class: 'global_notification',
+      });
+    }
     if (result.isEmpty) {
       this.stop();
     }
@@ -402,6 +419,7 @@ export class GameSession {
       matchEnded: this.matchState.isMatchEnded(),
       winningTeams: this.matchState.getWinningTeams(),
       matchEndAnnounced: this.matchEndAnnounced,
+      getHudMessagesForPlayer: playerId => this.hudMessages.drainForPlayer(playerId),
     });
     this.matchEndAnnounced = result.matchEndAnnounced;
   }

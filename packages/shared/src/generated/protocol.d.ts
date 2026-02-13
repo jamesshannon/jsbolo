@@ -1240,6 +1240,131 @@ export namespace jsbolo {
         public static getTypeUrl(typeUrlPrefix?: string): string;
     }
 
+    /** HudMessageClass enum. */
+    enum HudMessageClass {
+        HUD_MESSAGE_CLASS_GLOBAL_NOTIFICATION = 0,
+        HUD_MESSAGE_CLASS_ALLIANCE_NOTIFICATION = 1,
+        HUD_MESSAGE_CLASS_PERSONAL_NOTIFICATION = 2,
+        HUD_MESSAGE_CLASS_CHAT_GLOBAL = 3,
+        HUD_MESSAGE_CLASS_CHAT_ALLIANCE = 4,
+        HUD_MESSAGE_CLASS_SYSTEM_STATUS = 5
+    }
+
+    /** Properties of a HudMessage. */
+    interface IHudMessage {
+
+        /** HudMessage id */
+        id?: (number|Long|null);
+
+        /** HudMessage tick */
+        tick?: (number|null);
+
+        /** HudMessage class */
+        "class"?: (jsbolo.HudMessageClass|null);
+
+        /** HudMessage text */
+        text?: (string|null);
+    }
+
+    /** Represents a HudMessage. */
+    class HudMessage implements IHudMessage {
+
+        /**
+         * Constructs a new HudMessage.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: jsbolo.IHudMessage);
+
+        /** HudMessage id. */
+        public id: (number|Long);
+
+        /** HudMessage tick. */
+        public tick: number;
+
+        /** HudMessage class. */
+        public class: jsbolo.HudMessageClass;
+
+        /** HudMessage text. */
+        public text: string;
+
+        /**
+         * Creates a new HudMessage instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns HudMessage instance
+         */
+        public static create(properties?: jsbolo.IHudMessage): jsbolo.HudMessage;
+
+        /**
+         * Encodes the specified HudMessage message. Does not implicitly {@link jsbolo.HudMessage.verify|verify} messages.
+         * @param message HudMessage message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: jsbolo.IHudMessage, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified HudMessage message, length delimited. Does not implicitly {@link jsbolo.HudMessage.verify|verify} messages.
+         * @param message HudMessage message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: jsbolo.IHudMessage, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a HudMessage message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns HudMessage
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): jsbolo.HudMessage;
+
+        /**
+         * Decodes a HudMessage message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns HudMessage
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): jsbolo.HudMessage;
+
+        /**
+         * Verifies a HudMessage message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a HudMessage message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns HudMessage
+         */
+        public static fromObject(object: { [k: string]: any }): jsbolo.HudMessage;
+
+        /**
+         * Creates a plain object from a HudMessage message. Also converts values to other types if specified.
+         * @param message HudMessage
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: jsbolo.HudMessage, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this HudMessage to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for HudMessage
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
     /** Properties of a WelcomeMap. */
     interface IWelcomeMap {
 
@@ -1550,6 +1675,9 @@ export namespace jsbolo {
 
         /** UpdateMessage winningTeams */
         winningTeams?: (number[]|null);
+
+        /** UpdateMessage hudMessages */
+        hudMessages?: (jsbolo.IHudMessage[]|null);
     }
 
     /** Represents an UpdateMessage. */
@@ -1602,6 +1730,9 @@ export namespace jsbolo {
 
         /** UpdateMessage winningTeams. */
         public winningTeams: number[];
+
+        /** UpdateMessage hudMessages. */
+        public hudMessages: jsbolo.IHudMessage[];
 
         /**
          * Creates a new UpdateMessage instance using the specified properties.
