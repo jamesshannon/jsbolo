@@ -22,6 +22,8 @@
   - server now sends update packets when only `hudMessages` changed (no terrain/entity deltas),
   - preventing dropped alliance/chat/notification ticks.
 - Added personal builder rejection notifications (invalid target / insufficient resources), delivered only to affected player.
+- Added personal builder-loss notification (`You just lost builder`) when an exposed builder is killed.
+- Removed client-side inferred structure capture/loss ticker generation to keep HUD gameplay events strictly server-authoritative.
 - Added chat plumbing over protobuf client messages:
   - Client can send `chat` payloads (`global` and `allianceOnly` scope).
   - Server routes to HUD as `chat_global` / `chat_alliance` with server-side recipient filtering.

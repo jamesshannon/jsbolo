@@ -29,7 +29,6 @@ import {toNetworkInput} from './input-mapping.js';
 import {applyNetworkEntityUpdate} from './network-entity-state.js';
 import {applyNetworkWorldEffects} from './network-world-effects.js';
 import {applyNetworkWelcomeState} from './network-welcome-state.js';
-import {deriveStructureHudMessages} from './hud-events.js';
 import {deriveTankHudMarkers} from './hud-tank-status.js';
 import {deriveTickerMessagesFromServerHud} from './hud-message-stream.js';
 
@@ -128,8 +127,6 @@ export class MultiplayerGame {
 
     this.network.onUpdate(update => {
       const now = performance.now();
-      const previousPillboxes = new Map(this.pillboxes);
-      const previousBases = new Map(this.bases);
       applyNetworkEntityUpdate(
         update,
         {
@@ -163,17 +160,6 @@ export class MultiplayerGame {
       });
       const serverHudMessages = deriveTickerMessagesFromServerHud(update.hudMessages);
       for (const message of serverHudMessages) {
-        this.enqueueHudMessage(message);
-      }
-
-      const structureMessages = deriveStructureHudMessages({
-        previousPillboxes,
-        previousBases,
-        ...(update.pillboxes !== undefined && {updatedPillboxes: update.pillboxes}),
-        ...(update.bases !== undefined && {updatedBases: update.bases}),
-        myTeam: this.getMyTeam(),
-      });
-      for (const message of structureMessages) {
         this.enqueueHudMessage(message);
       }
     });
@@ -517,14 +503,6 @@ export class MultiplayerGame {
     }
 
     return nearest;
-  }
-
-  private getMyTeam(): number | null {
-    if (this.playerId === null) {
-      return null;
-    }
-    const tank = this.tanks.get(this.playerId);
-    return tank?.team ?? null;
   }
 
   private enqueueHudMessage(message: string): void {

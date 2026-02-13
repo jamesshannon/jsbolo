@@ -130,8 +130,10 @@ Status: In progress as of February 13, 2026.
   - HUD/chat v1 baseline completed:
     - server-authoritative HUD classes and recipient filtering
     - global/alliance/personal/game-result notifications
+    - personal builder-loss notification when exposed builder is killed
     - queue hardening (TTL, coalescing, priority overflow, reconnect tail)
     - client ticker rendering and chat input UI (global/alliance send)
+    - removed client-side inferred structure ticker events (server-only gameplay HUD source)
     - server/client chat smoke coverage
   - Optional accessibility and input quality improvements
   - Brains/Bot implementation plan in `docs/bot-architecture.md`
