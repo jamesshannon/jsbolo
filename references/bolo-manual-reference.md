@@ -1,7 +1,11 @@
 # Bolo Manual Reference
 
-Extracted from the official Bolo manual at `https://dialup.party/~jolo/bolo/guides/bolomanual/`.
-This document serves as the authoritative reference for game mechanics during development.
+> [!WARNING]
+> Deprecated as an authoritative spec source.
+> Use `references/MacBolo Instructions.html` as the source of truth.
+>
+> Reason: this markdown was a derivative summary and may omit or reword nuanced requirements.
+> It remains only as historical developer notes.
 
 ## Traceability
 
@@ -11,7 +15,7 @@ The authoritative requirement-to-code mapping now lives in:
 That matrix tracks each manual behavior against:
 - owner files (server/client),
 - automated test evidence,
-- implementation status (`verified`, `partial`, `missing`),
+- implementation status,
 - explicit deviation notes (if any).
 
 ---
