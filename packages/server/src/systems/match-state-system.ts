@@ -56,6 +56,10 @@ export class MatchStateSystem {
     if (fromTeam === toTeam || this.areTeamsAllied(fromTeam, toTeam)) {
       return false;
     }
+    // Manual rule: teams must leave their old alliance before joining a new one.
+    if (!this.canFormAlliance(fromTeam, toTeam)) {
+      return false;
+    }
     this.pendingAllianceRequests.add(this.getAllianceKey(fromTeam, toTeam));
     return true;
   }
@@ -63,6 +67,9 @@ export class MatchStateSystem {
   acceptAlliance(toTeam: number, fromTeam: number): boolean {
     const key = this.getAllianceKey(fromTeam, toTeam);
     if (!this.pendingAllianceRequests.has(key)) {
+      return false;
+    }
+    if (!this.canFormAlliance(fromTeam, toTeam)) {
       return false;
     }
 
@@ -73,6 +80,9 @@ export class MatchStateSystem {
 
   createAlliance(teamA: number, teamB: number): void {
     if (teamA === teamB) {
+      return;
+    }
+    if (!this.canFormAlliance(teamA, teamB)) {
       return;
     }
 
@@ -184,6 +194,24 @@ export class MatchStateSystem {
       }
     }
     return Array.from(members).sort((a, b) => a - b);
+  }
+
+  /**
+   * Classic behavior: a team can only be in one alliance pairing at a time.
+   *
+   * Existing A<->B alliances may be re-requested/re-accepted idempotently,
+   * but A cannot join C until A leaves B.
+   */
+  private canFormAlliance(teamA: number, teamB: number): boolean {
+    return this.canTeamJoinAlliance(teamA, teamB) && this.canTeamJoinAlliance(teamB, teamA);
+  }
+
+  private canTeamJoinAlliance(team: number, targetTeam: number): boolean {
+    const allies = this.alliances.get(team);
+    if (!allies || allies.size === 0) {
+      return true;
+    }
+    return allies.size === 1 && allies.has(targetTeam);
   }
 
   private getMineVisibilityTeams(team: number): Set<number> {

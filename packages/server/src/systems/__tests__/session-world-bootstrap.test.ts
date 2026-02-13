@@ -23,6 +23,10 @@ describe('SessionWorldBootstrap', () => {
     expect(pillboxTiles.has('175,125')).toBe(true);
     expect(baseTiles.has('80,80')).toBe(true);
     expect(baseTiles.has('170,170')).toBe(true);
+
+    for (const pillbox of result.pillboxes.values()) {
+      expect(pillbox.getAttackSpeed()).toBe(6);
+    }
   });
 
   it('should prioritize map-provided structure spawns and preserve map state', () => {
@@ -58,5 +62,18 @@ describe('SessionWorldBootstrap', () => {
 
     expect(log).toHaveBeenCalledWith('  Spawned 1 pillboxes from map');
     expect(log).toHaveBeenCalledWith('  Spawned 1 bases from map');
+  });
+
+  it('should clamp map-provided pillbox speed to maximum supported interval', () => {
+    const bootstrap = new SessionWorldBootstrap(() => {});
+    const result = bootstrap.initialize({
+      getPillboxSpawns: () => [
+        {tileX: 11, tileY: 12, armor: 90, ownerTeam: 2, speed: 250},
+      ],
+      getBaseSpawns: () => [],
+    });
+
+    const pillbox = Array.from(result.pillboxes.values())[0]!;
+    expect(pillbox.getAttackSpeed()).toBe(100);
   });
 });

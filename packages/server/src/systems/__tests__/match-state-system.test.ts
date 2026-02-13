@@ -10,6 +10,20 @@ describe('MatchStateSystem', () => {
     expect(system.areTeamsAllied(0, 1)).toBe(true);
   });
 
+  it('should require leaving an existing alliance before joining a new team', () => {
+    const system = new MatchStateSystem();
+    system.createAlliance(0, 1);
+
+    expect(system.requestAlliance(0, 2)).toBe(false);
+    expect(system.requestAlliance(2, 0)).toBe(false);
+
+    system.leaveAlliance(0);
+    expect(system.requestAlliance(0, 2)).toBe(true);
+    expect(system.acceptAlliance(2, 0)).toBe(true);
+    expect(system.areTeamsAllied(0, 2)).toBe(true);
+    expect(system.areTeamsAllied(0, 1)).toBe(false);
+  });
+
   it('should preserve snapshot mine visibility semantics across alliance changes', () => {
     const system = new MatchStateSystem();
     const world = new ServerWorld();

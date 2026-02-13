@@ -2,6 +2,8 @@ import {ServerBase} from '../simulation/base.js';
 import type {BaseSpawnData, PillboxSpawnData} from '../simulation/map-loader.js';
 import {ServerPillbox} from '../simulation/pillbox.js';
 
+const FALLBACK_PILLBOX_ATTACK_SPEED_TICKS = 6;
+
 interface BootstrapWorldView {
   getPillboxSpawns(): PillboxSpawnData[];
   getBaseSpawns(): BaseSpawnData[];
@@ -55,7 +57,14 @@ export class SessionWorldBootstrap {
       {x: 175, y: 125},
     ];
     for (const loc of fallback) {
-      const pillbox = new ServerPillbox(loc.x, loc.y, 255);
+      // Classic default: when no map cadence metadata exists, fallback pillboxes
+      // start at fast 6-tick cadence (equivalent to a "hot" pillbox).
+      const pillbox = new ServerPillbox(
+        loc.x,
+        loc.y,
+        255,
+        FALLBACK_PILLBOX_ATTACK_SPEED_TICKS
+      );
       pillboxes.set(pillbox.id, pillbox);
     }
     return pillboxes;

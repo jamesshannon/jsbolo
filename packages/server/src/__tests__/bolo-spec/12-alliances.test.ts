@@ -66,6 +66,20 @@ describe('Bolo Manual Spec: 12. Alliances', () => {
     expect(session.areTeamsAllied(0, 1)).toBe(false);
   });
 
+  it('should require leaving old alliance before joining a new one', () => {
+    const session = new GameSession();
+    expect(session.requestAlliance(0, 1)).toBe(true);
+    expect(session.acceptAlliance(1, 0)).toBe(true);
+    expect(session.areTeamsAllied(0, 1)).toBe(true);
+
+    expect(session.requestAlliance(0, 2)).toBe(false);
+
+    session.leaveAlliance(0);
+    expect(session.requestAlliance(0, 2)).toBe(true);
+    expect(session.acceptAlliance(2, 0)).toBe(true);
+    expect(session.areTeamsAllied(0, 2)).toBe(true);
+  });
+
   // "Any pillboxes he is carrying at the time are his, but any active ones
   //  on the map remain with the members of the alliance"
   it('should keep placed pillboxes with alliance when member leaves', () => {

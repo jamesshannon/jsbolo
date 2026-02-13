@@ -88,8 +88,8 @@ Last updated: 2026-02-13.
 
 | ID | Requirement | Server Owner(s) | Client Owner(s) | Test Evidence | Status | Notes |
 |---|---|---|---|---|---|---|
-| `WAT-01` | Drain shells/mines every 15 ticks in water without boat | `packages/server/src/systems/player-simulation-system.ts` | `packages/client/src/game/multiplayer-game.ts` | `packages/server/src/__tests__/bolo-spec/07-water-mechanics.test.ts` | `partial` | Behavior exists in simulation code, but tests mainly validate constants rather than full tick-level integration. |
-| `WAT-02` | No drain while on boat | `packages/server/src/systems/player-simulation-system.ts` | `packages/client/src/game/multiplayer-game.ts` | `packages/server/src/__tests__/bolo-spec/07-water-mechanics.test.ts` | `partial` | Add integration assertions against actual tank inventory changes. |
+| `WAT-01` | Drain shells/mines every 15 ticks in water without boat | `packages/server/src/systems/player-simulation-system.ts` | `packages/client/src/game/multiplayer-game.ts` | `packages/server/src/__tests__/bolo-spec/07-water-mechanics.test.ts` | `verified` | Tick-level integration assertions now validate real inventory depletion on cadence. |
+| `WAT-02` | No drain while on boat | `packages/server/src/systems/player-simulation-system.ts` | `packages/client/src/game/multiplayer-game.ts` | `packages/server/src/__tests__/bolo-spec/07-water-mechanics.test.ts` | `verified` | Integration assertions confirm water tiles do not drain resources while `onBoat=true`. |
 | `WAT-03` | River movement slowdown | `packages/server/src/simulation/world.ts`, `packages/server/src/simulation/tank.ts` | `packages/client/src/renderer/renderer.ts` | `packages/server/src/__tests__/bolo-spec/02-tank-movement.test.ts` | `verified` |  |
 
 ### 9. Pillboxes
@@ -104,7 +104,7 @@ Last updated: 2026-02-13.
 | `PIL-06` | Single pillbox mode: repair existing pillbox else place/build | `packages/server/src/systems/builder-system.ts` | `packages/client/src/input/builder-input.ts`, `packages/client/src/game/multiplayer-game.ts`, `packages/client/index.html` | `packages/server/src/systems/__tests__/builder-system.test.ts`, `packages/server/src/__tests__/game-session.test.ts`, `packages/client/src/__tests__/builder-input.test.ts` | `verified` | Fixed in commit `cc6e74f`. |
 | `PIL-07` | Repairing pillbox does not change ownership | `packages/server/src/systems/builder-system.ts` | `packages/client/src/game/multiplayer-game.ts` | `packages/server/src/__tests__/bolo-spec/08-pillboxes.test.ts`, `packages/server/src/systems/__tests__/builder-system.test.ts` | `verified` |  |
 | `PIL-08` | Forest concealment blocks pillbox targeting | `packages/server/src/simulation/world.ts`, `packages/server/src/simulation/pillbox.ts` | `packages/client/src/renderer/renderer.ts` | `packages/server/src/__tests__/bolo-spec/08-pillboxes.test.ts` | `verified` |  |
-| `PIL-09` | Default pillbox fire interval semantics (map vs fallback) | `packages/server/src/simulation/pillbox.ts`, `packages/server/src/systems/session-world-bootstrap.ts` | `packages/client/src/renderer/renderer.ts` | `packages/server/src/__tests__/bolo-spec/08-pillboxes.test.ts` | `partial` | Map-authored speed (6..100) is preserved; fallback-spawned pillboxes default to `100`. Confirm desired classic default for fallback maps. |
+| `PIL-09` | Default pillbox fire interval semantics (map vs fallback) | `packages/server/src/simulation/pillbox.ts`, `packages/server/src/systems/session-world-bootstrap.ts` | `packages/client/src/renderer/renderer.ts` | `packages/server/src/__tests__/bolo-spec/08-pillboxes.test.ts`, `packages/server/src/systems/__tests__/session-world-bootstrap.test.ts` | `verified` | Explicit policy: map-authored speed is clamped/preserved (6..100); fallback spawns use classic 6-tick cadence. |
 
 ### 10. Bases
 
@@ -141,7 +141,7 @@ Last updated: 2026-02-13.
 | `ALL-01` | Request/accept/create/leave alliance APIs | `packages/server/src/systems/match-state-system.ts`, `packages/server/src/game-session.ts` | `packages/client/src/game/multiplayer-game.ts` | `packages/server/src/__tests__/bolo-spec/12-alliances.test.ts` | `verified` |  |
 | `ALL-02` | Allied pillboxes do not target allies | `packages/server/src/simulation/pillbox.ts`, `packages/server/src/systems/structure-simulation-system.ts` | `packages/client/src/renderer/renderer.ts` | `packages/server/src/__tests__/bolo-spec/12-alliances.test.ts` | `verified` |  |
 | `ALL-03` | Alliance mine-sharing behavior | `packages/server/src/systems/match-state-system.ts` | `packages/client/src/game/network-world-effects.ts` | `packages/server/src/__tests__/bolo-spec/12-alliances.test.ts`, `packages/server/src/__tests__/bolo-spec/05-mines.test.ts` | `verified` |  |
-| `ALL-04` | Must leave old alliance before joining new one | `packages/server/src/systems/match-state-system.ts` | `packages/client/src/game/multiplayer-game.ts` | `packages/server/src/__tests__/bolo-spec/12-alliances.test.ts` | `partial` | Current model allows multiple direct alliances; add rule/enforcement test if strict classic behavior is required. |
+| `ALL-04` | Must leave old alliance before joining new one | `packages/server/src/systems/match-state-system.ts` | `packages/client/src/game/multiplayer-game.ts` | `packages/server/src/__tests__/bolo-spec/12-alliances.test.ts`, `packages/server/src/systems/__tests__/match-state-system.test.ts` | `verified` | Enforced in request/accept/create flows: teams with existing alliances must leave before forming a new one. |
 
 ### 14. Win Condition
 
@@ -153,6 +153,3 @@ Last updated: 2026-02-13.
 
 1. The summary text in `references/bolo-manual-reference.md` currently says shell hits capture pillboxes/bases in section 4.
    The implemented behavior and detailed sections 9/10 follow a different rule: shell hits deplete armor; ownership changes on pickup/drive-over capture logic.
-2. Water-drain mechanics are implemented in simulation code, but current tests do not strongly validate full tick-level resource depletion behavior.
-3. Fallback-spawned pillboxes use attack interval `100` unless map-authored speed is provided. Confirm if fallback should instead use classic aggressive values.
-
