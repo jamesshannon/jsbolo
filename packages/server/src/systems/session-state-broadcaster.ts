@@ -256,6 +256,18 @@ export class SessionStateBroadcaster {
         }),
     };
 
+    // Drain per-player HUD streams once so we can both:
+    // 1) include HUD-only ticks in broadcast decisions, and
+    // 2) avoid double-draining during payload assembly.
+    const hudByPlayerId = new Map<number, UpdateMessage['hudMessages']>();
+    for (const player of players) {
+      const hudMessages = context.getHudMessagesForPlayer?.(player.id) ?? [];
+      hudByPlayerId.set(player.id, hudMessages);
+    }
+    const hasHudChanges = Array.from(hudByPlayerId.values()).some(
+      messages => messages.length > 0
+    );
+
     const hasChanges =
       tanks.length > 0 ||
       shells.length > 0 ||
@@ -268,7 +280,8 @@ export class SessionStateBroadcaster {
       removedBaseIds.length > 0 ||
       terrainUpdates.length > 0 ||
       context.soundEvents.length > 0 ||
-      (context.matchEnded && !context.matchEndAnnounced);
+      (context.matchEnded && !context.matchEndAnnounced) ||
+      hasHudChanges;
 
     if (!hasChanges) {
       return {
@@ -279,7 +292,7 @@ export class SessionStateBroadcaster {
 
     for (const player of players) {
       if (player.ws.readyState === 1) {
-        const hudMessages = context.getHudMessagesForPlayer?.(player.id) ?? [];
+        const hudMessages = hudByPlayerId.get(player.id) ?? [];
         const message = encodeServerMessage({
           ...update,
           ...(hudMessages.length > 0 && {hudMessages}),

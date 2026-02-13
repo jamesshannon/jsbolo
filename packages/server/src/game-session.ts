@@ -463,11 +463,35 @@ export class GameSession {
   }
 
   public requestAlliance(fromTeam: number, toTeam: number): boolean {
-    return this.matchState.requestAlliance(fromTeam, toTeam);
+    const accepted = this.matchState.requestAlliance(fromTeam, toTeam);
+    if (!accepted) {
+      return false;
+    }
+
+    // Before acceptance, notify source and target teams separately.
+    this.publishAllianceHudMessage({
+      sourceTeam: fromTeam,
+      text: `Team ${fromTeam} requested alliance with Team ${toTeam}`,
+    });
+    this.publishAllianceHudMessage({
+      sourceTeam: toTeam,
+      text: `Team ${toTeam} received alliance request from Team ${fromTeam}`,
+    });
+    return true;
   }
 
   public acceptAlliance(toTeam: number, fromTeam: number): boolean {
-    return this.matchState.acceptAlliance(toTeam, fromTeam);
+    const accepted = this.matchState.acceptAlliance(toTeam, fromTeam);
+    if (!accepted) {
+      return false;
+    }
+
+    // Emit after acceptance so both newly allied teams receive it in one publish.
+    this.publishAllianceHudMessage({
+      sourceTeam: toTeam,
+      text: `Team ${toTeam} accepted alliance with Team ${fromTeam}`,
+    });
+    return true;
   }
 
   public createAlliance(teamA: number, teamB: number): void {
@@ -475,10 +499,20 @@ export class GameSession {
   }
 
   public breakAlliance(teamA: number, teamB: number): void {
+    // Emit before break so both currently allied teams still receive the notice.
+    this.publishAllianceHudMessage({
+      sourceTeam: teamA,
+      text: `Team ${teamA} broke alliance with Team ${teamB}`,
+    });
     this.matchState.breakAlliance(teamA, teamB);
   }
 
   public leaveAlliance(team: number): void {
+    // Emit before leave so allied recipients still receive the departure notice.
+    this.publishAllianceHudMessage({
+      sourceTeam: team,
+      text: `Team ${team} left all alliances`,
+    });
     this.matchState.leaveAlliance(team);
   }
 
@@ -509,6 +543,17 @@ export class GameSession {
       text,
       players: this.players.values(),
       class: 'global_notification',
+    });
+  }
+
+  private publishAllianceHudMessage(args: {sourceTeam: number; text: string}): void {
+    this.hudMessages.publishAlliance({
+      tick: this.tick,
+      sourceTeam: args.sourceTeam,
+      text: args.text,
+      players: this.players.values(),
+      areTeamsAllied: (teamA, teamB) => this.areTeamsAllied(teamA, teamB),
+      class: 'alliance_notification',
     });
   }
 

@@ -178,4 +178,58 @@ describe('SessionStateBroadcaster', () => {
     }]);
     expect(messageB.hudMessages).toBeUndefined();
   });
+
+  it('should broadcast on HUD-only ticks without entity/world deltas', () => {
+    const broadcaster = new SessionStateBroadcaster(() => {});
+    const world = new ServerWorld();
+    const ws = createMockWs();
+    const tank = new ServerTank(40, 0, 40, 40);
+
+    // Prime hashes so the next tick has no normal state deltas.
+    broadcaster.broadcastState({
+      tick: 1,
+      players: [{id: 40, ws, tank}],
+      shells: [],
+      pillboxes: [],
+      bases: [],
+      world,
+      terrainChanges: new Set<string>(),
+      soundEvents: [],
+      matchEnded: false,
+      winningTeams: [],
+      matchEndAnnounced: false,
+      getHudMessagesForPlayer: () => [],
+    });
+    (ws.send as any).mockClear();
+
+    const result = broadcaster.broadcastState({
+      tick: 2,
+      players: [{id: 40, ws, tank}],
+      shells: [],
+      pillboxes: [],
+      bases: [],
+      world,
+      terrainChanges: new Set<string>(),
+      soundEvents: [],
+      matchEnded: false,
+      winningTeams: [],
+      matchEndAnnounced: false,
+      getHudMessagesForPlayer: () => [{
+        id: 99,
+        tick: 2,
+        class: 'alliance_notification',
+        text: 'Team 1 requested alliance with Team 2',
+      }],
+    });
+
+    expect(result.didBroadcast).toBe(true);
+    expect(ws.send).toHaveBeenCalledTimes(1);
+    const message = decodeServerMessage((ws.send as any).mock.calls[0][0]);
+    expect(message.hudMessages).toEqual([{
+      id: 99,
+      tick: 2,
+      class: 'alliance_notification',
+      text: 'Team 1 requested alliance with Team 2',
+    }]);
+  });
 });

@@ -597,6 +597,53 @@ describe('GameSession Integration', () => {
       expect(hudText.some(text => text.includes('captured a Neutral Pillbox'))).toBe(true);
     });
 
+    it('should server-filter alliance HUD notifications to relevant teams only', () => {
+      const wsA = createMockWebSocket();
+      const wsB = createMockWebSocket();
+      const wsC = createMockWebSocket();
+      const playerA = session.addPlayer(wsA);
+      const playerB = session.addPlayer(wsB);
+      session.addPlayer(wsC);
+
+      const players = (session as any).players;
+      const teamA = players.get(playerA).tank.team;
+      const teamB = players.get(playerB).tank.team;
+
+      (wsA.send as any).mockClear();
+      (wsB.send as any).mockClear();
+      (wsC.send as any).mockClear();
+      (session as any).broadcastState();
+      (wsA.send as any).mockClear();
+      (wsB.send as any).mockClear();
+      (wsC.send as any).mockClear();
+
+      expect(session.requestAlliance(teamA, teamB)).toBe(true);
+      (session as any).broadcastState();
+
+      const requestA = decodeServerMessage((wsA.send as any).mock.calls.slice(-1)[0][0]);
+      const requestB = decodeServerMessage((wsB.send as any).mock.calls.slice(-1)[0][0]);
+      const requestC = decodeServerMessage((wsC.send as any).mock.calls.slice(-1)[0][0]);
+
+      expect(requestA.hudMessages?.some(m => m.text.includes('requested alliance'))).toBe(true);
+      expect(requestB.hudMessages?.some(m => m.text.includes('received alliance request'))).toBe(true);
+      expect(requestC.hudMessages).toBeUndefined();
+
+      (wsA.send as any).mockClear();
+      (wsB.send as any).mockClear();
+      (wsC.send as any).mockClear();
+
+      expect(session.acceptAlliance(teamB, teamA)).toBe(true);
+      (session as any).broadcastState();
+
+      const acceptA = decodeServerMessage((wsA.send as any).mock.calls.slice(-1)[0][0]);
+      const acceptB = decodeServerMessage((wsB.send as any).mock.calls.slice(-1)[0][0]);
+      const acceptC = decodeServerMessage((wsC.send as any).mock.calls.slice(-1)[0][0]);
+
+      expect(acceptA.hudMessages?.some(m => m.text.includes('accepted alliance'))).toBe(true);
+      expect(acceptB.hudMessages?.some(m => m.text.includes('accepted alliance'))).toBe(true);
+      expect(acceptC.hudMessages).toBeUndefined();
+    });
+
     it('should send welcome message with map data', () => {
       const ws = createMockWebSocket();
       session.addPlayer(ws);

@@ -16,6 +16,10 @@
   - Neutral Base capture
   - Neutral Pillbox capture (drive-over pickup)
   - Base/Pillbox steal events (non-neutral ownership change)
+- Added alliance-event HUD emitters (request, receive, accept, break, leave) with team-scoped server filtering.
+- Fixed HUD-only broadcast delivery:
+  - server now sends update packets when only `hudMessages` changed (no terrain/entity deltas),
+  - preventing dropped alliance/chat/notification ticks.
 - Client HUD class visibility defaults now match policy:
   - global/alliance/personal/chat: enabled
   - system status: disabled by default
