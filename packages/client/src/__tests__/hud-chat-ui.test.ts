@@ -1,6 +1,7 @@
 import {describe, expect, it, vi, afterEach} from 'vitest';
 import {MultiplayerGame} from '../game/multiplayer-game.js';
 import {NetworkClient} from '../network/network-client.js';
+import {Renderer} from '../renderer/renderer.js';
 
 function mountHudChatDom(): HTMLCanvasElement {
   document.body.innerHTML = `
@@ -13,6 +14,7 @@ function mountHudChatDom(): HTMLCanvasElement {
       <input id="hud-filter-newswire" type="checkbox" checked />
       <input id="hud-filter-assistant" type="checkbox" checked />
       <input id="hud-filter-ai-brain" type="checkbox" checked />
+      <input id="hud-colorblind-mode" type="checkbox" />
       <input id="hud-chat-input" type="text" />
       <button id="hud-chat-send" type="submit">Send</button>
     </form>
@@ -81,6 +83,22 @@ describe('HUD chat UI wiring', () => {
       allianceOnly: false,
       recipientPlayerIds: [2],
     });
+    game.destroy();
+  });
+
+  it('applies renderer color mode when the HUD colorblind toggle changes', () => {
+    const setColorModeSpy = vi
+      .spyOn(Renderer.prototype, 'setColorMode')
+      .mockImplementation(() => {});
+
+    const canvas = mountHudChatDom();
+    const game = new MultiplayerGame(canvas, {} as CanvasRenderingContext2D);
+    const checkbox = document.getElementById('hud-colorblind-mode') as HTMLInputElement;
+
+    checkbox.checked = true;
+    checkbox.dispatchEvent(new Event('change', {bubbles: true}));
+
+    expect(setColorModeSpy).toHaveBeenCalledWith('colorblind');
     game.destroy();
   });
 });

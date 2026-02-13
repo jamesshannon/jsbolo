@@ -16,6 +16,7 @@ import {
 import {SpriteSheet} from './sprite-sheet.js';
 import {Camera} from './camera.js';
 import {AutoTiler} from './auto-tiler.js';
+import {getRelationPalette, type HudColorMode} from './color-palette.js';
 import type {World} from '../world/world.js';
 import type {Tank} from '../entities/tank.js';
 
@@ -56,6 +57,7 @@ export class Renderer {
   private baseSprites: SpriteSheet;
   private styledSprites: SpriteSheet;
   private hudSprites: SpriteSheet;
+  private colorMode: HudColorMode = 'default';
 
   constructor(
     private readonly ctx: CanvasRenderingContext2D,
@@ -72,6 +74,10 @@ export class Renderer {
       this.styledSprites.load(),
       this.hudSprites.load(),
     ]);
+  }
+
+  setColorMode(mode: HudColorMode): void {
+    this.colorMode = mode;
   }
 
   /**
@@ -475,13 +481,14 @@ export class Renderer {
     myTeam: number | null,
     neutralColor: string
   ): string {
+    const palette = getRelationPalette(this.colorMode);
     if (ownerTeam === NEUTRAL_TEAM) {
       return neutralColor;
     }
     if (myTeam === null) {
-      return '#e5e5e5';
+      return palette.neutral;
     }
-    return ownerTeam === myTeam ? '#26d93b' : '#de2f2f';
+    return ownerTeam === myTeam ? palette.friendly : palette.hostile;
   }
 
   private drawTankTurretMarker(
@@ -492,9 +499,10 @@ export class Renderer {
     myTeam: number | null,
     isLocalPlayer: boolean
   ): void {
+    const palette = getRelationPalette(this.colorMode);
     const markerColor = isLocalPlayer
-      ? '#0a0a0a'
-      : (myTeam !== null && team === myTeam ? '#26d93b' : '#de2f2f');
+      ? palette.self
+      : (myTeam !== null && team === myTeam ? palette.friendly : palette.hostile);
     const angle = ((256 - direction) * 2 * Math.PI) / 256;
     const tipX = centerX + Math.cos(angle) * 10;
     const tipY = centerY + Math.sin(angle) * 10;

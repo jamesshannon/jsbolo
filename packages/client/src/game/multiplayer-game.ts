@@ -35,6 +35,11 @@ import {
   deriveTickerMessagesFromServerHud,
   type HudMessageVisibility,
 } from './hud-message-stream.js';
+import {
+  buildBaseHudChipsHtml,
+  buildPillboxHudChipsHtml,
+} from './hud-structure-chips.js';
+import {selectNearestFriendlyVisibleBase} from './hud-nearest-base.js';
 import {formatHudTickerHtml} from './hud-ticker-format.js';
 
 export class MultiplayerGame {
@@ -74,6 +79,7 @@ export class MultiplayerGame {
   private chatInput: HTMLInputElement | null = null;
   private chatAllianceOnly: HTMLInputElement | null = null;
   private chatRecipientSelect: HTMLSelectElement | null = null;
+  private colorblindToggle: HTMLInputElement | null = null;
   private readonly hudMessageVisibility: HudMessageVisibility = {
     ...DEFAULT_HUD_MESSAGE_VISIBILITY,
   };
@@ -95,6 +101,7 @@ export class MultiplayerGame {
     this.bindBuilderHudButtons();
     this.bindHudChatInput();
     this.bindHudMessageFilters();
+    this.bindColorblindModeToggle();
     this.setTickerText('Ready.');
 
     // Setup builder command handler
@@ -430,31 +437,15 @@ export class MultiplayerGame {
     this.refreshBuilderHudButtonState();
 
     if (hudPillboxes) {
-      const myTeam = tank.team;
-      const chips = Array.from(this.pillboxes.values()).map(pillbox => {
-        const cls =
-          pillbox.ownerTeam === 255
-            ? 'neutral'
-            : pillbox.ownerTeam === myTeam
-              ? 'owned'
-              : 'enemy';
-        return `<span class="hud-chip ${cls}"></span>`;
-      });
-      hudPillboxes.innerHTML = chips.join('');
+      hudPillboxes.innerHTML = buildPillboxHudChipsHtml(
+        this.pillboxes.values(),
+        tank.team,
+        tank.carriedPillbox
+      );
     }
 
     if (hudBases) {
-      const myTeam = tank.team;
-      const chips = Array.from(this.bases.values()).map(base => {
-        const cls =
-          base.ownerTeam === 255
-            ? 'neutral'
-            : base.ownerTeam === myTeam
-              ? 'owned'
-              : 'enemy';
-        return `<span class="hud-chip ${cls}"></span>`;
-      });
-      hudBases.innerHTML = chips.join('');
+      hudBases.innerHTML = buildBaseHudChipsHtml(this.bases.values(), tank.team);
     }
 
     if (
@@ -501,22 +492,7 @@ export class MultiplayerGame {
   }
 
   private getNearestBaseToTank(tank: Tank): Base | null {
-    let nearest: Base | null = null;
-    let nearestDistance = Number.POSITIVE_INFINITY;
-
-    for (const base of this.bases.values()) {
-      const baseX = (base.tileX + 0.5) * TILE_SIZE_WORLD;
-      const baseY = (base.tileY + 0.5) * TILE_SIZE_WORLD;
-      const dx = tank.x - baseX;
-      const dy = tank.y - baseY;
-      const distance = (dx * dx) + (dy * dy);
-      if (distance < nearestDistance) {
-        nearestDistance = distance;
-        nearest = base;
-      }
-    }
-
-    return nearest;
+    return selectNearestFriendlyVisibleBase(tank, this.bases.values(), this.camera);
   }
 
   private getMyTeam(): number | null {
@@ -586,6 +562,18 @@ export class MultiplayerGame {
     this.chatInput?.addEventListener('keydown', this.handleHudChatInputKeyDown);
     this.refreshChatRecipientOptions();
   }
+
+  private bindColorblindModeToggle(): void {
+    this.colorblindToggle = document.getElementById('hud-colorblind-mode') as HTMLInputElement | null;
+    this.colorblindToggle?.addEventListener('change', this.handleColorblindModeChanged);
+    this.handleColorblindModeChanged();
+  }
+
+  private readonly handleColorblindModeChanged = (): void => {
+    const colorMode = this.colorblindToggle?.checked ? 'colorblind' : 'default';
+    this.renderer.setColorMode(colorMode);
+    document.body.classList.toggle('colorblind-mode', colorMode === 'colorblind');
+  };
 
   private readonly handleHudChatSubmit = (event: SubmitEvent): void => {
     event.preventDefault();
@@ -803,6 +791,7 @@ export class MultiplayerGame {
     this.chatForm?.removeEventListener('submit', this.handleHudChatSubmit);
     window.removeEventListener('keydown', this.handleHudChatShortcut);
     this.chatInput?.removeEventListener('keydown', this.handleHudChatInputKeyDown);
+    this.colorblindToggle?.removeEventListener('change', this.handleColorblindModeChanged);
     (document.getElementById('hud-filter-newswire') as HTMLInputElement | null)
       ?.removeEventListener('change', this.handleHudFilterChange);
     (document.getElementById('hud-filter-assistant') as HTMLInputElement | null)
