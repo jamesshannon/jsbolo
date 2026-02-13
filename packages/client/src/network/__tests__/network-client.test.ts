@@ -152,4 +152,28 @@ describe('NetworkClient', () => {
       },
     });
   });
+
+  it('should encode selected-recipient chat fanout metadata', () => {
+    const client = new NetworkClient();
+    const ws = {send: vi.fn()} as any;
+    const internal = client as any;
+    internal.ws = ws;
+    internal.state.connected = true;
+
+    client.sendChat('hold this lane', {
+      allianceOnly: false,
+      recipientPlayerIds: [3, 8],
+    });
+
+    const payload = ws.send.mock.calls[0][0] as Uint8Array;
+    const decoded = decodeClientMessage(payload);
+    expect(decoded).toEqual({
+      type: 'chat',
+      chat: {
+        text: 'hold this lane',
+        allianceOnly: false,
+        recipientPlayerIds: [3, 8],
+      },
+    });
+  });
 });

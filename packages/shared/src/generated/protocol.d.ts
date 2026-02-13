@@ -1926,6 +1926,9 @@ export namespace jsbolo {
 
         /** ChatMessage allianceOnly */
         allianceOnly?: (boolean|null);
+
+        /** ChatMessage recipientPlayerIds */
+        recipientPlayerIds?: (number[]|null);
     }
 
     /** Represents a ChatMessage. */
@@ -1942,6 +1945,9 @@ export namespace jsbolo {
 
         /** ChatMessage allianceOnly. */
         public allianceOnly: boolean;
+
+        /** ChatMessage recipientPlayerIds. */
+        public recipientPlayerIds: number[];
 
         /**
          * Creates a new ChatMessage instance using the specified properties.

@@ -192,6 +192,7 @@ message ClientMessage {
 message ChatMessage {
   string text = 1;
   bool allianceOnly = 2;
+  repeated uint32 recipientPlayerIds = 3;
 }
 
 message ServerMessage {

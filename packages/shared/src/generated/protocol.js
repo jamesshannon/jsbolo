@@ -5678,6 +5678,7 @@ export const jsbolo = $root.jsbolo = (() => {
          * @interface IChatMessage
          * @property {string|null} [text] ChatMessage text
          * @property {boolean|null} [allianceOnly] ChatMessage allianceOnly
+         * @property {Array.<number>|null} [recipientPlayerIds] ChatMessage recipientPlayerIds
          */
 
         /**
@@ -5689,6 +5690,7 @@ export const jsbolo = $root.jsbolo = (() => {
          * @param {jsbolo.IChatMessage=} [properties] Properties to set
          */
         function ChatMessage(properties) {
+            this.recipientPlayerIds = [];
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null)
@@ -5710,6 +5712,14 @@ export const jsbolo = $root.jsbolo = (() => {
          * @instance
          */
         ChatMessage.prototype.allianceOnly = false;
+
+        /**
+         * ChatMessage recipientPlayerIds.
+         * @member {Array.<number>} recipientPlayerIds
+         * @memberof jsbolo.ChatMessage
+         * @instance
+         */
+        ChatMessage.prototype.recipientPlayerIds = $util.emptyArray;
 
         /**
          * Creates a new ChatMessage instance using the specified properties.
@@ -5739,6 +5749,12 @@ export const jsbolo = $root.jsbolo = (() => {
                 writer.uint32(/* id 1, wireType 2 =*/10).string(message.text);
             if (message.allianceOnly != null && Object.hasOwnProperty.call(message, "allianceOnly"))
                 writer.uint32(/* id 2, wireType 0 =*/16).bool(message.allianceOnly);
+            if (message.recipientPlayerIds != null && message.recipientPlayerIds.length) {
+                writer.uint32(/* id 3, wireType 2 =*/26).fork();
+                for (let i = 0; i < message.recipientPlayerIds.length; ++i)
+                    writer.uint32(message.recipientPlayerIds[i]);
+                writer.ldelim();
+            }
             return writer;
         };
 
@@ -5783,6 +5799,17 @@ export const jsbolo = $root.jsbolo = (() => {
                         message.allianceOnly = reader.bool();
                         break;
                     }
+                case 3: {
+                        if (!(message.recipientPlayerIds && message.recipientPlayerIds.length))
+                            message.recipientPlayerIds = [];
+                        if ((tag & 7) === 2) {
+                            let end2 = reader.uint32() + reader.pos;
+                            while (reader.pos < end2)
+                                message.recipientPlayerIds.push(reader.uint32());
+                        } else
+                            message.recipientPlayerIds.push(reader.uint32());
+                        break;
+                    }
                 default:
                     reader.skipType(tag & 7);
                     break;
@@ -5824,6 +5851,13 @@ export const jsbolo = $root.jsbolo = (() => {
             if (message.allianceOnly != null && message.hasOwnProperty("allianceOnly"))
                 if (typeof message.allianceOnly !== "boolean")
                     return "allianceOnly: boolean expected";
+            if (message.recipientPlayerIds != null && message.hasOwnProperty("recipientPlayerIds")) {
+                if (!Array.isArray(message.recipientPlayerIds))
+                    return "recipientPlayerIds: array expected";
+                for (let i = 0; i < message.recipientPlayerIds.length; ++i)
+                    if (!$util.isInteger(message.recipientPlayerIds[i]))
+                        return "recipientPlayerIds: integer[] expected";
+            }
             return null;
         };
 
@@ -5843,6 +5877,13 @@ export const jsbolo = $root.jsbolo = (() => {
                 message.text = String(object.text);
             if (object.allianceOnly != null)
                 message.allianceOnly = Boolean(object.allianceOnly);
+            if (object.recipientPlayerIds) {
+                if (!Array.isArray(object.recipientPlayerIds))
+                    throw TypeError(".jsbolo.ChatMessage.recipientPlayerIds: array expected");
+                message.recipientPlayerIds = [];
+                for (let i = 0; i < object.recipientPlayerIds.length; ++i)
+                    message.recipientPlayerIds[i] = object.recipientPlayerIds[i] >>> 0;
+            }
             return message;
         };
 
@@ -5859,6 +5900,8 @@ export const jsbolo = $root.jsbolo = (() => {
             if (!options)
                 options = {};
             let object = {};
+            if (options.arrays || options.defaults)
+                object.recipientPlayerIds = [];
             if (options.defaults) {
                 object.text = "";
                 object.allianceOnly = false;
@@ -5867,6 +5910,11 @@ export const jsbolo = $root.jsbolo = (() => {
                 object.text = message.text;
             if (message.allianceOnly != null && message.hasOwnProperty("allianceOnly"))
                 object.allianceOnly = message.allianceOnly;
+            if (message.recipientPlayerIds && message.recipientPlayerIds.length) {
+                object.recipientPlayerIds = [];
+                for (let j = 0; j < message.recipientPlayerIds.length; ++j)
+                    object.recipientPlayerIds[j] = message.recipientPlayerIds[j];
+            }
             return object;
         };
 

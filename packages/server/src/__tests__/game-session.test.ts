@@ -822,6 +822,21 @@ describe('GameSession Integration', () => {
       expect(whisper1.hudMessages?.some(m => m.text.includes('to Player 2 (whisper): secret plan'))).toBe(true);
       expect(whisper2.hudMessages?.some(m => m.text.includes('Player 1 (whisper): secret plan'))).toBe(true);
       expect(whisper3.hudMessages).toBeUndefined();
+
+      // Selected-recipient chat should reach sender and selected recipients only.
+      (ws1.send as any).mockClear();
+      (ws2.send as any).mockClear();
+      (ws3.send as any).mockClear();
+      session.handlePlayerChat(playerId1, 'selected route', {
+        recipientPlayerIds: [playerId2],
+      });
+      (session as any).broadcastState();
+      const directed1 = decodeServerMessage((ws1.send as any).mock.calls.slice(-1)[0][0]);
+      const directed2 = decodeServerMessage((ws2.send as any).mock.calls.slice(-1)[0][0]);
+      const directed3 = decodeServerMessage((ws3.send as any).mock.calls.slice(-1)[0][0]);
+      expect(directed1.hudMessages?.some(m => m.text.includes('to Players') && m.text.includes('selected route'))).toBe(true);
+      expect(directed2.hudMessages?.some(m => m.text.includes('Player 1: selected route'))).toBe(true);
+      expect(directed3.hudMessages).toBeUndefined();
     });
 
     it('should seed reconnecting/new players with recent global HUD tail only', () => {

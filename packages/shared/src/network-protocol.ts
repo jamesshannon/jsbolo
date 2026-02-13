@@ -17,6 +17,7 @@ export interface ClientChatMessage {
   chat: {
     text: string;
     allianceOnly: boolean;
+    recipientPlayerIds?: number[];
   };
 }
 
@@ -252,6 +253,7 @@ export function encodeClientMessage(message: ClientMessage): Uint8Array {
       chat: {
         text: message.chat.text,
         allianceOnly: message.chat.allianceOnly,
+        recipientPlayerIds: message.chat.recipientPlayerIds ?? [],
       },
     }).finish();
   }
@@ -274,6 +276,8 @@ export function decodeClientMessage(data: BinaryData): ClientMessage {
       chat: {
         text: decoded.chat.text ?? '',
         allianceOnly: decoded.chat.allianceOnly ?? false,
+        ...((decoded.chat.recipientPlayerIds?.length ?? 0) > 0
+          && {recipientPlayerIds: decoded.chat.recipientPlayerIds?.map(id => Number(id)) ?? []}),
       },
     };
   }

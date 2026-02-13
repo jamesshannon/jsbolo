@@ -88,7 +88,12 @@ export class NetworkClient {
     this.ws.send(data);
   }
 
-  sendChat(text: string, allianceOnly = false): void {
+  sendChat(
+    text: string,
+    optionsOrAllianceOnly:
+      | boolean
+      | {allianceOnly?: boolean; recipientPlayerIds?: number[]} = false
+  ): void {
     if (!this.ws || !this.state.connected) {
       return;
     }
@@ -98,11 +103,17 @@ export class NetworkClient {
       return;
     }
 
+    const options = typeof optionsOrAllianceOnly === 'boolean'
+      ? {allianceOnly: optionsOrAllianceOnly}
+      : optionsOrAllianceOnly;
+
     const data = encodeClientMessage({
       type: 'chat',
       chat: {
         text: trimmed,
-        allianceOnly,
+        allianceOnly: options.allianceOnly ?? false,
+        ...(options.recipientPlayerIds && options.recipientPlayerIds.length > 0
+          && {recipientPlayerIds: options.recipientPlayerIds}),
       },
     });
     this.ws.send(data);

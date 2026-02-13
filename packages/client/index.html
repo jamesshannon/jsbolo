@@ -302,6 +302,20 @@
         flex: 0 0 auto;
       }
 
+      #hud-chat-recipients {
+        width: 92px;
+        background: #0d0d0d;
+        color: #f5f5f5;
+        border: 1px solid #5f5f5f;
+        padding: 1px 2px;
+        font-size: 11px;
+        height: 22px;
+      }
+
+      #hud-chat-recipients:disabled {
+        opacity: 0.6;
+      }
+
       #hud-chat-input {
         width: 230px;
         background: #0d0d0d;
@@ -331,6 +345,20 @@
         gap: 4px;
         font-size: 11px;
         color: #bcbcbc;
+      }
+
+      #hud-message-filters {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 10px;
+        color: #bcbcbc;
+      }
+
+      .hud-filter-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
       }
 
       #debug-info {
@@ -513,6 +541,12 @@
             <input type="checkbox" id="hud-chat-alliance" />
             Ally
           </label>
+          <select
+            id="hud-chat-recipients"
+            title="Send to selected players (Command/Ctrl-click for multi-select)"
+            multiple
+            size="1"
+          ></select>
           <input
             id="hud-chat-input"
             type="text"
@@ -521,6 +555,20 @@
             aria-label="Chat message"
           />
           <button id="hud-chat-send" type="submit">Send</button>
+          <span id="hud-message-filters" title="HUD message channel visibility">
+            <label class="hud-filter-toggle">
+              <input type="checkbox" id="hud-filter-newswire" checked />
+              News
+            </label>
+            <label class="hud-filter-toggle">
+              <input type="checkbox" id="hud-filter-assistant" checked />
+              Asst
+            </label>
+            <label class="hud-filter-toggle">
+              <input type="checkbox" id="hud-filter-ai-brain" checked />
+              AI
+            </label>
+          </span>
         </form>
       </div>
     </div>

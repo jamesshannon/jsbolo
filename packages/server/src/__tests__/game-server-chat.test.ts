@@ -28,11 +28,15 @@ describe('GameServer chat dispatch', () => {
         chat: {
           text: 'hello',
           allianceOnly: true,
+          recipientPlayerIds: [12, 99],
         },
       }) as any
     );
 
-    expect(chatSpy).toHaveBeenCalledWith(77, 'hello', {allianceOnly: true});
+    expect(chatSpy).toHaveBeenCalledWith(77, 'hello', {
+      allianceOnly: true,
+      recipientPlayerIds: [12, 99],
+    });
   });
 
   it('smoke: decodes client chat and broadcasts scoped hud messages to recipients', () => {
@@ -104,5 +108,29 @@ describe('GameServer chat dispatch', () => {
     expect(alliance1.hudMessages?.some(m => m.class === 'chat_alliance' && m.text.includes('alliance smoke'))).toBe(true);
     expect(alliance2.hudMessages?.some(m => m.class === 'chat_alliance' && m.text.includes('alliance smoke'))).toBe(true);
     expect(alliance3.hudMessages).toBeUndefined();
+
+    ws1.send.mockClear();
+    ws2.send.mockClear();
+    ws3.send.mockClear();
+
+    (server as any).handleMessage(
+      ws1,
+      encodeClientMessage({
+        type: 'chat',
+        chat: {
+          text: 'direct smoke',
+          allianceOnly: false,
+          recipientPlayerIds: [p2],
+        },
+      }) as any
+    );
+    (session as any).broadcastState();
+
+    const direct1 = decodeServerMessage(ws1.send.mock.calls.slice(-1)[0][0]);
+    const direct2 = decodeServerMessage(ws2.send.mock.calls.slice(-1)[0][0]);
+    const direct3 = decodeServerMessage(ws3.send.mock.calls.slice(-1)[0][0]);
+    expect(direct1.hudMessages?.some(m => m.class === 'chat_alliance' && m.text.includes('to Players'))).toBe(true);
+    expect(direct2.hudMessages?.some(m => m.class === 'chat_alliance' && m.text.includes('direct smoke'))).toBe(true);
+    expect(direct3.hudMessages).toBeUndefined();
   });
 });

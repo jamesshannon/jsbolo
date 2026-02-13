@@ -7,6 +7,12 @@ function mountHudChatDom(): HTMLCanvasElement {
     <span id="hud-ticker-text">Ready.</span>
     <form id="hud-chat-form">
       <input id="hud-chat-alliance" type="checkbox" />
+      <select id="hud-chat-recipients" multiple size="1">
+        <option value="2">P2</option>
+      </select>
+      <input id="hud-filter-newswire" type="checkbox" checked />
+      <input id="hud-filter-assistant" type="checkbox" checked />
+      <input id="hud-filter-ai-brain" type="checkbox" checked />
       <input id="hud-chat-input" type="text" />
       <button id="hud-chat-send" type="submit">Send</button>
     </form>
@@ -40,7 +46,7 @@ describe('HUD chat UI wiring', () => {
     alliance.checked = true;
     form.dispatchEvent(new Event('submit', {bubbles: true, cancelable: true}));
 
-    expect(sendChatSpy).toHaveBeenCalledWith('attack now', true);
+    expect(sendChatSpy).toHaveBeenCalledWith('attack now', {allianceOnly: true});
     expect(input.value).toBe('');
     game.destroy();
   });
@@ -52,6 +58,29 @@ describe('HUD chat UI wiring', () => {
 
     window.dispatchEvent(new KeyboardEvent('keydown', {key: 'Enter', bubbles: true}));
     expect(document.activeElement).toBe(input);
+    game.destroy();
+  });
+
+  it('sends selected recipient ids from HUD player selector', () => {
+    const sendChatSpy = vi
+      .spyOn(NetworkClient.prototype, 'sendChat')
+      .mockImplementation(() => {});
+
+    const canvas = mountHudChatDom();
+    const game = new MultiplayerGame(canvas, {} as CanvasRenderingContext2D);
+
+    const input = document.getElementById('hud-chat-input') as HTMLInputElement;
+    const recipients = document.getElementById('hud-chat-recipients') as HTMLSelectElement;
+    const form = document.getElementById('hud-chat-form') as HTMLFormElement;
+
+    recipients.options[0]!.selected = true;
+    input.value = 'defend north';
+    form.dispatchEvent(new Event('submit', {bubbles: true, cancelable: true}));
+
+    expect(sendChatSpy).toHaveBeenCalledWith('defend north', {
+      allianceOnly: false,
+      recipientPlayerIds: [2],
+    });
     game.destroy();
   });
 });

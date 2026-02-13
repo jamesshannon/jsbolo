@@ -213,7 +213,7 @@ export class GameSession {
   public handlePlayerChat(
     playerId: number,
     text: string,
-    options?: {allianceOnly?: boolean}
+    options?: {allianceOnly?: boolean; recipientPlayerIds?: number[]}
   ): void {
     const player = this.players.get(playerId);
     if (!player) {
@@ -243,6 +243,11 @@ export class GameSession {
         return;
       }
       this.publishNearbyChat(playerId, nearbyText);
+      return;
+    }
+
+    if ((options?.recipientPlayerIds?.length ?? 0) > 0) {
+      this.publishDirectedChat(playerId, sanitized, options?.recipientPlayerIds ?? []);
       return;
     }
 
@@ -323,6 +328,48 @@ export class GameSession {
         tick: this.tick,
         playerId: recipientPlayerId,
         text: `Player ${senderPlayerId} (whisper): ${text}`,
+        class: 'chat_alliance',
+      });
+    }
+  }
+
+  /**
+   * Send a chat message to a client-selected subset of players.
+   *
+   * Server-side recipient filtering is authoritative. Invalid/unknown IDs are dropped.
+   */
+  private publishDirectedChat(
+    senderPlayerId: number,
+    text: string,
+    recipientPlayerIds: number[]
+  ): void {
+    const sender = this.players.get(senderPlayerId);
+    if (!sender) {
+      return;
+    }
+
+    const uniqueRecipientIds = Array.from(new Set(recipientPlayerIds))
+      .filter(id => Number.isFinite(id))
+      .filter(id => id !== senderPlayerId)
+      .filter(id => this.players.has(id));
+
+    if (uniqueRecipientIds.length === 0) {
+      return;
+    }
+
+    const recipientList = uniqueRecipientIds.join(', ');
+    this.hudMessages.publishPersonal({
+      tick: this.tick,
+      playerId: senderPlayerId,
+      text: `to Players ${recipientList}: ${text}`,
+      class: 'chat_alliance',
+    });
+
+    for (const recipientId of uniqueRecipientIds) {
+      this.hudMessages.publishPersonal({
+        tick: this.tick,
+        playerId: recipientId,
+        text: `Player ${senderPlayerId}: ${text}`,
         class: 'chat_alliance',
       });
     }

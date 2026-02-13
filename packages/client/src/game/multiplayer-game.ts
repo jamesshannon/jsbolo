@@ -30,7 +30,11 @@ import {applyNetworkEntityUpdate} from './network-entity-state.js';
 import {applyNetworkWorldEffects} from './network-world-effects.js';
 import {applyNetworkWelcomeState} from './network-welcome-state.js';
 import {deriveTankHudMarkers} from './hud-tank-status.js';
-import {deriveTickerMessagesFromServerHud} from './hud-message-stream.js';
+import {
+  DEFAULT_HUD_MESSAGE_VISIBILITY,
+  deriveTickerMessagesFromServerHud,
+  type HudMessageVisibility,
+} from './hud-message-stream.js';
 import {formatHudTickerHtml} from './hud-ticker-format.js';
 
 export class MultiplayerGame {
@@ -69,6 +73,10 @@ export class MultiplayerGame {
   private chatForm: HTMLFormElement | null = null;
   private chatInput: HTMLInputElement | null = null;
   private chatAllianceOnly: HTMLInputElement | null = null;
+  private chatRecipientSelect: HTMLSelectElement | null = null;
+  private readonly hudMessageVisibility: HudMessageVisibility = {
+    ...DEFAULT_HUD_MESSAGE_VISIBILITY,
+  };
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -86,6 +94,7 @@ export class MultiplayerGame {
     this.soundManager = new SoundManager();
     this.bindBuilderHudButtons();
     this.bindHudChatInput();
+    this.bindHudMessageFilters();
     this.setTickerText('Ready.');
 
     // Setup builder command handler
@@ -123,6 +132,7 @@ export class MultiplayerGame {
       });
       this.playerId = welcomeState.playerId;
       this.mapName = welcomeState.mapName;
+      this.refreshChatRecipientOptions();
     });
 
     this.network.onUpdate(update => {
@@ -158,10 +168,14 @@ export class MultiplayerGame {
         tanks: this.tanks,
         soundPlayback: this.soundManager,
       });
-      const serverHudMessages = deriveTickerMessagesFromServerHud(update.hudMessages);
+      const serverHudMessages = deriveTickerMessagesFromServerHud(
+        update.hudMessages,
+        this.hudMessageVisibility
+      );
       for (const message of serverHudMessages) {
         this.enqueueHudMessage(message);
       }
+      this.refreshChatRecipientOptions();
     });
   }
 
@@ -565,10 +579,12 @@ export class MultiplayerGame {
     this.chatForm = document.getElementById('hud-chat-form') as HTMLFormElement | null;
     this.chatInput = document.getElementById('hud-chat-input') as HTMLInputElement | null;
     this.chatAllianceOnly = document.getElementById('hud-chat-alliance') as HTMLInputElement | null;
+    this.chatRecipientSelect = document.getElementById('hud-chat-recipients') as HTMLSelectElement | null;
 
     this.chatForm?.addEventListener('submit', this.handleHudChatSubmit);
     window.addEventListener('keydown', this.handleHudChatShortcut);
     this.chatInput?.addEventListener('keydown', this.handleHudChatInputKeyDown);
+    this.refreshChatRecipientOptions();
   }
 
   private readonly handleHudChatSubmit = (event: SubmitEvent): void => {
@@ -582,10 +598,82 @@ export class MultiplayerGame {
       return;
     }
 
-    this.network.sendChat(text, this.chatAllianceOnly?.checked ?? false);
+    const selectedRecipientIds = this.chatRecipientSelect
+      ? Array.from(this.chatRecipientSelect.selectedOptions)
+          .map(option => Number(option.value))
+          .filter(id => Number.isFinite(id))
+      : [];
+
+    this.network.sendChat(text, {
+      allianceOnly: this.chatAllianceOnly?.checked ?? false,
+      ...(selectedRecipientIds.length > 0 && {recipientPlayerIds: selectedRecipientIds}),
+    });
     this.chatInput.value = '';
     this.chatInput.blur();
   };
+
+  private bindHudMessageFilters(): void {
+    const newswire = document.getElementById('hud-filter-newswire') as HTMLInputElement | null;
+    const assistant = document.getElementById('hud-filter-assistant') as HTMLInputElement | null;
+    const aiBrain = document.getElementById('hud-filter-ai-brain') as HTMLInputElement | null;
+
+    if (newswire) {
+      newswire.checked = this.hudMessageVisibility.showNewswireMessages;
+      newswire.addEventListener('change', this.handleHudFilterChange);
+    }
+    if (assistant) {
+      assistant.checked = this.hudMessageVisibility.showAssistantMessages;
+      assistant.addEventListener('change', this.handleHudFilterChange);
+    }
+    if (aiBrain) {
+      aiBrain.checked = this.hudMessageVisibility.showAiBrainMessages;
+      aiBrain.addEventListener('change', this.handleHudFilterChange);
+    }
+  }
+
+  private readonly handleHudFilterChange = (): void => {
+    const newswire = document.getElementById('hud-filter-newswire') as HTMLInputElement | null;
+    const assistant = document.getElementById('hud-filter-assistant') as HTMLInputElement | null;
+    const aiBrain = document.getElementById('hud-filter-ai-brain') as HTMLInputElement | null;
+
+    this.hudMessageVisibility.showNewswireMessages = newswire?.checked ?? true;
+    this.hudMessageVisibility.showAssistantMessages = assistant?.checked ?? true;
+    this.hudMessageVisibility.showAiBrainMessages = aiBrain?.checked ?? true;
+  };
+
+  private refreshChatRecipientOptions(): void {
+    if (!this.chatRecipientSelect || this.playerId === null) {
+      return;
+    }
+
+    const previouslySelected = new Set(
+      Array.from(this.chatRecipientSelect.selectedOptions).map(option => Number(option.value))
+    );
+    const myTeam = this.getMyTeam();
+    const recipients = Array.from(this.tanks.values())
+      .filter(tank => tank.id !== this.playerId)
+      .sort((a, b) => a.id - b.id);
+
+    this.chatRecipientSelect.innerHTML = '';
+    if (recipients.length === 0) {
+      this.chatRecipientSelect.disabled = true;
+      return;
+    }
+
+    this.chatRecipientSelect.disabled = false;
+    for (const recipient of recipients) {
+      const option = document.createElement('option');
+      option.value = String(recipient.id);
+      const relation = myTeam === null
+        ? ''
+        : recipient.team === myTeam
+          ? ' ally'
+          : ' enemy';
+      option.textContent = `P${recipient.id}${relation}`;
+      option.selected = previouslySelected.has(recipient.id);
+      this.chatRecipientSelect.appendChild(option);
+    }
+  }
 
   private readonly handleHudChatShortcut = (event: KeyboardEvent): void => {
     if (
@@ -715,6 +803,12 @@ export class MultiplayerGame {
     this.chatForm?.removeEventListener('submit', this.handleHudChatSubmit);
     window.removeEventListener('keydown', this.handleHudChatShortcut);
     this.chatInput?.removeEventListener('keydown', this.handleHudChatInputKeyDown);
+    (document.getElementById('hud-filter-newswire') as HTMLInputElement | null)
+      ?.removeEventListener('change', this.handleHudFilterChange);
+    (document.getElementById('hud-filter-assistant') as HTMLInputElement | null)
+      ?.removeEventListener('change', this.handleHudFilterChange);
+    (document.getElementById('hud-filter-ai-brain') as HTMLInputElement | null)
+      ?.removeEventListener('change', this.handleHudFilterChange);
     this.input.destroy();
     this.builderInput.destroy();
     this.debugOverlay.destroy();

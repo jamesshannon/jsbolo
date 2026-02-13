@@ -59,4 +59,34 @@ describe('hud-message-stream', () => {
 
     expect(messages).toEqual(['Alpha captured a Neutral Base']);
   });
+
+  it('can hide newswire messages without suppressing assistant messages', () => {
+    const messages = deriveTickerMessagesFromServerHud(
+      [
+        hudMessage(1, 'global_notification', 'Alpha captured base'),
+        hudMessage(2, 'personal_notification', 'Builder action failed'),
+      ],
+      {
+        ...DEFAULT_HUD_MESSAGE_VISIBILITY,
+        showNewswireMessages: false,
+      }
+    );
+
+    expect(messages).toEqual(['Builder action failed']);
+  });
+
+  it('can hide AI brain channel messages independently', () => {
+    const messages = deriveTickerMessagesFromServerHud(
+      [
+        hudMessage(1, 'chat_global', '[AI] Bot 3 requesting support'),
+        hudMessage(2, 'chat_global', 'Player 2: hold mid'),
+      ],
+      {
+        ...DEFAULT_HUD_MESSAGE_VISIBILITY,
+        showAiBrainMessages: false,
+      }
+    );
+
+    expect(messages).toEqual(['Player 2: hold mid']);
+  });
 });
