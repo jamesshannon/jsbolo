@@ -48,10 +48,10 @@ describe('BuilderInput Controls', () => {
       expect(builderInput.getPendingAction()).toBe(BuildAction.ROAD);
     });
 
-    it('should respond to R key for repair', () => {
+    it('should respond to R key for pillbox mode alias', () => {
       const event = new KeyboardEvent('keydown', {key: 'r'});
       window.dispatchEvent(event);
-      expect(builderInput.getPendingAction()).toBe(BuildAction.REPAIR);
+      expect(builderInput.getPendingAction()).toBe(BuildAction.PILLBOX);
     });
 
     it('should respond to W key for wall building', () => {
@@ -103,7 +103,7 @@ describe('BuilderInput Controls', () => {
       expect(builderInput.getPendingAction()).toBe(BuildAction.PILLBOX);
 
       window.dispatchEvent(new KeyboardEvent('keydown', {key: 'R'}));
-      expect(builderInput.getPendingAction()).toBe(BuildAction.REPAIR);
+      expect(builderInput.getPendingAction()).toBe(BuildAction.PILLBOX);
     });
   });
 
@@ -161,9 +161,9 @@ describe('BuilderInput Controls', () => {
       const handler = vi.fn();
       builderInput.setBuildCommandHandler(handler);
 
-      // Set repair action
+      // Set pillbox mode via R alias
       window.dispatchEvent(new KeyboardEvent('keydown', {key: 'r'}));
-      expect(builderInput.getPendingAction()).toBe(BuildAction.REPAIR);
+      expect(builderInput.getPendingAction()).toBe(BuildAction.PILLBOX);
 
       // Click
       canvas.getBoundingClientRect = vi.fn(() => ({
@@ -181,7 +181,7 @@ describe('BuilderInput Controls', () => {
       canvas.dispatchEvent(new MouseEvent('click', {clientX: 100, clientY: 100}));
 
       // Action should STAY ACTIVE (sticky mode)
-      expect(builderInput.getPendingAction()).toBe(BuildAction.REPAIR);
+      expect(builderInput.getPendingAction()).toBe(BuildAction.PILLBOX);
     });
 
     it('should not call handler if no action is pending', () => {
@@ -245,15 +245,15 @@ describe('BuilderInput Controls', () => {
       expect(builderInput.getPendingAction()).toBe(BuildAction.PILLBOX);
     });
 
-    it('should support full repair workflow with sticky mode', () => {
+    it('should support R-key alias into pillbox workflow with sticky mode', () => {
       const handler = vi.fn();
       builderInput.setBuildCommandHandler(handler);
 
-      // 1. Press R to select repair
+      // 1. Press R to select pillbox mode
       window.dispatchEvent(new KeyboardEvent('keydown', {key: 'r'}));
-      expect(builderInput.getPendingAction()).toBe(BuildAction.REPAIR);
+      expect(builderInput.getPendingAction()).toBe(BuildAction.PILLBOX);
 
-      // 2. Click to repair first pillbox
+      // 2. Click to execute first pillbox command
       canvas.getBoundingClientRect = vi.fn(() => ({
         left: 0,
         top: 0,
@@ -270,16 +270,16 @@ describe('BuilderInput Controls', () => {
 
       // 3. Verify handler called and action STILL ACTIVE
       expect(handler).toHaveBeenCalledWith(
-        BuildAction.REPAIR,
+        BuildAction.PILLBOX,
         expect.any(Number),
         expect.any(Number)
       );
-      expect(builderInput.getPendingAction()).toBe(BuildAction.REPAIR);
+      expect(builderInput.getPendingAction()).toBe(BuildAction.PILLBOX);
 
-      // 4. Click again to repair second pillbox
+      // 4. Click again with the same sticky mode
       canvas.dispatchEvent(new MouseEvent('click', {clientX: 350, clientY: 250}));
       expect(handler).toHaveBeenCalledTimes(2);
-      expect(builderInput.getPendingAction()).toBe(BuildAction.REPAIR);
+      expect(builderInput.getPendingAction()).toBe(BuildAction.PILLBOX);
     });
 
     it('should allow changing modes by pressing different keys', () => {
@@ -294,9 +294,9 @@ describe('BuilderInput Controls', () => {
       window.dispatchEvent(new KeyboardEvent('keydown', {key: 'p'}));
       expect(builderInput.getPendingAction()).toBe(BuildAction.PILLBOX);
 
-      // Switch to repair mode
+      // Switch via R-key alias (still pillbox mode)
       window.dispatchEvent(new KeyboardEvent('keydown', {key: 'r'}));
-      expect(builderInput.getPendingAction()).toBe(BuildAction.REPAIR);
+      expect(builderInput.getPendingAction()).toBe(BuildAction.PILLBOX);
 
       // Recall (clear mode)
       window.dispatchEvent(new KeyboardEvent('keydown', {key: 'c'}));

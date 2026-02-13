@@ -42,7 +42,7 @@ export class BuilderInput {
         this.setPendingAction(BuildAction.ROAD);
         break;
       case 'r':
-        this.setPendingAction(BuildAction.REPAIR);
+        this.setPendingAction(BuildAction.PILLBOX);
         break;
       case 'w':
         this.setPendingAction(BuildAction.BUILDING);
@@ -131,7 +131,7 @@ export class BuilderInput {
         console.log('Builder: Select tile to build road');
         break;
       case BuildAction.REPAIR:
-        console.log('Builder: Select pillbox to repair');
+        console.log('Builder: Legacy repair action selected');
         break;
       case BuildAction.BUILDING:
         console.log('Builder: Select tile to build wall');
@@ -140,7 +140,7 @@ export class BuilderInput {
         console.log('Builder: Select tile to build boat');
         break;
       case BuildAction.PILLBOX:
-        console.log('Builder: Select tile to place pillbox');
+        console.log('Builder: Select tile for pillbox mode (place/repair)');
         break;
       case BuildAction.MINE:
         console.log('Builder: Select tile to lay mine');

@@ -154,7 +154,15 @@ export class BuilderSystem {
         break;
 
       case BuilderOrder.PLACING_PILLBOX:
-        this.updatePillboxPlacement(tank, tick, terrain, builderTile.x, builderTile.y, callbacks);
+        this.updatePillboxPlacement(
+          tank,
+          tick,
+          terrain,
+          builderTile.x,
+          builderTile.y,
+          context,
+          callbacks
+        );
         break;
 
       case BuilderOrder.REPAIRING:
@@ -172,6 +180,7 @@ export class BuilderSystem {
     terrain: TerrainType,
     tileX: number,
     tileY: number,
+    context: BuilderSystemContext,
     callbacks: BuilderSystemCallbacks
   ): void {
     const builder = tank.builder;
@@ -179,6 +188,14 @@ export class BuilderSystem {
       t !== TerrainType.DEEP_SEA &&
       t !== TerrainType.BOAT &&
       t !== TerrainType.FOREST;
+    const pillboxAtLocation = this.findPillboxAtTile(tileX, tileY, context.pillboxes);
+
+    // Manual behavior: "Pillbox mode" is a single mode. If a pillbox already exists
+    // at target tile, builder repairs it instead of placing a new one.
+    if (pillboxAtLocation) {
+      this.updatePillboxRepairAtTile(tank, tick, pillboxAtLocation, callbacks);
+      return;
+    }
 
     if (builder.hasPillbox && canPlacePillbox(terrain)) {
       if (tick % 10 === 0) {
@@ -195,27 +212,36 @@ export class BuilderSystem {
       return;
     }
 
-    if (builder.canBuildWall(BUILDER_PILLBOX_COST) && canPlacePillbox(terrain)) {
-      if (tick % 10 === 0) {
-        builder.useTrees(BUILDER_PILLBOX_COST);
-        const newPillbox = new ServerPillbox(tileX, tileY, tank.team);
-        callbacks.onCreatePillbox(newPillbox);
-        tank.trees = builder.trees;
-        builder.recallToTank(tank.x, tank.y);
-        callbacks.emitSound(SOUND_MAN_BUILDING, builder.x, builder.y);
-        console.log(`[PILLBOX] Built new pillbox at (${tileX}, ${tileY}) for team ${tank.team}`);
-      }
+    if (!canPlacePillbox(terrain)) {
+      console.log(
+        `[PILLBOX] Cannot place pillbox at (${tileX}, ${tileY}): terrain=${terrain}, hasPillbox=${builder.hasPillbox}, trees=${builder.trees}`
+      );
+      callbacks.onActionRejected?.({
+        tankId: tank.id,
+        text: 'Builder action failed: cannot place pillbox here.',
+      });
+      builder.recallToTank(tank.x, tank.y);
       return;
     }
 
-    console.log(
-      `[PILLBOX] Cannot place pillbox at (${tileX}, ${tileY}): terrain=${terrain}, hasPillbox=${builder.hasPillbox}, trees=${builder.trees}`
-    );
-    callbacks.onActionRejected?.({
-      tankId: tank.id,
-      text: 'Builder action failed: cannot place pillbox here.',
-    });
-    builder.recallToTank(tank.x, tank.y);
+    if (!builder.canBuildWall(BUILDER_PILLBOX_COST)) {
+      callbacks.onActionRejected?.({
+        tankId: tank.id,
+        text: 'Builder action failed: not enough trees to build pillbox.',
+      });
+      builder.recallToTank(tank.x, tank.y);
+      return;
+    }
+
+    if (tick % 10 === 0) {
+      builder.useTrees(BUILDER_PILLBOX_COST);
+      const newPillbox = new ServerPillbox(tileX, tileY, tank.team);
+      callbacks.onCreatePillbox(newPillbox);
+      tank.trees = builder.trees;
+      builder.recallToTank(tank.x, tank.y);
+      callbacks.emitSound(SOUND_MAN_BUILDING, builder.x, builder.y);
+      console.log(`[PILLBOX] Built new pillbox at (${tileX}, ${tileY}) for team ${tank.team}`);
+    }
   }
 
   private updateRepairing(
@@ -227,43 +253,67 @@ export class BuilderSystem {
     callbacks: BuilderSystemCallbacks
   ): void {
     const builder = tank.builder;
-    const pillboxAtLocation = Array.from(context.pillboxes).find(
-      pb => pb.tileX === tileX && pb.tileY === tileY && !pb.inTank
-    );
-
-    if (pillboxAtLocation && pillboxAtLocation.armor < PILLBOX_MAX_ARMOR) {
-      const damageRatio =
-        (PILLBOX_MAX_ARMOR - pillboxAtLocation.armor) / PILLBOX_MAX_ARMOR;
-      const repairCost = damageRatio * BUILDER_PILLBOX_COST;
-
-      if (builder.canBuildWall(repairCost)) {
-        if (tick % 10 === 0) {
-          builder.useTrees(repairCost);
-          pillboxAtLocation.armor = PILLBOX_MAX_ARMOR;
-          tank.trees = builder.trees;
-          builder.recallToTank(tank.x, tank.y);
-          callbacks.emitSound(SOUND_MAN_BUILDING, builder.x, builder.y);
-          console.log(
-            `[PILLBOX] Repaired pillbox ${pillboxAtLocation.id} for ${repairCost.toFixed(2)} trees (ownership unchanged, still team ${pillboxAtLocation.ownerTeam})`
-          );
-        }
-      } else {
-        console.log(
-          `[PILLBOX] Cannot repair: need ${repairCost.toFixed(2)} trees, have ${builder.trees}`
-        );
-        callbacks.onActionRejected?.({
-          tankId: tank.id,
-          text: 'Builder action failed: not enough trees to repair pillbox.',
-        });
-        builder.recallToTank(tank.x, tank.y);
-      }
-    } else {
+    const pillboxAtLocation = this.findPillboxAtTile(tileX, tileY, context.pillboxes);
+    if (!pillboxAtLocation) {
       console.log(`[PILLBOX] No damaged pillbox to repair at (${tileX}, ${tileY})`);
       callbacks.onActionRejected?.({
         tankId: tank.id,
         text: 'Builder action failed: no damaged pillbox at target.',
       });
       builder.recallToTank(tank.x, tank.y);
+      return;
     }
+
+    this.updatePillboxRepairAtTile(tank, tick, pillboxAtLocation, callbacks);
+  }
+
+  private updatePillboxRepairAtTile(
+    tank: ServerTank,
+    tick: number,
+    pillboxAtLocation: ServerPillbox,
+    callbacks: BuilderSystemCallbacks
+  ): void {
+    const builder = tank.builder;
+
+    if (pillboxAtLocation.armor >= PILLBOX_MAX_ARMOR) {
+      // Already full health; treat as a completed repair attempt and return.
+      builder.recallToTank(tank.x, tank.y);
+      return;
+    }
+
+    const damageRatio =
+      (PILLBOX_MAX_ARMOR - pillboxAtLocation.armor) / PILLBOX_MAX_ARMOR;
+    const repairCost = damageRatio * BUILDER_PILLBOX_COST;
+
+    if (!builder.canBuildWall(repairCost)) {
+      console.log(
+        `[PILLBOX] Cannot repair: need ${repairCost.toFixed(2)} trees, have ${builder.trees}`
+      );
+      callbacks.onActionRejected?.({
+        tankId: tank.id,
+        text: 'Builder action failed: not enough trees to repair pillbox.',
+      });
+      builder.recallToTank(tank.x, tank.y);
+      return;
+    }
+
+    if (tick % 10 === 0) {
+      builder.useTrees(repairCost);
+      pillboxAtLocation.armor = PILLBOX_MAX_ARMOR;
+      tank.trees = builder.trees;
+      builder.recallToTank(tank.x, tank.y);
+      callbacks.emitSound(SOUND_MAN_BUILDING, builder.x, builder.y);
+      console.log(
+        `[PILLBOX] Repaired pillbox ${pillboxAtLocation.id} for ${repairCost.toFixed(2)} trees (ownership unchanged, still team ${pillboxAtLocation.ownerTeam})`
+      );
+    }
+  }
+
+  private findPillboxAtTile(
+    tileX: number,
+    tileY: number,
+    pillboxes: Iterable<ServerPillbox>
+  ): ServerPillbox | undefined {
+    return Array.from(pillboxes).find(pb => pb.tileX === tileX && pb.tileY === tileY && !pb.inTank);
   }
 }

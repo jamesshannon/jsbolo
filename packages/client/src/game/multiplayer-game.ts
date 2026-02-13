@@ -63,7 +63,6 @@ export class MultiplayerGame {
   private fps = 0;
   private frameCount = 0;
   private lastFpsUpdate = 0;
-  private pillboxButtonUsesRepair = false;
   private readonly tickerQueue: string[] = [];
   private tickerActiveUntilMs = 0;
   private currentTickerText = 'Ready.';
@@ -639,18 +638,9 @@ export class MultiplayerGame {
     for (const button of buttons) {
       button.addEventListener('click', () => {
         const action = button.dataset.buildAction;
-        if (action === 'pillbox-toggle') {
-          this.pillboxButtonUsesRepair = !this.pillboxButtonUsesRepair;
-          const nextAction = this.pillboxButtonUsesRepair
-            ? BuildAction.REPAIR
-            : BuildAction.PILLBOX;
-          this.builderInput.setPendingAction(nextAction);
-          button.dataset.mode = this.pillboxButtonUsesRepair ? 'repair' : 'place';
-        } else {
-          const parsedAction = Number(action);
-          if (!Number.isNaN(parsedAction)) {
-            this.builderInput.setPendingAction(parsedAction as BuildAction);
-          }
+        const parsedAction = Number(action);
+        if (!Number.isNaN(parsedAction)) {
+          this.builderInput.setPendingAction(parsedAction as BuildAction);
         }
         this.refreshBuilderHudButtonState();
       });
@@ -659,27 +649,11 @@ export class MultiplayerGame {
 
   private refreshBuilderHudButtonState(): void {
     const activeAction = this.builderInput.getPendingAction();
-    // Keep button mode aligned even when action was selected from keyboard.
-    if (activeAction === BuildAction.REPAIR) {
-      this.pillboxButtonUsesRepair = true;
-    } else if (activeAction === BuildAction.PILLBOX) {
-      this.pillboxButtonUsesRepair = false;
-    }
-
     const buttons = Array.from(
       document.querySelectorAll<HTMLButtonElement>('[data-build-action]')
     );
     for (const button of buttons) {
-      const action = button.dataset.buildAction;
-      if (action === 'pillbox-toggle') {
-        button.dataset.mode = this.pillboxButtonUsesRepair ? 'repair' : 'place';
-        const isActive =
-          (this.pillboxButtonUsesRepair && activeAction === BuildAction.REPAIR) ||
-          (!this.pillboxButtonUsesRepair && activeAction === BuildAction.PILLBOX);
-        button.classList.toggle('active', isActive);
-      } else {
-        button.classList.toggle('active', Number(action) === activeAction);
-      }
+      button.classList.toggle('active', Number(button.dataset.buildAction) === activeAction);
     }
   }
 

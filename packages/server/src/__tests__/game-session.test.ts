@@ -13,6 +13,7 @@ import { GameSession } from '../game-session.js';
 import {
   BuildAction,
   BuilderOrder,
+  PILLBOX_MAX_ARMOR,
   TerrainType,
   TANK_RESPAWN_TICKS,
   decodeServerMessage,
@@ -321,6 +322,48 @@ describe('GameSession Integration', () => {
 
       expect(tank.carriedPillbox).toBeNull();
       expect(first.inTank).toBe(false);
+    });
+
+    it('should repair an existing damaged pillbox when using pillbox mode', () => {
+      const ws = createMockWebSocket();
+      const playerId = session.addPlayer(ws);
+      const players = (session as any).players;
+      const player = players.get(playerId);
+      const tank = player.tank;
+
+      const target = Array.from((session as any).pillboxes.values())[0];
+      expect(target).toBeDefined();
+
+      target.armor = 5;
+      target.inTank = false;
+      tank.trees = 1;
+      tank.builder.trees = 1;
+      tank.x = (target.tileX + 0.5) * 256;
+      tank.y = (target.tileY + 0.5) * 256;
+      // Keep builder attached to the relocated tank before issuing one-shot order.
+      (session as any).update();
+
+      session.handlePlayerInput(playerId, {
+        ...idleInput,
+        sequence: 20,
+        tick: 20,
+        buildOrder: {
+          action: BuildAction.PILLBOX,
+          targetX: target.tileX,
+          targetY: target.tileY,
+        },
+      });
+      (session as any).update();
+
+      for (let i = 0; i < 120; i++) {
+        (session as any).update();
+        if (tank.builder.order === BuilderOrder.RETURNING) {
+          break;
+        }
+      }
+
+      expect(target.armor).toBe(PILLBOX_MAX_ARMOR);
+      expect(tank.builder.order).toBe(BuilderOrder.RETURNING);
     });
   });
 

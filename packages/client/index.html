@@ -89,22 +89,6 @@
         color: #dfffd3;
       }
 
-      .builder-button[data-build-action="pillbox-toggle"] .mode {
-        display: block;
-        margin-top: 3px;
-        font-size: 8px;
-        color: #9eb99f;
-        letter-spacing: 0.3px;
-      }
-
-      .builder-button[data-build-action="pillbox-toggle"][data-mode="repair"] .mode::after {
-        content: "Repair";
-      }
-
-      .builder-button[data-build-action="pillbox-toggle"][data-mode="place"] .mode::after {
-        content: "Place";
-      }
-
       #center-column {
         grid-column: 2;
         grid-row: 1;
@@ -408,15 +392,9 @@
           <span class="icon">#</span>
           <span class="label">Wall</span>
         </button>
-        <button
-          class="builder-button"
-          data-build-action="pillbox-toggle"
-          data-mode="place"
-          title="Place or Repair Pillbox (P/R)"
-        >
+        <button class="builder-button" data-build-action="6" title="Pillbox Mode (P)">
           <span class="icon">P</span>
           <span class="label">Pillbox</span>
-          <span class="mode"></span>
         </button>
         <button class="builder-button" data-build-action="7" title="Place Mine (M)">
           <span class="icon">*</span>
