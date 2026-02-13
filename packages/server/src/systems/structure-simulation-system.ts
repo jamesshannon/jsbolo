@@ -25,6 +25,12 @@ interface StructureContext {
 interface StructureCallbacks {
   areTeamsAllied(teamA: number, teamB: number): boolean;
   spawnShellFromPillbox(pillboxId: number, x: number, y: number, direction: number): void;
+  onBaseCaptured?(event: {
+    baseId: number;
+    previousOwnerTeam: number;
+    newOwnerTeam: number;
+    capturingTankId: number;
+  }): void;
 }
 
 /**
@@ -118,9 +124,23 @@ export class StructureSimulationSystem {
         }
 
         if (base.ownerTeam === NEUTRAL_TEAM) {
+          const previousOwnerTeam = base.ownerTeam;
           base.capture(tank.team);
+          callbacks.onBaseCaptured?.({
+            baseId: base.id,
+            previousOwnerTeam,
+            newOwnerTeam: tank.team,
+            capturingTankId: tank.id,
+          });
         } else if (base.armor <= 0 && !callbacks.areTeamsAllied(base.ownerTeam, tank.team)) {
+          const previousOwnerTeam = base.ownerTeam;
           base.capture(tank.team);
+          callbacks.onBaseCaptured?.({
+            baseId: base.id,
+            previousOwnerTeam,
+            newOwnerTeam: tank.team,
+            capturingTankId: tank.id,
+          });
         }
 
         base.refuelTank(tank);

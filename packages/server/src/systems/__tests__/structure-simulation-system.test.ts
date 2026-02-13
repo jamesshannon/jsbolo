@@ -12,6 +12,13 @@ describe('StructureSimulationSystem', () => {
     const tank = new ServerTank(1, 3, 50, 50);
     tank.shells = 0;
 
+    const captures: Array<{
+      baseId: number;
+      previousOwnerTeam: number;
+      newOwnerTeam: number;
+      capturingTankId: number;
+    }> = [];
+
     system.updateStructures(
       {
         world: {
@@ -24,11 +31,55 @@ describe('StructureSimulationSystem', () => {
       {
         areTeamsAllied: () => false,
         spawnShellFromPillbox: () => {},
+        onBaseCaptured: event => captures.push(event),
       }
     );
 
     expect(base.ownerTeam).toBe(tank.team);
     expect(tank.shells).toBeGreaterThan(0);
+    expect(captures).toEqual([{
+      baseId: base.id,
+      previousOwnerTeam: 255,
+      newOwnerTeam: tank.team,
+      capturingTankId: tank.id,
+    }]);
+  });
+
+  it('should emit steal capture events when destroyed enemy bases are recaptured', () => {
+    const system = new StructureSimulationSystem();
+    const base = new ServerBase(50, 50, 3);
+    base.armor = 0;
+    const tank = new ServerTank(1, 7, 50, 50);
+    const captures: Array<{
+      baseId: number;
+      previousOwnerTeam: number;
+      newOwnerTeam: number;
+      capturingTankId: number;
+    }> = [];
+
+    system.updateStructures(
+      {
+        world: {
+          isTankConcealedInForest: () => false,
+        },
+        players: [{tank}],
+        pillboxes: [],
+        bases: [base],
+      },
+      {
+        areTeamsAllied: () => false,
+        spawnShellFromPillbox: () => {},
+        onBaseCaptured: event => captures.push(event),
+      }
+    );
+
+    expect(base.ownerTeam).toBe(7);
+    expect(captures).toEqual([{
+      baseId: base.id,
+      previousOwnerTeam: 3,
+      newOwnerTeam: 7,
+      capturingTankId: 1,
+    }]);
   });
 
   it('should fire pillbox shells at enemy tanks when target acquired', () => {

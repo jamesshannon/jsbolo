@@ -559,6 +559,44 @@ describe('GameSession Integration', () => {
       expect(quitMessage.hudMessages?.some(m => m.text.includes('has quit game'))).toBe(true);
     });
 
+    it('should publish global HUD notifications for neutral base and pillbox captures', () => {
+      const ws = createMockWebSocket();
+      const playerId = session.addPlayer(ws);
+      const players = (session as any).players;
+      const player = players.get(playerId);
+      const tank = player.tank;
+      const base = Array.from((session as any).bases.values())[0];
+      const pillbox = Array.from((session as any).pillboxes.values())[0];
+
+      expect(base).toBeDefined();
+      expect(pillbox).toBeDefined();
+
+      // Prime both structures as neutral so capture messages follow classic wording.
+      base.ownerTeam = 255;
+      base.armor = 90;
+      pillbox.ownerTeam = 255;
+      pillbox.armor = 0;
+      pillbox.inTank = false;
+
+      // Clear welcome/join packets to inspect only new gameplay HUD notifications.
+      (ws.send as any).mockClear();
+
+      tank.x = (base.tileX + 0.5) * 256;
+      tank.y = (base.tileY + 0.5) * 256;
+      (session as any).update();
+
+      tank.x = (pillbox.tileX + 0.5) * 256;
+      tank.y = (pillbox.tileY + 0.5) * 256;
+      (session as any).update();
+
+      (session as any).broadcastState();
+      const message = decodeServerMessage((ws.send as any).mock.calls.slice(-1)[0][0]);
+      const hudText = (message.hudMessages ?? []).map(m => m.text);
+
+      expect(hudText.some(text => text.includes('captured a Neutral Base'))).toBe(true);
+      expect(hudText.some(text => text.includes('captured a Neutral Pillbox'))).toBe(true);
+    });
+
     it('should send welcome message with map data', () => {
       const ws = createMockWebSocket();
       session.addPlayer(ws);

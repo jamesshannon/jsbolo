@@ -83,6 +83,13 @@ describe('PlayerSimulationSystem', () => {
     const pillbox = new ServerPillbox(100, 100, 255);
     pillbox.armor = 0;
 
+    const pickedUp: Array<{
+      pillboxId: number;
+      previousOwnerTeam: number;
+      newOwnerTeam: number;
+      byTankId: number;
+    }> = [];
+
     system.updatePlayers(
       10,
       {
@@ -106,11 +113,18 @@ describe('PlayerSimulationSystem', () => {
         onMineExploded: () => {},
         spawnShell: () => {},
         updateBuilder: () => {},
+        onPillboxPickedUp: event => pickedUp.push(event),
       }
     );
 
     expect(tank.carriedPillbox?.id).toBe(pillbox.id);
     expect(pillbox.inTank).toBe(true);
     expect(pillbox.ownerTeam).toBe(tank.team);
+    expect(pickedUp).toEqual([{
+      pillboxId: pillbox.id,
+      previousOwnerTeam: 255,
+      newOwnerTeam: tank.team,
+      byTankId: tank.id,
+    }]);
   });
 });

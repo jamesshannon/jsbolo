@@ -60,6 +60,12 @@ interface PlayerSimulationCallbacks {
   onMineExploded(tileX: number, tileY: number): void;
   spawnShell(tank: ServerTank): void;
   updateBuilder(tank: ServerTank, tick: number): void;
+  onPillboxPickedUp?(event: {
+    pillboxId: number;
+    previousOwnerTeam: number;
+    newOwnerTeam: number;
+    byTankId: number;
+  }): void;
 }
 
 /**
@@ -123,7 +129,7 @@ export class PlayerSimulationSystem {
         callbacks.updateBuilder(tank, tick);
       }
 
-      this.tryPickupDisabledPillbox(tank, context.pillboxes);
+      this.tryPickupDisabledPillbox(tank, context.pillboxes, callbacks);
       this.handleTankMineInteraction(tank, context, callbacks);
     }
   }
@@ -204,7 +210,8 @@ export class PlayerSimulationSystem {
 
   private tryPickupDisabledPillbox(
     tank: ServerTank,
-    pillboxes: Iterable<ServerPillbox>
+    pillboxes: Iterable<ServerPillbox>,
+    callbacks: PlayerSimulationCallbacks
   ): void {
     if (!tank.canPickupPillbox()) {
       return;
@@ -216,8 +223,15 @@ export class PlayerSimulationSystem {
         continue;
       }
       if (pillbox.tileX === tankTilePos.x && pillbox.tileY === tankTilePos.y) {
+        const previousOwnerTeam = pillbox.ownerTeam;
         // Decision: drive-over pickup captures/repairs exactly one disabled pillbox per tick.
         tank.pickupPillbox(pillbox);
+        callbacks.onPillboxPickedUp?.({
+          pillboxId: pillbox.id,
+          previousOwnerTeam,
+          newOwnerTeam: tank.team,
+          byTankId: tank.id,
+        });
         console.log(
           `[PILLBOX] Tank ${tank.id} picked up pillbox ${pillbox.id}, repaired and captured for team ${tank.team}`
         );

@@ -5,6 +5,7 @@
 import {
   TICK_LENGTH_MS,
   TANK_RESPAWN_TICKS,
+  NEUTRAL_TEAM,
   type PlayerInput,
   encodeServerMessage,
   type WelcomeMessage,
@@ -241,6 +242,22 @@ export class GameSession {
         onMatchEnded: () => {
           this.matchEndAnnounced = false;
         },
+        onBaseCaptured: event => {
+          this.publishStructureCaptureHudMessage({
+            structure: 'Base',
+            previousOwnerTeam: event.previousOwnerTeam,
+            newOwnerTeam: event.newOwnerTeam,
+            byTankId: event.capturingTankId,
+          });
+        },
+        onPillboxPickedUp: event => {
+          this.publishStructureCaptureHudMessage({
+            structure: 'Pillbox',
+            previousOwnerTeam: event.previousOwnerTeam,
+            newOwnerTeam: event.newOwnerTeam,
+            byTankId: event.byTankId,
+          });
+        },
       }
     );
 
@@ -467,6 +484,32 @@ export class GameSession {
 
   public areTeamsAllied(teamA: number, teamB: number): boolean {
     return this.matchState.areTeamsAllied(teamA, teamB);
+  }
+
+  /**
+   * Emit classic-style global structure ownership ticker messages.
+   */
+  private publishStructureCaptureHudMessage(args: {
+    structure: 'Base' | 'Pillbox';
+    previousOwnerTeam: number;
+    newOwnerTeam: number;
+    byTankId: number;
+  }): void {
+    if (args.previousOwnerTeam === args.newOwnerTeam) {
+      return;
+    }
+
+    const text =
+      args.previousOwnerTeam === NEUTRAL_TEAM
+        ? `Player ${args.byTankId} captured a Neutral ${args.structure}`
+        : `Player ${args.byTankId} just stole ${args.structure.toLowerCase()} from Team ${args.previousOwnerTeam}`;
+
+    this.hudMessages.publishGlobal({
+      tick: this.tick,
+      text,
+      players: this.players.values(),
+      class: 'global_notification',
+    });
   }
 
   public getVisibleMineTilesForPlayer(playerId: number): Array<{x: number; y: number}> {

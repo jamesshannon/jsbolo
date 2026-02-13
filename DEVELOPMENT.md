@@ -12,6 +12,10 @@
   - Server emits authoritative HUD entries in `UpdateMessage.hudMessages`.
   - Server filters recipients before send (global/alliance/personal scope), so clients do not receive unauthorized HUD content.
   - Client consumes server HUD entries into ticker playback.
+- Added gameplay-driven HUD emitters for classic high-value structure events:
+  - Neutral Base capture
+  - Neutral Pillbox capture (drive-over pickup)
+  - Base/Pillbox steal events (non-neutral ownership change)
 - Client HUD class visibility defaults now match policy:
   - global/alliance/personal/chat: enabled
   - system status: disabled by default

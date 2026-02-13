@@ -44,6 +44,18 @@ export interface SessionUpdateCallbacks {
     direction: number
   ): void;
   onMatchEnded(): void;
+  onBaseCaptured?(event: {
+    baseId: number;
+    previousOwnerTeam: number;
+    newOwnerTeam: number;
+    capturingTankId: number;
+  }): void;
+  onPillboxPickedUp?(event: {
+    pillboxId: number;
+    previousOwnerTeam: number;
+    newOwnerTeam: number;
+    byTankId: number;
+  }): void;
 }
 
 /**
@@ -114,6 +126,7 @@ export class SessionUpdatePipeline {
               onCreatePillbox: pillbox => context.pillboxes.set(pillbox.id, pillbox),
             }
           ),
+        onPillboxPickedUp: event => callbacks.onPillboxPickedUp?.(event),
       }
     );
 
@@ -147,6 +160,7 @@ export class SessionUpdatePipeline {
         areTeamsAllied: (teamA, teamB) => callbacks.areTeamsAllied(teamA, teamB),
         spawnShellFromPillbox: (pillboxId, x, y, direction) =>
           callbacks.spawnShellFromPillbox(pillboxId, x, y, direction),
+        onBaseCaptured: event => callbacks.onBaseCaptured?.(event),
       }
     );
 
