@@ -14,6 +14,8 @@ Traditional single-tick unit tests miss bugs that appear across multi-tick state
 - **`terrain-transitions.test.ts`** - Terrain boundary scenarios (0/5 passing)
 - **`collision-recovery.test.ts`** - Collision edge cases (1/4 passing)
 - **`boat-edge-cases.test.ts`** - Boat mechanics scenarios (3/8 passing)
+- **`bot-determinism.test.ts`** - Baseline bot determinism regression checks
+- **`bot-v1-scenarios.test.ts`** - Tactical bot v1 integration scenarios
 
 ## Usage Example
 
@@ -131,7 +133,7 @@ These failures are **valuable** - they're documenting actual behavior and can be
 
 1. **Fix failing tests** - Adjust expectations to match actual game mechanics
 2. **Add more invariants** - E.g., boat tile consistency, terrain change validation
-3. **Expand scenarios** - Mine explosions, water drainage, builder operations
+3. **Expand scenarios** - Mine explosions, water drainage, builder operations, long-run bot matches
 4. **Use for debugging** - When bugs appear, write a failing scenario first
 
 ## Implementation Notes
