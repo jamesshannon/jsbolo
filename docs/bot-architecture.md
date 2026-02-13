@@ -4,6 +4,23 @@
 
 This document defines how to implement classic Bolo-style "Brains" in `jsbolo` with modern multiplayer architecture.
 
+## Implementation Status (v1)
+
+As of February 13, 2026, bot v1 is implemented with the following scope:
+
+- Server-authoritative in-process bots via `packages/bots` + server adapter boundary.
+- Built-in profiles:
+  - `idle`
+  - `patrol`
+  - `tactical` (default startup profile)
+- Startup-only bot configuration:
+  - `ALLOW_BOTS`, `MAX_BOTS`, `BOT_ALLIANCE_MODE`, `BOT_COUNT`, `BOT_PROFILE`
+- Default policy:
+  - `botAllianceMode = all-bots`
+  - session pauses when no humans are connected unless `ALLOW_BOT_ONLY_SIM=true`
+- Runtime HTTP control is status-only (`/health`, `/bots/profiles`, `/bots`).
+- Test coverage includes controller unit tests, server policy tests, and scenario-level integration tests.
+
 ## What WinBolo Did
 
 WinBolo implemented Brains as client-side plug-ins:

@@ -114,6 +114,8 @@ Status: Completed on February 12, 2026.
 
 ## Phase 4: Productization and Polish
 
+Status: In progress as of February 13, 2026.
+
 ### Goals
 
 - Transition from “playable dev build” to “maintainable game product”.
@@ -127,6 +129,11 @@ Status: Completed on February 12, 2026.
   - `HUD-TODO`: add scrolling message when player drives over a disabled pillbox while already carrying one (pickup blocked by single-pillbox carry limit)
   - Optional accessibility and input quality improvements
   - Brains/Bot implementation plan in `docs/bot-architecture.md`
+  - Bot v1 hardening completed:
+    - Startup-only bot configuration
+    - Tactical default profile
+    - All-bots default alliance mode
+    - Pause-without-humans default behavior (+ optional bot-only simulation)
 - Content and tooling:
   - Map workflow improvements (selection/validation/editor groundwork)
   - Replay/diagnostic tooling (if in scope)
@@ -144,6 +151,25 @@ Status: Completed on February 12, 2026.
 - Repeatable CI quality gate.
 - Stable developer onboarding path.
 - Clear path from dev branch to release candidates.
+
+## Bot Follow-Up Phases (Post-v1)
+
+### Bot Phase 2: Stability and Regression Defense
+
+- Expand long-run scenario coverage (mixed human+bot sessions, reconnect/disconnect flows).
+- Add CI smoke that verifies startup bot config behavior (`BOT_COUNT`, `BOT_PROFILE`, `ALLOW_BOT_ONLY_SIM`).
+- Keep tactical behavior deterministic under repeated runs.
+
+### Bot Phase 3: Tactical Quality (Deferred)
+
+- Improve objective weighting and threat response without changing server authority boundaries.
+- Add alliance-aware target deconfliction for coordinated bot teams.
+- Add behavior tuning via config profiles while preserving deterministic defaults.
+
+### Bot Phase 4: Isolation Architecture (Deferred)
+
+- Keep `packages/bots` boundary strict and prepare runtime adapters for worker/process isolation.
+- Preserve compatibility tests so behavior remains stable across runtime adapters.
 
 ---
 

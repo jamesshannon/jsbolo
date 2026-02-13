@@ -495,6 +495,30 @@ curl http://localhost:8081/bots/profiles
 curl http://localhost:8081/bots
 ```
 
+### Bot V1 Status
+
+Implemented bot profiles:
+- `idle`: deterministic no-op baseline.
+- `patrol`: deterministic sweep + simple engage behavior.
+- `tactical`: v1 strategy profile (default for startup bots) with:
+  - local-view enemy engagement
+  - allied/neutral base retreat when low on armor/shells
+  - near-base hold while refueling
+  - shell-threat evasion and close-range disengage
+
+V1 policy/behavior:
+- Startup-only bot configuration (`BOT_COUNT`, `BOT_PROFILE`) by design.
+- Default alliance mode: `all-bots`.
+- Default startup profile: `tactical`.
+- Session pauses when last human disconnects unless `ALLOW_BOT_ONLY_SIM=true`.
+
+Bot test coverage:
+- Controller unit tests in `packages/bots/src/__tests__/`.
+- Server bot lifecycle/admin/policy tests in `packages/server/src/__tests__/`.
+- Scenario-level bot integration checks in:
+  - `packages/server/src/__tests__/scenarios/bot-determinism.test.ts`
+  - `packages/server/src/__tests__/scenarios/bot-v1-scenarios.test.ts`
+
 ### Known Issues / Future Work
 
 **Not Yet Implemented:**
