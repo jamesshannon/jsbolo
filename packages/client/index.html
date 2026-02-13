@@ -271,15 +271,59 @@
         background: #050505;
         display: flex;
         align-items: center;
+        justify-content: space-between;
+        gap: 10px;
         padding: 0 8px;
         font-size: 14px;
         color: #f4f4f4;
-        white-space: nowrap;
         overflow: hidden;
       }
 
       #hud-ticker-text {
         display: inline-block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        min-width: 0;
+        flex: 1 1 auto;
+      }
+
+      #hud-chat-form {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex: 0 0 auto;
+      }
+
+      #hud-chat-input {
+        width: 230px;
+        background: #0d0d0d;
+        color: #f5f5f5;
+        border: 1px solid #5f5f5f;
+        padding: 3px 6px;
+        font-size: 12px;
+      }
+
+      #hud-chat-input:focus {
+        outline: 1px solid #95e195;
+        border-color: #95e195;
+      }
+
+      #hud-chat-send {
+        background: #171717;
+        color: #f5f5f5;
+        border: 1px solid #6a6a6a;
+        padding: 3px 8px;
+        font-size: 12px;
+        cursor: pointer;
+      }
+
+      #hud-chat-scope {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 11px;
+        color: #bcbcbc;
       }
 
       #debug-info {
@@ -463,6 +507,20 @@
 
       <div id="hud-ticker">
         <span id="hud-ticker-text">Ready.</span>
+        <form id="hud-chat-form" autocomplete="off">
+          <label id="hud-chat-scope" title="Send to allies only">
+            <input type="checkbox" id="hud-chat-alliance" />
+            Ally
+          </label>
+          <input
+            id="hud-chat-input"
+            type="text"
+            maxlength="160"
+            placeholder="Press Enter to chat"
+            aria-label="Chat message"
+          />
+          <button id="hud-chat-send" type="submit">Send</button>
+        </form>
       </div>
     </div>
 
@@ -483,6 +541,8 @@
       Arrow Keys: Alternative turning<br />
       Space/0 (numpad): Shoot<br />
       +/-: Adjust Range
+      <br />
+      Enter: Chat
     </div>
 
     <script type="module" src="/src/main.ts"></script>

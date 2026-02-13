@@ -61,6 +61,10 @@ export class KeyboardInput {
   }
 
   private readonly handleKeyDown = (event: KeyboardEvent): void => {
+    if (this.isEditableTarget(event.target)) {
+      return;
+    }
+
     const action = this.keyMap.get(event.code);
     if (action) {
       event.preventDefault();
@@ -70,12 +74,27 @@ export class KeyboardInput {
   };
 
   private readonly handleKeyUp = (event: KeyboardEvent): void => {
+    if (this.isEditableTarget(event.target)) {
+      return;
+    }
+
     const action = this.keyMap.get(event.code);
     if (action) {
       event.preventDefault();
       this.state[action] = false;
     }
   };
+
+  private isEditableTarget(target: EventTarget | null): boolean {
+    if (!(target instanceof HTMLElement)) {
+      return false;
+    }
+    return (
+      target instanceof HTMLInputElement ||
+      target instanceof HTMLTextAreaElement ||
+      target.isContentEditable
+    );
+  }
 
   getState(): Readonly<InputState> {
     return this.state;

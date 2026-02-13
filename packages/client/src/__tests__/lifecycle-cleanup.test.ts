@@ -20,12 +20,18 @@ function createMockCanvas(): HTMLCanvasElement {
 describe('Lifecycle Cleanup', () => {
   it('should stop keyboard input updates after destroy', () => {
     const input = new KeyboardInput();
+    const chatInput = document.createElement('input');
+    document.body.appendChild(chatInput);
 
     window.dispatchEvent(new KeyboardEvent('keydown', {code: 'KeyQ'}));
     window.dispatchEvent(new KeyboardEvent('keyup', {code: 'KeyQ'}));
     expect(input.getState().accelerating).toBe(false);
 
+    chatInput.dispatchEvent(new KeyboardEvent('keydown', {code: 'KeyQ', bubbles: true}));
+    expect(input.getState().accelerating).toBe(false);
+
     input.destroy();
+    chatInput.remove();
 
     window.dispatchEvent(new KeyboardEvent('keydown', {code: 'KeyQ'}));
     expect(input.getState().accelerating).toBe(false);
@@ -34,16 +40,23 @@ describe('Lifecycle Cleanup', () => {
   it('should stop builder keyboard and click handlers after destroy', () => {
     const canvas = createMockCanvas();
     const builderInput = new BuilderInput(canvas, new MockCamera() as any);
+    const chatInput = document.createElement('input');
+    document.body.appendChild(chatInput);
     const handler = vi.fn();
     builderInput.setBuildCommandHandler(handler);
 
     window.dispatchEvent(new KeyboardEvent('keydown', {key: 'p'}));
     expect(builderInput.getPendingAction()).toBe(BuildAction.PILLBOX);
 
+    builderInput.setPendingAction(BuildAction.NONE);
+    chatInput.dispatchEvent(new KeyboardEvent('keydown', {key: 'p', bubbles: true}));
+    expect(builderInput.getPendingAction()).toBe(BuildAction.NONE);
+
     builderInput.destroy();
+    chatInput.remove();
 
     window.dispatchEvent(new KeyboardEvent('keydown', {key: 'r'}));
-    expect(builderInput.getPendingAction()).toBe(BuildAction.PILLBOX);
+    expect(builderInput.getPendingAction()).toBe(BuildAction.NONE);
 
     canvas.getBoundingClientRect = vi.fn(() => ({
       left: 0,

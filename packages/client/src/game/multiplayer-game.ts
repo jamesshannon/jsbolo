@@ -67,6 +67,9 @@ export class MultiplayerGame {
   private readonly tickerQueue: string[] = [];
   private tickerActiveUntilMs = 0;
   private currentTickerText = 'Ready.';
+  private chatForm: HTMLFormElement | null = null;
+  private chatInput: HTMLInputElement | null = null;
+  private chatAllianceOnly: HTMLInputElement | null = null;
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -83,6 +86,7 @@ export class MultiplayerGame {
     this.debugOverlay = new DebugOverlay();
     this.soundManager = new SoundManager();
     this.bindBuilderHudButtons();
+    this.bindHudChatInput();
     this.setTickerText('Ready.');
 
     // Setup builder command handler
@@ -564,6 +568,78 @@ export class MultiplayerGame {
     this.currentTickerText = text;
   }
 
+  /**
+   * Wire HUD chat controls to network chat messages and focus shortcuts.
+   */
+  private bindHudChatInput(): void {
+    this.chatForm = document.getElementById('hud-chat-form') as HTMLFormElement | null;
+    this.chatInput = document.getElementById('hud-chat-input') as HTMLInputElement | null;
+    this.chatAllianceOnly = document.getElementById('hud-chat-alliance') as HTMLInputElement | null;
+
+    this.chatForm?.addEventListener('submit', this.handleHudChatSubmit);
+    window.addEventListener('keydown', this.handleHudChatShortcut);
+    this.chatInput?.addEventListener('keydown', this.handleHudChatInputKeyDown);
+  }
+
+  private readonly handleHudChatSubmit = (event: SubmitEvent): void => {
+    event.preventDefault();
+    if (!this.chatInput) {
+      return;
+    }
+
+    const text = this.chatInput.value.trim();
+    if (!text) {
+      return;
+    }
+
+    this.network.sendChat(text, this.chatAllianceOnly?.checked ?? false);
+    this.chatInput.value = '';
+    this.chatInput.blur();
+  };
+
+  private readonly handleHudChatShortcut = (event: KeyboardEvent): void => {
+    if (
+      event.key !== 'Enter' ||
+      event.defaultPrevented ||
+      event.repeat ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.altKey
+    ) {
+      return;
+    }
+
+    if (this.isEditableTarget(event.target)) {
+      return;
+    }
+
+    if (!this.chatInput) {
+      return;
+    }
+
+    event.preventDefault();
+    this.chatInput.focus();
+    this.chatInput.select();
+  };
+
+  private readonly handleHudChatInputKeyDown = (event: KeyboardEvent): void => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      this.chatInput?.blur();
+    }
+  };
+
+  private isEditableTarget(target: EventTarget | null): boolean {
+    if (!(target instanceof HTMLElement)) {
+      return false;
+    }
+    return (
+      target instanceof HTMLInputElement ||
+      target instanceof HTMLTextAreaElement ||
+      target.isContentEditable
+    );
+  }
+
   private bindBuilderHudButtons(): void {
     const buttons = Array.from(
       document.querySelectorAll<HTMLButtonElement>('[data-build-action]')
@@ -671,6 +747,9 @@ export class MultiplayerGame {
     this.network.disconnect();
     this.tankInterpolator.clear();
     this.builderInterpolator.clear();
+    this.chatForm?.removeEventListener('submit', this.handleHudChatSubmit);
+    window.removeEventListener('keydown', this.handleHudChatShortcut);
+    this.chatInput?.removeEventListener('keydown', this.handleHudChatInputKeyDown);
     this.input.destroy();
     this.builderInput.destroy();
     this.debugOverlay.destroy();

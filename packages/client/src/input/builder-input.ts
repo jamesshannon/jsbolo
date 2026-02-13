@@ -30,6 +30,10 @@ export class BuilderInput {
   }
 
   private readonly handleKeyDown = (event: KeyboardEvent): void => {
+    if (this.isEditableTarget(event.target)) {
+      return;
+    }
+
     switch (event.key.toLowerCase()) {
       case 't':
         this.setPendingAction(BuildAction.FOREST);
@@ -58,6 +62,17 @@ export class BuilderInput {
         break;
     }
   };
+
+  private isEditableTarget(target: EventTarget | null): boolean {
+    if (!(target instanceof HTMLElement)) {
+      return false;
+    }
+    return (
+      target instanceof HTMLInputElement ||
+      target instanceof HTMLTextAreaElement ||
+      target.isContentEditable
+    );
+  }
 
   private readonly handleClick = (event: MouseEvent): void => {
     if (this.pendingAction === BuildAction.NONE) {
