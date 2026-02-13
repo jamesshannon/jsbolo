@@ -110,40 +110,39 @@ describe('Movement Physics Scenarios', () => {
     runner.assertNoViolations();
   });
 
-  it('18. Movement in all 16 compass directions', () => {
-    for (let dir = 0; dir < 256; dir += 16) {
-      const runner = new ScenarioRunner()
-        .terrain(40, 40, 20, 20, TerrainType.ROAD)
-        .placeTank(50, 50)
-        .setTank({ speed: 0, direction: dir })
-        .addInvariants(...MOVEMENT_INVARIANTS);
+  const allDirections = Array.from({ length: 16 }, (_, i) => i * 16);
+  it.each(allDirections)('18.%s Movement in compass direction', (dir) => {
+    const runner = new ScenarioRunner()
+      .terrain(40, 40, 20, 20, TerrainType.ROAD)
+      .placeTank(50, 50)
+      .setTank({ speed: 0, direction: dir })
+      .addInvariants(...MOVEMENT_INVARIANTS);
 
-      // Accelerate to speed
-      runner.input({ accelerating: true }).run(40);
+    // Accelerate to speed
+    runner.input({ accelerating: true }).run(40);
 
-      // Capture start position
-      const startX = runner.latest.tank.x;
-      const startY = runner.latest.tank.y;
+    // Capture start position
+    const startX = runner.latest.tank.x;
+    const startY = runner.latest.tank.y;
 
-      // Run more ticks to accumulate clear movement
-      runner.run(5);
+    // Run more ticks to accumulate clear movement
+    runner.run(5);
 
-      const endX = runner.latest.tank.x;
-      const endY = runner.latest.tank.y;
+    const endX = runner.latest.tank.x;
+    const endY = runner.latest.tank.y;
 
-      const dx = endX - startX;
-      const dy = endY - startY;
-      const totalMovement = Math.sqrt(dx * dx + dy * dy);
+    const dx = endX - startX;
+    const dy = endY - startY;
+    const totalMovement = Math.sqrt(dx * dx + dy * dy);
 
-      // Verify tank actually moved
-      expect(totalMovement).toBeGreaterThan(10);
+    // Verify tank actually moved
+    expect(totalMovement).toBeGreaterThan(10);
 
-      // Verify direction is maintained (roughly)
-      const finalDirection = runner.latest.tank.direction;
-      const directionDiff = Math.abs(finalDirection - dir);
-      expect(directionDiff).toBeLessThan(10); // Allow small drift
+    // Verify direction is maintained (roughly)
+    const finalDirection = runner.latest.tank.direction;
+    const directionDiff = Math.abs(finalDirection - dir);
+    expect(directionDiff).toBeLessThan(10); // Allow small drift
 
-      runner.assertNoViolations();
-    }
+    runner.assertNoViolations();
   });
 });
