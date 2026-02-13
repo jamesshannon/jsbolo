@@ -191,6 +191,35 @@ describe('Bolo Manual Spec: 5. Mines', () => {
       world.removeMineAt(50, 50);
       expect(world.hasMineAt(50, 50)).toBe(false);
     });
+
+    it('should clear a mine when a shell is ranged to detonate on that tile', () => {
+      const session = new GameSession();
+      const ws = createMockWebSocket();
+      const playerId = session.addPlayer(ws);
+      const player = getPlayer(session, playerId);
+      const sessionWorld = getWorld(session);
+
+      fillArea(sessionWorld, 48, 48, 12, 5, TerrainType.ROAD);
+      placeTankAtTile(player.tank, 50, 50);
+      player.tank.direction = 0; // East
+
+      // Range tuning for manual mine clearing: expire shell over tile (52, 50).
+      for (let i = 0; i < 11; i++) {
+        player.lastInput = createDefaultInput({rangeAdjustment: 2});
+        tickSession(session, 1);
+      }
+      expect(player.tank.firingRange).toBe(1.5);
+
+      session.placeMineForTeam(player.tank.team, 52, 50);
+      expect(sessionWorld.hasMineAt(52, 50)).toBe(true);
+
+      player.lastInput = createDefaultInput({shooting: true});
+      tickSession(session, 1);
+      player.lastInput = createDefaultInput({shooting: false});
+      tickSession(session, 20);
+
+      expect(sessionWorld.hasMineAt(52, 50)).toBe(false);
+    });
   });
 
   describe('5d. Mine Chain Reactions', () => {

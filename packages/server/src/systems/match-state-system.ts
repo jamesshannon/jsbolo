@@ -64,6 +64,19 @@ export class MatchStateSystem {
     return true;
   }
 
+  /**
+   * Cancel a previously sent alliance request.
+   * Returns false when no matching pending request exists.
+   */
+  cancelAllianceRequest(fromTeam: number, toTeam: number): boolean {
+    const key = this.getAllianceKey(fromTeam, toTeam);
+    if (!this.pendingAllianceRequests.has(key)) {
+      return false;
+    }
+    this.pendingAllianceRequests.delete(key);
+    return true;
+  }
+
   acceptAlliance(toTeam: number, fromTeam: number): boolean {
     const key = this.getAllianceKey(fromTeam, toTeam);
     if (!this.pendingAllianceRequests.has(key)) {

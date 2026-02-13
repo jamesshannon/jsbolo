@@ -53,7 +53,7 @@ const DEFAULT_BOT_POLICY: BotPolicyOptions = {
   botAllianceMode: 'all-bots',
 };
 const MAX_CHAT_MESSAGE_LENGTH = 160;
-const NEARBY_CHAT_RADIUS_TILES = 24;
+const NEARBY_CHAT_RADIUS_TILES = 12;
 const QUICK_MINE_VISIBILITY_RADIUS_TILES = 24;
 
 export class GameSession {
@@ -630,6 +630,23 @@ export class GameSession {
     this.publishAllianceHudMessage({
       sourceTeam: toTeam,
       text: `Team ${toTeam} accepted alliance with Team ${fromTeam}`,
+    });
+    return true;
+  }
+
+  public cancelAllianceRequest(fromTeam: number, toTeam: number): boolean {
+    const canceled = this.matchState.cancelAllianceRequest(fromTeam, toTeam);
+    if (!canceled) {
+      return false;
+    }
+
+    this.publishAllianceHudMessage({
+      sourceTeam: fromTeam,
+      text: `Team ${fromTeam} canceled alliance request to Team ${toTeam}`,
+    });
+    this.publishAllianceHudMessage({
+      sourceTeam: toTeam,
+      text: `Team ${toTeam} alliance request from Team ${fromTeam} was canceled`,
     });
     return true;
   }

@@ -24,6 +24,14 @@ describe('MatchStateSystem', () => {
     expect(system.areTeamsAllied(0, 1)).toBe(false);
   });
 
+  it('should prevent acceptance after request cancellation', () => {
+    const system = new MatchStateSystem();
+    expect(system.requestAlliance(0, 1)).toBe(true);
+    expect(system.cancelAllianceRequest(0, 1)).toBe(true);
+    expect(system.acceptAlliance(1, 0)).toBe(false);
+    expect(system.areTeamsAllied(0, 1)).toBe(false);
+  });
+
   it('should preserve snapshot mine visibility semantics across alliance changes', () => {
     const system = new MatchStateSystem();
     const world = new ServerWorld();

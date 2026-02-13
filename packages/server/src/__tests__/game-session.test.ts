@@ -685,6 +685,24 @@ describe('GameSession Integration', () => {
       expect(acceptA.hudMessages?.some(m => m.text.includes('accepted alliance'))).toBe(true);
       expect(acceptB.hudMessages?.some(m => m.text.includes('accepted alliance'))).toBe(true);
       expect(acceptC.hudMessages).toBeUndefined();
+
+      (wsA.send as any).mockClear();
+      (wsB.send as any).mockClear();
+      (wsC.send as any).mockClear();
+
+      expect(session.breakAlliance(teamA, teamB)).toBeUndefined();
+      expect(session.requestAlliance(teamA, teamB)).toBe(true);
+      expect(session.cancelAllianceRequest(teamA, teamB)).toBe(true);
+      expect(session.acceptAlliance(teamB, teamA)).toBe(false);
+      (session as any).broadcastState();
+
+      const cancelA = decodeServerMessage((wsA.send as any).mock.calls.slice(-1)[0][0]);
+      const cancelB = decodeServerMessage((wsB.send as any).mock.calls.slice(-1)[0][0]);
+      const cancelC = decodeServerMessage((wsC.send as any).mock.calls.slice(-1)[0][0]);
+
+      expect(cancelA.hudMessages?.some(m => m.text.includes('canceled alliance request'))).toBe(true);
+      expect(cancelB.hudMessages?.some(m => m.text.includes('was canceled'))).toBe(true);
+      expect(cancelC.hudMessages).toBeUndefined();
     });
 
     it('should send builder rejection HUD notifications only to the affected player', () => {
@@ -774,10 +792,10 @@ describe('GameSession Integration', () => {
       const tank3 = players.get(playerId3).tank;
       tank1.x = 100 * 256;
       tank1.y = 100 * 256;
-      tank2.x = 108 * 256;
+      tank2.x = 112 * 256;
       tank2.y = 100 * 256;
-      tank3.x = 220 * 256;
-      tank3.y = 220 * 256;
+      tank3.x = 113 * 256;
+      tank3.y = 100 * 256;
 
       (ws1.send as any).mockClear();
       (ws2.send as any).mockClear();

@@ -80,6 +80,14 @@ describe('Bolo Manual Spec: 12. Alliances', () => {
     expect(session.areTeamsAllied(0, 2)).toBe(true);
   });
 
+  it('should prevent alliance acceptance after sender cancels the request', () => {
+    const session = new GameSession();
+    expect(session.requestAlliance(0, 1)).toBe(true);
+    expect(session.cancelAllianceRequest(0, 1)).toBe(true);
+    expect(session.acceptAlliance(1, 0)).toBe(false);
+    expect(session.areTeamsAllied(0, 1)).toBe(false);
+  });
+
   // "Any pillboxes he is carrying at the time are his, but any active ones
   //  on the map remain with the members of the alliance"
   it('should keep placed pillboxes with alliance when member leaves', () => {
@@ -91,5 +99,33 @@ describe('Bolo Manual Spec: 12. Alliances', () => {
     session.leaveAlliance(1);
 
     expect(pillbox.ownerTeam).toBe(0);
+  });
+
+  it('should keep carried pillboxes with the leaving player', () => {
+    const session = new GameSession();
+    const ws0 = { send: () => {}, readyState: 1 } as any;
+    const ws1 = { send: () => {}, readyState: 1 } as any;
+    const player0Id = session.addPlayer(ws0);
+    const player1Id = session.addPlayer(ws1);
+    const players = (session as any).players;
+    const player0 = players.get(player0Id);
+    const player1 = players.get(player1Id);
+
+    expect(session.requestAlliance(player0.tank.team, player1.tank.team)).toBe(true);
+    expect(session.acceptAlliance(player1.tank.team, player0.tank.team)).toBe(true);
+
+    const pillbox = Array.from((session as any).pillboxes.values())[0];
+    // This requirement is about alliance-leave ownership, not pickup mechanics.
+    // Seed a valid "carried pillbox" state directly to keep the regression focused.
+    player1.tank.carriedPillbox = pillbox;
+    pillbox.inTank = true;
+    pillbox.ownerTeam = player1.tank.team;
+
+    session.leaveAlliance(player1.tank.team);
+
+    expect(player1.tank.carriedPillbox?.id).toBe(pillbox.id);
+    expect(pillbox.ownerTeam).toBe(player1.tank.team);
+    expect(pillbox.inTank).toBe(true);
+    expect(session.areTeamsAllied(player0.tank.team, player1.tank.team)).toBe(false);
   });
 });
