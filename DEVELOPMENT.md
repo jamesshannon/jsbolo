@@ -16,6 +16,7 @@
   - Neutral Base capture
   - Neutral Pillbox capture (drive-over pickup)
   - Base/Pillbox steal events (non-neutral ownership change)
+  - Match end result (`Team X won the match`)
 - Added alliance-event HUD emitters (request, receive, accept, break, leave) with team-scoped server filtering.
 - Fixed HUD-only broadcast delivery:
   - server now sends update packets when only `hudMessages` changed (no terrain/entity deltas),
@@ -39,6 +40,7 @@
 - Added tests for:
   - server recipient routing and broadcaster payload isolation
   - queue overflow policy and reconnect-tail seeding behavior
+  - end-to-end chat smoke through `GameServer` decode/dispatch and session broadcast
   - client HUD message class filtering
   - network decode path preserving `hudMessages` through client update callbacks
 

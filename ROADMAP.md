@@ -127,6 +127,12 @@ Status: In progress as of February 13, 2026.
   - HUD refinements
   - Better feedback for builder/actions/combat events
   - `HUD-TODO`: add scrolling message when player drives over a disabled pillbox while already carrying one (pickup blocked by single-pillbox carry limit)
+  - HUD/chat v1 baseline completed:
+    - server-authoritative HUD classes and recipient filtering
+    - global/alliance/personal/game-result notifications
+    - queue hardening (TTL, coalescing, priority overflow, reconnect tail)
+    - client ticker rendering and chat input UI (global/alliance send)
+    - server/client chat smoke coverage
   - Optional accessibility and input quality improvements
   - Brains/Bot implementation plan in `docs/bot-architecture.md`
   - Bot v1 hardening completed:
@@ -170,6 +176,13 @@ Status: In progress as of February 13, 2026.
 
 - Keep `packages/bots` boundary strict and prepare runtime adapters for worker/process isolation.
 - Preserve compatibility tests so behavior remains stable across runtime adapters.
+
+## HUD/Chat Deferred (Post-v1)
+
+- Nearby chat and selected-recipient chat.
+- Rich sender formatting and team-color names in ticker.
+- Runtime admin controls for HUD policy.
+- Localization/i18n string packs.
 
 ---
 
