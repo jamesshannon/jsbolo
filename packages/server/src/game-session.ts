@@ -54,6 +54,7 @@ const DEFAULT_BOT_POLICY: BotPolicyOptions = {
 };
 const MAX_CHAT_MESSAGE_LENGTH = 160;
 const NEARBY_CHAT_RADIUS_TILES = 24;
+const QUICK_MINE_VISIBILITY_RADIUS_TILES = 24;
 
 export class GameSession {
   private readonly world: ServerWorld;
@@ -731,6 +732,52 @@ export class GameSession {
 
   public placeMineForTeam(team: number, tileX: number, tileY: number): boolean {
     return this.matchState.placeMineForTeam(team, tileX, tileY, this.world);
+  }
+
+  /**
+   * Drop a "quick mine" at the tank's current tile.
+   *
+   * Manual behavior: nearby tanks can see quick mines. We model this as a
+   * snapshot of nearby team visibility at placement time.
+   */
+  public dropQuickMine(playerId: number): boolean {
+    const player = this.players.get(playerId);
+    if (!player || player.tank.isDead()) {
+      return false;
+    }
+
+    const tank = player.tank;
+    if (tank.mines <= 0) {
+      return false;
+    }
+
+    const tile = tank.getTilePosition();
+    const radiusWorldUnits = QUICK_MINE_VISIBILITY_RADIUS_TILES * TILE_SIZE_WORLD;
+    const radiusSquared = radiusWorldUnits * radiusWorldUnits;
+    const visibleTeams = new Set<number>([tank.team]);
+
+    for (const other of this.players.values()) {
+      const dx = other.tank.x - tank.x;
+      const dy = other.tank.y - tank.y;
+      const distanceSquared = (dx * dx) + (dy * dy);
+      if (distanceSquared <= radiusSquared) {
+        visibleTeams.add(other.tank.team);
+      }
+    }
+
+    const placed = this.matchState.placeMineForTeam(
+      tank.team,
+      tile.x,
+      tile.y,
+      this.world,
+      visibleTeams
+    );
+    if (!placed) {
+      return false;
+    }
+
+    tank.mines = Math.max(0, tank.mines - 1);
+    return true;
   }
 
   public isMatchEnded(): boolean {

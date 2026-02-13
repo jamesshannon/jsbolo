@@ -117,18 +117,23 @@ export class MatchStateSystem {
     team: number,
     tileX: number,
     tileY: number,
-    world: MineWorldView
+    world: MineWorldView,
+    visibilityOverride?: ReadonlySet<number>
   ): boolean {
     if (world.hasMineAt(tileX, tileY)) {
       return false;
     }
+
+    const visibleToTeams = visibilityOverride
+      ? new Set<number>(visibilityOverride)
+      : this.getMineVisibilityTeams(team);
 
     world.setMineAt(tileX, tileY, true);
     this.mineVisibility.set(`${tileX},${tileY}`, {
       ownerTeam: team,
       // ASSUMPTION: mine visibility is snapshot-based at placement time.
       // Pre-alliance mines are not retro-shared; post-break sharing applies only to new mines.
-      visibleToTeams: this.getMineVisibilityTeams(team),
+      visibleToTeams,
     });
     return true;
   }

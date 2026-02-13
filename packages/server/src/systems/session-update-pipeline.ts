@@ -150,6 +150,8 @@ export class SessionUpdatePipeline {
         onTerrainChanged: (tileX, tileY) => context.terrainChanges.add(`${tileX},${tileY}`),
         onForestDestroyed: (tileX, tileY) =>
           this.terrainEffects.trackForestRegrowth(`${tileX},${tileY}`),
+        onMineExploded: (tileX, tileY) =>
+          callbacks.clearMineVisibilityAt(tileX, tileY),
         onBuilderKilled: tankId => callbacks.onBuilderKilled?.({tankId}),
       }
     );

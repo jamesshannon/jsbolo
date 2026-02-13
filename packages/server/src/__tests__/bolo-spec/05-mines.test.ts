@@ -45,13 +45,49 @@ describe('Bolo Manual Spec: 5. Mines', () => {
     });
 
     // "all other tanks which are near to you will see mines that you lay this way"
-    it.skip('should be visible to nearby enemy tanks (quick mines)', () => {
-      // Not yet implemented - quick mine visibility system
+    it('should be visible to nearby enemy tanks (quick mines)', () => {
+      const session = new GameSession();
+      const ws1 = createMockWebSocket();
+      const ws2 = createMockWebSocket();
+      const ws3 = createMockWebSocket();
+      const ownerId = session.addPlayer(ws1);
+      const nearbyEnemyId = session.addPlayer(ws2);
+      const farEnemyId = session.addPlayer(ws3);
+      const owner = getPlayer(session, ownerId);
+      const nearbyEnemy = getPlayer(session, nearbyEnemyId);
+      const farEnemy = getPlayer(session, farEnemyId);
+      const world = getWorld(session);
+
+      placeTankAtTile(owner.tank, 50, 50);
+      placeTankAtTile(nearbyEnemy.tank, 52, 50);
+      placeTankAtTile(farEnemy.tank, 200, 200);
+      owner.tank.mines = 1;
+
+      expect(session.dropQuickMine(ownerId)).toBe(true);
+      expect(world.hasMineAt(50, 50)).toBe(true);
+
+      const ownerVisible = session.getVisibleMineTilesForPlayer(ownerId);
+      const nearbyVisible = session.getVisibleMineTilesForPlayer(nearbyEnemyId);
+      const farVisible = session.getVisibleMineTilesForPlayer(farEnemyId);
+      expect(ownerVisible).toContainEqual({x: 50, y: 50});
+      expect(nearbyVisible).toContainEqual({x: 50, y: 50});
+      expect(farVisible).not.toContainEqual({x: 50, y: 50});
     });
 
     // "Don't assume that you can kill him just by dropping mines in his path"
-    it.skip('should cost 1 mine from tank inventory when placing', () => {
-      // Quick mine placement via input not yet implemented
+    it('should cost 1 mine from tank inventory when placing', () => {
+      const session = new GameSession();
+      const ws = createMockWebSocket();
+      const ownerId = session.addPlayer(ws);
+      const owner = getPlayer(session, ownerId);
+      const world = getWorld(session);
+
+      placeTankAtTile(owner.tank, 70, 70);
+      owner.tank.mines = 2;
+
+      expect(session.dropQuickMine(ownerId)).toBe(true);
+      expect(owner.tank.mines).toBe(1);
+      expect(world.hasMineAt(70, 70)).toBe(true);
     });
   });
 

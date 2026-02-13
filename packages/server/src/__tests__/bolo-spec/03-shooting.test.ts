@@ -263,9 +263,33 @@ describe('Bolo Manual Spec: 3. Shooting', () => {
     });
 
     // "deliberately land a shell on top of a mine to set it off"
-    it.skip('should allow using range control for mine clearing', () => {
-      // Not directly testable as a unit - this is about the game loop
-      // triggering mine detonation from shell end-of-range explosion
+    it('should allow using range control for mine clearing', () => {
+      const session = new GameSession();
+      const ws = createMockWebSocket();
+      const playerId = session.addPlayer(ws);
+      const player = getPlayer(session, playerId);
+      const world = getWorld(session);
+
+      fillArea(world, 48, 48, 12, 5, TerrainType.ROAD);
+      placeTankAtTile(player.tank, 50, 50);
+      player.tank.direction = 0; // East
+
+      // Decrease range from 7 to 1.5 tiles so shell expires over tile (52, 50).
+      for (let i = 0; i < 11; i++) {
+        player.lastInput = createDefaultInput({ rangeAdjustment: 2 });
+        tickSession(session, 1);
+      }
+      expect(player.tank.firingRange).toBe(1.5);
+
+      session.placeMineForTeam(player.tank.team, 52, 50);
+      expect(world.hasMineAt(52, 50)).toBe(true);
+
+      player.lastInput = createDefaultInput({ shooting: true });
+      tickSession(session, 1);
+      player.lastInput = createDefaultInput({ shooting: false });
+      tickSession(session, 20);
+
+      expect(world.hasMineAt(52, 50)).toBe(false);
     });
   });
 

@@ -1,6 +1,9 @@
 import {
+  MINE_DAMAGE,
+  MINE_EXPLOSION_RADIUS_TILES,
   SHELL_DAMAGE,
   SOUND_HIT_TANK,
+  SOUND_MINE_EXPLOSION,
   SOUND_SHOT_BUILDING,
   SOUND_SHOT_TREE,
   SOUND_MAN_DYING,
@@ -24,6 +27,7 @@ interface CombatCallbacks {
   scheduleTankRespawn(tankId: number): void;
   onTerrainChanged(tileX: number, tileY: number): void;
   onForestDestroyed(tileX: number, tileY: number): void;
+  onMineExploded?(tileX: number, tileY: number): void;
   onBuilderKilled?(ownerTankId: number): void;
 }
 
@@ -61,7 +65,7 @@ export class CombatSystem {
       }
 
       if (!shell.alive) {
-        this.handleDeadShell(shell, context.world, callbacks);
+        this.handleDeadShell(shell, context, callbacks);
         shells.delete(shell.id);
       }
     }
@@ -217,7 +221,7 @@ export class CombatSystem {
 
   private handleDeadShell(
     shell: ServerShell,
-    world: ServerWorld,
+    context: CombatContext,
     callbacks: CombatCallbacks
   ): void {
     if (!shell.shouldExplode) {
@@ -225,7 +229,56 @@ export class CombatSystem {
     }
 
     const tilePos = shell.getTilePosition();
-    const originalTerrain = world.damageTerrainFromExplosion(tilePos.x, tilePos.y);
+    if (context.world.hasMineAt(tilePos.x, tilePos.y)) {
+      const {explodedMines, affectedTiles} = context.world.triggerMineExplosion(
+        tilePos.x,
+        tilePos.y,
+        MINE_EXPLOSION_RADIUS_TILES
+      );
+
+      for (const tile of affectedTiles) {
+        callbacks.onTerrainChanged(tile.x, tile.y);
+        if (tile.originalTerrain === TerrainType.FOREST) {
+          callbacks.onForestDestroyed(tile.x, tile.y);
+        }
+      }
+
+      for (const mine of explodedMines) {
+        const worldX = (mine.x + 0.5) * TILE_SIZE_WORLD;
+        const worldY = (mine.y + 0.5) * TILE_SIZE_WORLD;
+        callbacks.emitSound(SOUND_MINE_EXPLOSION, worldX, worldY);
+        callbacks.onMineExploded?.(mine.x, mine.y);
+      }
+
+      for (const mine of explodedMines) {
+        const centerX = (mine.x + 0.5) * TILE_SIZE_WORLD;
+        const centerY = (mine.y + 0.5) * TILE_SIZE_WORLD;
+        const explosionRadius = MINE_EXPLOSION_RADIUS_TILES * TILE_SIZE_WORLD;
+
+        for (const player of context.players) {
+          const tank = player.tank;
+          if (tank.isDead()) {
+            continue;
+          }
+
+          const dx = tank.x - centerX;
+          const dy = tank.y - centerY;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          if (distance > explosionRadius) {
+            continue;
+          }
+
+          const killed = tank.takeDamage(MINE_DAMAGE);
+          if (killed) {
+            callbacks.emitSound(SOUND_TANK_SINKING, tank.x, tank.y);
+            callbacks.scheduleTankRespawn(tank.id);
+          }
+        }
+      }
+      return;
+    }
+
+    const originalTerrain = context.world.damageTerrainFromExplosion(tilePos.x, tilePos.y);
     callbacks.onTerrainChanged(tilePos.x, tilePos.y);
 
     if (originalTerrain === TerrainType.FOREST) {

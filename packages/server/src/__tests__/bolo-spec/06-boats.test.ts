@@ -15,7 +15,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { GameSession } from '../../game-session.js';
 import { ServerWorld } from '../../simulation/world.js';
-import { TerrainType, TILE_SIZE_WORLD } from '@jsbolo/shared';
+import { BuilderOrder, TerrainType, TILE_SIZE_WORLD } from '@jsbolo/shared';
 import {
   createDefaultInput,
   createMockWebSocket,
@@ -224,13 +224,58 @@ describe('Bolo Manual Spec: 6. Boats', () => {
     });
 
     // "You cannot build on deep sea"
-    it.skip('should not allow building boats on deep sea', () => {
-      // Validation not yet implemented in builder orders
+    it('should not allow building boats on deep sea', () => {
+      const session = new GameSession();
+      const ws = createMockWebSocket();
+      const id = session.addPlayer(ws);
+      const player = getPlayer(session, id);
+      const world = getWorld(session);
+
+      world.setTerrainAt(50, 50, TerrainType.DEEP_SEA);
+      placeTankAtTile(player.tank, 49, 50);
+      player.tank.trees = 10;
+      player.tank.builder.trees = 10;
+      player.tank.builder.x = (50 + 0.5) * TILE_SIZE_WORLD;
+      player.tank.builder.y = (50 + 0.5) * TILE_SIZE_WORLD;
+      player.tank.builder.targetX = player.tank.builder.x;
+      player.tank.builder.targetY = player.tank.builder.y;
+      player.tank.builder.order = BuilderOrder.BUILDING_BOAT;
+
+      tickSession(session, 30);
+
+      expect(world.getTerrainAt(50, 50)).toBe(TerrainType.DEEP_SEA);
+      expect([BuilderOrder.IN_TANK, BuilderOrder.RETURNING]).toContain(
+        player.tank.builder.order
+      );
     });
 
     // "Boats cost five trees" - resource cost validation
-    it.skip('should cost 5 trees to build a boat', () => {
-      // Resource cost validation not yet fully implemented
+    it('should cost 5 trees to build a boat', () => {
+      const session = new GameSession();
+      const ws = createMockWebSocket();
+      const id = session.addPlayer(ws);
+      const player = getPlayer(session, id);
+      const world = getWorld(session);
+
+      world.setTerrainAt(50, 50, TerrainType.RIVER);
+      placeTankAtTile(player.tank, 49, 50);
+      player.tank.trees = 10;
+      player.tank.builder.trees = 10;
+      player.tank.builder.x = (50 + 0.5) * TILE_SIZE_WORLD;
+      player.tank.builder.y = (50 + 0.5) * TILE_SIZE_WORLD;
+      player.tank.builder.targetX = player.tank.builder.x;
+      player.tank.builder.targetY = player.tank.builder.y;
+      player.tank.builder.order = BuilderOrder.BUILDING_BOAT;
+
+      for (let i = 0; i < 40; i++) {
+        tickSession(session, 1);
+        if (world.getTerrainAt(50, 50) === TerrainType.BOAT) {
+          break;
+        }
+      }
+
+      expect(world.getTerrainAt(50, 50)).toBe(TerrainType.BOAT);
+      expect(player.tank.trees).toBe(5);
     });
   });
 });
