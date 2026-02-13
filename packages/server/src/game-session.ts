@@ -51,6 +51,7 @@ const DEFAULT_BOT_POLICY: BotPolicyOptions = {
   maxBots: 4,
   botAllianceMode: 'all-bots',
 };
+const MAX_CHAT_MESSAGE_LENGTH = 160;
 
 export class GameSession {
   private readonly world: ServerWorld;
@@ -156,6 +157,7 @@ export class GameSession {
   addPlayer(ws: WebSocket, _legacyUnusedTeamOverride?: number): number {
     // NOTE: optional second arg is accepted for legacy test compatibility.
     const playerId = this.playerManager.addPlayer(ws);
+    this.hudMessages.seedPlayerFromRecentGlobal(playerId, this.tick);
     this.hudMessages.publishGlobal({
       tick: this.tick,
       text: `Player ${playerId} joined game`,
@@ -203,6 +205,42 @@ export class GameSession {
       const {buildOrder: _ignoredBuildOrder, ...movementInput} = input;
       player.lastInput = movementInput;
     }
+  }
+
+  public handlePlayerChat(
+    playerId: number,
+    text: string,
+    options?: {allianceOnly?: boolean}
+  ): void {
+    const player = this.players.get(playerId);
+    if (!player) {
+      return;
+    }
+
+    const sanitized = text.trim().slice(0, MAX_CHAT_MESSAGE_LENGTH);
+    if (!sanitized) {
+      return;
+    }
+
+    const messageText = `Player ${playerId}: ${sanitized}`;
+    if (options?.allianceOnly) {
+      this.hudMessages.publishAlliance({
+        tick: this.tick,
+        sourceTeam: player.tank.team,
+        text: messageText,
+        players: this.players.values(),
+        areTeamsAllied: (teamA, teamB) => this.areTeamsAllied(teamA, teamB),
+        class: 'chat_alliance',
+      });
+      return;
+    }
+
+    this.hudMessages.publishGlobal({
+      tick: this.tick,
+      text: messageText,
+      players: this.players.values(),
+      class: 'chat_global',
+    });
   }
 
   private update(): void {

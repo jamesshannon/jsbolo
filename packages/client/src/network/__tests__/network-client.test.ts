@@ -1,6 +1,6 @@
 import {describe, expect, it, vi} from 'vitest';
 import {NetworkClient} from '../network-client.js';
-import {encodeServerMessage} from '@shared';
+import {decodeClientMessage, encodeServerMessage} from '@shared';
 
 describe('NetworkClient', () => {
   it('should ignore stale update ticks and keep latest state', () => {
@@ -130,5 +130,26 @@ describe('NetworkClient', () => {
       class: 'global_notification',
       text: 'Alice joined game',
     }]);
+  });
+
+  it('should encode and send chat messages', () => {
+    const client = new NetworkClient();
+    const ws = {send: vi.fn()} as any;
+    const internal = client as any;
+    internal.ws = ws;
+    internal.state.connected = true;
+
+    client.sendChat('  hello team  ', true);
+
+    expect(ws.send).toHaveBeenCalledTimes(1);
+    const payload = ws.send.mock.calls[0][0] as Uint8Array;
+    const decoded = decodeClientMessage(payload);
+    expect(decoded).toEqual({
+      type: 'chat',
+      chat: {
+        text: 'hello team',
+        allianceOnly: true,
+      },
+    });
   });
 });

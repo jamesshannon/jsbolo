@@ -7,10 +7,20 @@ import * as proto from './generated/protocol.js';
 
 // Client -> Server Messages
 
-export interface ClientMessage {
+export interface ClientInputMessage {
   type: 'input';
   input: PlayerInput;
 }
+
+export interface ClientChatMessage {
+  type: 'chat';
+  chat: {
+    text: string;
+    allianceOnly: boolean;
+  };
+}
+
+export type ClientMessage = ClientInputMessage | ClientChatMessage;
 
 // Server -> Client Messages
 
@@ -231,23 +241,44 @@ function fromProtoBuilder(builder: proto.jsbolo.IBuilder): Builder {
 // Encoding/Decoding helpers
 
 export function encodeClientMessage(message: ClientMessage): Uint8Array {
-  if (message.type !== 'input') {
-    throw new Error(`Unsupported client message type: ${(message as {type?: string}).type}`);
+  if (message.type === 'input') {
+    return proto.jsbolo.ClientMessage.encode({
+      input: toProtoPlayerInput(message.input),
+    }).finish();
   }
-  return proto.jsbolo.ClientMessage.encode({
-    input: toProtoPlayerInput(message.input),
-  }).finish();
+
+  if (message.type === 'chat') {
+    return proto.jsbolo.ClientMessage.encode({
+      chat: {
+        text: message.chat.text,
+        allianceOnly: message.chat.allianceOnly,
+      },
+    }).finish();
+  }
+
+  throw new Error(`Unsupported client message type: ${(message as {type?: string}).type}`);
 }
 
 export function decodeClientMessage(data: BinaryData): ClientMessage {
   const decoded = proto.jsbolo.ClientMessage.decode(toUint8Array(data));
-  if (!decoded.input) {
-    throw new Error('Invalid client message: missing input payload');
+  if (decoded.input) {
+    return {
+      type: 'input',
+      input: fromProtoPlayerInput(decoded.input),
+    };
   }
-  return {
-    type: 'input',
-    input: fromProtoPlayerInput(decoded.input),
-  };
+
+  if (decoded.chat) {
+    return {
+      type: 'chat',
+      chat: {
+        text: decoded.chat.text ?? '',
+        allianceOnly: decoded.chat.allianceOnly ?? false,
+      },
+    };
+  }
+
+  throw new Error('Invalid client message: missing payload');
 }
 
 function toProtoWelcome(message: WelcomeMessage): proto.jsbolo.IWelcomeMessage {

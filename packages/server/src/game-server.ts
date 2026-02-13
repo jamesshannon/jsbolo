@@ -87,6 +87,10 @@ export class GameServer {
           console.log(`Player ${conn.playerId} input:`, message.input);
         }
         conn.session.handlePlayerInput(conn.playerId, message.input);
+      } else if (message.type === 'chat') {
+        conn.session.handlePlayerChat(conn.playerId, message.chat.text, {
+          allianceOnly: message.chat.allianceOnly,
+        });
       }
     } catch (error) {
       console.error('Error decoding message:', error);

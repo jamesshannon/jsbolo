@@ -679,6 +679,53 @@ describe('GameSession Integration', () => {
       expect(message2.hudMessages).toBeUndefined();
     });
 
+    it('should publish global and alliance chat with server-side filtering', () => {
+      const ws1 = createMockWebSocket();
+      const ws2 = createMockWebSocket();
+      const ws3 = createMockWebSocket();
+      const playerId1 = session.addPlayer(ws1);
+      const playerId2 = session.addPlayer(ws2);
+      session.addPlayer(ws3);
+
+      const players = (session as any).players;
+      const team1 = players.get(playerId1).tank.team;
+      const team2 = players.get(playerId2).tank.team;
+
+      // Flush join notifications.
+      (session as any).broadcastState();
+      (ws1.send as any).mockClear();
+      (ws2.send as any).mockClear();
+      (ws3.send as any).mockClear();
+
+      session.handlePlayerChat(playerId1, 'hello world');
+      (session as any).broadcastState();
+      const global1 = decodeServerMessage((ws1.send as any).mock.calls.slice(-1)[0][0]);
+      const global2 = decodeServerMessage((ws2.send as any).mock.calls.slice(-1)[0][0]);
+      const global3 = decodeServerMessage((ws3.send as any).mock.calls.slice(-1)[0][0]);
+      expect(global1.hudMessages?.some(m => m.class === 'chat_global' && m.text.includes('hello world'))).toBe(true);
+      expect(global2.hudMessages?.some(m => m.class === 'chat_global' && m.text.includes('hello world'))).toBe(true);
+      expect(global3.hudMessages?.some(m => m.class === 'chat_global' && m.text.includes('hello world'))).toBe(true);
+
+      (ws1.send as any).mockClear();
+      (ws2.send as any).mockClear();
+      (ws3.send as any).mockClear();
+      expect(session.requestAlliance(team1, team2)).toBe(true);
+      expect(session.acceptAlliance(team2, team1)).toBe(true);
+      (session as any).broadcastState();
+      (ws1.send as any).mockClear();
+      (ws2.send as any).mockClear();
+      (ws3.send as any).mockClear();
+
+      session.handlePlayerChat(playerId1, 'ally only', {allianceOnly: true});
+      (session as any).broadcastState();
+      const alliance1 = decodeServerMessage((ws1.send as any).mock.calls.slice(-1)[0][0]);
+      const alliance2 = decodeServerMessage((ws2.send as any).mock.calls.slice(-1)[0][0]);
+      const alliance3 = decodeServerMessage((ws3.send as any).mock.calls.slice(-1)[0][0]);
+      expect(alliance1.hudMessages?.some(m => m.class === 'chat_alliance' && m.text.includes('ally only'))).toBe(true);
+      expect(alliance2.hudMessages?.some(m => m.class === 'chat_alliance' && m.text.includes('ally only'))).toBe(true);
+      expect(alliance3.hudMessages).toBeUndefined();
+    });
+
     it('should send welcome message with map data', () => {
       const ws = createMockWebSocket();
       session.addPlayer(ws);

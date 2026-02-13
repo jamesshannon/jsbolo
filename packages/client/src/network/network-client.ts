@@ -88,6 +88,26 @@ export class NetworkClient {
     this.ws.send(data);
   }
 
+  sendChat(text: string, allianceOnly = false): void {
+    if (!this.ws || !this.state.connected) {
+      return;
+    }
+
+    const trimmed = text.trim();
+    if (!trimmed) {
+      return;
+    }
+
+    const data = encodeClientMessage({
+      type: 'chat',
+      chat: {
+        text: trimmed,
+        allianceOnly,
+      },
+    });
+    this.ws.send(data);
+  }
+
   private handleMessage(data: ArrayBuffer | Uint8Array): void {
     try {
       const message: ServerMessage = decodeServerMessage(data);

@@ -34,5 +34,42 @@ describe('HudMessageService', () => {
     expect(service.drainForPlayer(7)).toHaveLength(1);
     expect(service.drainForPlayer(8)).toHaveLength(0);
   });
-});
 
+  it('coalesces identical adjacent messages in a short window', () => {
+    const service = new HudMessageService();
+    service.publishPersonal({
+      tick: 100,
+      text: 'Builder action failed: cannot place mine here.',
+      playerId: 1,
+    });
+    service.publishPersonal({
+      tick: 120,
+      text: 'Builder action failed: cannot place mine here.',
+      playerId: 1,
+    });
+
+    expect(service.drainForPlayer(1)).toEqual([expect.objectContaining({
+      text: 'Builder action failed: cannot place mine here. (x2)',
+    })]);
+  });
+
+  it('expires stale queued messages and seeds recent global context to new players', () => {
+    const service = new HudMessageService();
+    const players = [{id: 1, tank: {team: 1}}];
+
+    service.publishGlobal({
+      tick: 10,
+      text: 'Old message',
+      players,
+    });
+    service.publishGlobal({
+      tick: 650,
+      text: 'Recent message',
+      players,
+    });
+
+    service.seedPlayerFromRecentGlobal(2, 700);
+    const seeded = service.drainForPlayer(2);
+    expect(seeded.map(m => m.text)).toEqual(['Recent message']);
+  });
+});

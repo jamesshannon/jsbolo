@@ -183,7 +183,15 @@ message UpdateMessage {
 }
 
 message ClientMessage {
-  PlayerInput input = 1;
+  oneof payload {
+    PlayerInput input = 1;
+    ChatMessage chat = 2;
+  }
+}
+
+message ChatMessage {
+  string text = 1;
+  bool allianceOnly = 2;
 }
 
 message ServerMessage {

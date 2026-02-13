@@ -5413,6 +5413,7 @@ export const jsbolo = $root.jsbolo = (() => {
          * @memberof jsbolo
          * @interface IClientMessage
          * @property {jsbolo.IPlayerInput|null} [input] ClientMessage input
+         * @property {jsbolo.IChatMessage|null} [chat] ClientMessage chat
          */
 
         /**
@@ -5437,6 +5438,28 @@ export const jsbolo = $root.jsbolo = (() => {
          * @instance
          */
         ClientMessage.prototype.input = null;
+
+        /**
+         * ClientMessage chat.
+         * @member {jsbolo.IChatMessage|null|undefined} chat
+         * @memberof jsbolo.ClientMessage
+         * @instance
+         */
+        ClientMessage.prototype.chat = null;
+
+        // OneOf field names bound to virtual getters and setters
+        let $oneOfFields;
+
+        /**
+         * ClientMessage payload.
+         * @member {"input"|"chat"|undefined} payload
+         * @memberof jsbolo.ClientMessage
+         * @instance
+         */
+        Object.defineProperty(ClientMessage.prototype, "payload", {
+            get: $util.oneOfGetter($oneOfFields = ["input", "chat"]),
+            set: $util.oneOfSetter($oneOfFields)
+        });
 
         /**
          * Creates a new ClientMessage instance using the specified properties.
@@ -5464,6 +5487,8 @@ export const jsbolo = $root.jsbolo = (() => {
                 writer = $Writer.create();
             if (message.input != null && Object.hasOwnProperty.call(message, "input"))
                 $root.jsbolo.PlayerInput.encode(message.input, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
+            if (message.chat != null && Object.hasOwnProperty.call(message, "chat"))
+                $root.jsbolo.ChatMessage.encode(message.chat, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
             return writer;
         };
 
@@ -5504,6 +5529,10 @@ export const jsbolo = $root.jsbolo = (() => {
                         message.input = $root.jsbolo.PlayerInput.decode(reader, reader.uint32());
                         break;
                     }
+                case 2: {
+                        message.chat = $root.jsbolo.ChatMessage.decode(reader, reader.uint32());
+                        break;
+                    }
                 default:
                     reader.skipType(tag & 7);
                     break;
@@ -5539,10 +5568,24 @@ export const jsbolo = $root.jsbolo = (() => {
         ClientMessage.verify = function verify(message) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            let properties = {};
             if (message.input != null && message.hasOwnProperty("input")) {
-                let error = $root.jsbolo.PlayerInput.verify(message.input);
-                if (error)
-                    return "input." + error;
+                properties.payload = 1;
+                {
+                    let error = $root.jsbolo.PlayerInput.verify(message.input);
+                    if (error)
+                        return "input." + error;
+                }
+            }
+            if (message.chat != null && message.hasOwnProperty("chat")) {
+                if (properties.payload === 1)
+                    return "payload: multiple values";
+                properties.payload = 1;
+                {
+                    let error = $root.jsbolo.ChatMessage.verify(message.chat);
+                    if (error)
+                        return "chat." + error;
+                }
             }
             return null;
         };
@@ -5564,6 +5607,11 @@ export const jsbolo = $root.jsbolo = (() => {
                     throw TypeError(".jsbolo.ClientMessage.input: object expected");
                 message.input = $root.jsbolo.PlayerInput.fromObject(object.input);
             }
+            if (object.chat != null) {
+                if (typeof object.chat !== "object")
+                    throw TypeError(".jsbolo.ClientMessage.chat: object expected");
+                message.chat = $root.jsbolo.ChatMessage.fromObject(object.chat);
+            }
             return message;
         };
 
@@ -5580,10 +5628,16 @@ export const jsbolo = $root.jsbolo = (() => {
             if (!options)
                 options = {};
             let object = {};
-            if (options.defaults)
-                object.input = null;
-            if (message.input != null && message.hasOwnProperty("input"))
+            if (message.input != null && message.hasOwnProperty("input")) {
                 object.input = $root.jsbolo.PlayerInput.toObject(message.input, options);
+                if (options.oneofs)
+                    object.payload = "input";
+            }
+            if (message.chat != null && message.hasOwnProperty("chat")) {
+                object.chat = $root.jsbolo.ChatMessage.toObject(message.chat, options);
+                if (options.oneofs)
+                    object.payload = "chat";
+            }
             return object;
         };
 
@@ -5614,6 +5668,235 @@ export const jsbolo = $root.jsbolo = (() => {
         };
 
         return ClientMessage;
+    })();
+
+    jsbolo.ChatMessage = (function() {
+
+        /**
+         * Properties of a ChatMessage.
+         * @memberof jsbolo
+         * @interface IChatMessage
+         * @property {string|null} [text] ChatMessage text
+         * @property {boolean|null} [allianceOnly] ChatMessage allianceOnly
+         */
+
+        /**
+         * Constructs a new ChatMessage.
+         * @memberof jsbolo
+         * @classdesc Represents a ChatMessage.
+         * @implements IChatMessage
+         * @constructor
+         * @param {jsbolo.IChatMessage=} [properties] Properties to set
+         */
+        function ChatMessage(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null)
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * ChatMessage text.
+         * @member {string} text
+         * @memberof jsbolo.ChatMessage
+         * @instance
+         */
+        ChatMessage.prototype.text = "";
+
+        /**
+         * ChatMessage allianceOnly.
+         * @member {boolean} allianceOnly
+         * @memberof jsbolo.ChatMessage
+         * @instance
+         */
+        ChatMessage.prototype.allianceOnly = false;
+
+        /**
+         * Creates a new ChatMessage instance using the specified properties.
+         * @function create
+         * @memberof jsbolo.ChatMessage
+         * @static
+         * @param {jsbolo.IChatMessage=} [properties] Properties to set
+         * @returns {jsbolo.ChatMessage} ChatMessage instance
+         */
+        ChatMessage.create = function create(properties) {
+            return new ChatMessage(properties);
+        };
+
+        /**
+         * Encodes the specified ChatMessage message. Does not implicitly {@link jsbolo.ChatMessage.verify|verify} messages.
+         * @function encode
+         * @memberof jsbolo.ChatMessage
+         * @static
+         * @param {jsbolo.IChatMessage} message ChatMessage message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        ChatMessage.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.text != null && Object.hasOwnProperty.call(message, "text"))
+                writer.uint32(/* id 1, wireType 2 =*/10).string(message.text);
+            if (message.allianceOnly != null && Object.hasOwnProperty.call(message, "allianceOnly"))
+                writer.uint32(/* id 2, wireType 0 =*/16).bool(message.allianceOnly);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified ChatMessage message, length delimited. Does not implicitly {@link jsbolo.ChatMessage.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof jsbolo.ChatMessage
+         * @static
+         * @param {jsbolo.IChatMessage} message ChatMessage message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        ChatMessage.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a ChatMessage message from the specified reader or buffer.
+         * @function decode
+         * @memberof jsbolo.ChatMessage
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {jsbolo.ChatMessage} ChatMessage
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        ChatMessage.decode = function decode(reader, length, error) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.jsbolo.ChatMessage();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.text = reader.string();
+                        break;
+                    }
+                case 2: {
+                        message.allianceOnly = reader.bool();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a ChatMessage message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof jsbolo.ChatMessage
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {jsbolo.ChatMessage} ChatMessage
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        ChatMessage.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a ChatMessage message.
+         * @function verify
+         * @memberof jsbolo.ChatMessage
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        ChatMessage.verify = function verify(message) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (message.text != null && message.hasOwnProperty("text"))
+                if (!$util.isString(message.text))
+                    return "text: string expected";
+            if (message.allianceOnly != null && message.hasOwnProperty("allianceOnly"))
+                if (typeof message.allianceOnly !== "boolean")
+                    return "allianceOnly: boolean expected";
+            return null;
+        };
+
+        /**
+         * Creates a ChatMessage message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof jsbolo.ChatMessage
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {jsbolo.ChatMessage} ChatMessage
+         */
+        ChatMessage.fromObject = function fromObject(object) {
+            if (object instanceof $root.jsbolo.ChatMessage)
+                return object;
+            let message = new $root.jsbolo.ChatMessage();
+            if (object.text != null)
+                message.text = String(object.text);
+            if (object.allianceOnly != null)
+                message.allianceOnly = Boolean(object.allianceOnly);
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a ChatMessage message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof jsbolo.ChatMessage
+         * @static
+         * @param {jsbolo.ChatMessage} message ChatMessage
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        ChatMessage.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.text = "";
+                object.allianceOnly = false;
+            }
+            if (message.text != null && message.hasOwnProperty("text"))
+                object.text = message.text;
+            if (message.allianceOnly != null && message.hasOwnProperty("allianceOnly"))
+                object.allianceOnly = message.allianceOnly;
+            return object;
+        };
+
+        /**
+         * Converts this ChatMessage to JSON.
+         * @function toJSON
+         * @memberof jsbolo.ChatMessage
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        ChatMessage.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for ChatMessage
+         * @function getTypeUrl
+         * @memberof jsbolo.ChatMessage
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        ChatMessage.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/jsbolo.ChatMessage";
+        };
+
+        return ChatMessage;
     })();
 
     jsbolo.ServerMessage = (function() {

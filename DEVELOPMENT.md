@@ -21,6 +21,13 @@
   - server now sends update packets when only `hudMessages` changed (no terrain/entity deltas),
   - preventing dropped alliance/chat/notification ticks.
 - Added personal builder rejection notifications (invalid target / insufficient resources), delivered only to affected player.
+- Added chat plumbing over protobuf client messages:
+  - Client can send `chat` payloads (`global` and `allianceOnly` scope).
+  - Server routes to HUD as `chat_global` / `chat_alliance` with server-side recipient filtering.
+- Hardened HUD queue behavior in server:
+  - message TTL expiry (12s window)
+  - short-window duplicate coalescing (`(xN)` suffix)
+  - recent global history seeding for newly joined/reconnected players
 - Client HUD class visibility defaults now match policy:
   - global/alliance/personal/chat: enabled
   - system status: disabled by default
