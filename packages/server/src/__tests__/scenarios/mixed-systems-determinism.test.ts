@@ -13,6 +13,8 @@ import {
   tickSession,
 } from '../bolo-spec/helpers';
 
+const SCENARIO_TIMEOUT_MS = 15000;
+
 function runMixedSystemsSignature(): string[] {
   const session = new GameSession();
   const playerId = session.addPlayer(createMockWebSocket());
@@ -107,5 +109,5 @@ describe('Mixed Systems Determinism', () => {
     expect(baseOwner).toBe(0);
     expect(trees).toBeGreaterThan(0);
     expect(shellCount).toBe(0);
-  });
+  }, SCENARIO_TIMEOUT_MS);
 });

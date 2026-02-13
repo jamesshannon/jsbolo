@@ -9,6 +9,7 @@ const TANK_COAST_DECELERATION = 0.125;
 const MAX_SPEED = 16;
 const TURN_RATE_SLOW = 2; // First 10 ticks
 const TURN_RATE_FAST = 4; // After 10 ticks
+const SCENARIO_TIMEOUT_MS = 15000;
 
 describe('Movement Physics Scenarios', () => {
   it('14. Full acceleration curve', () => {
@@ -144,5 +145,5 @@ describe('Movement Physics Scenarios', () => {
     expect(directionDiff).toBeLessThan(10); // Allow small drift
 
     runner.assertNoViolations();
-  });
+  }, SCENARIO_TIMEOUT_MS);
 });

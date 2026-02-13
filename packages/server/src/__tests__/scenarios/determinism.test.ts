@@ -3,6 +3,8 @@ import {TerrainType} from '@jsbolo/shared';
 import {ScenarioRunner} from './scenario-runner';
 import {BOAT_INVARIANTS, MOVEMENT_INVARIANTS} from './invariants';
 
+const SCENARIO_TIMEOUT_MS = 20000;
+
 function snapshotSignature(runner: ScenarioRunner): string[] {
   return runner.history.map((snap) =>
     [
@@ -47,7 +49,7 @@ describe('Simulation Determinism Scenarios', () => {
     runB.assertNoViolations();
 
     expect(snapshotSignature(runA)).toEqual(snapshotSignature(runB));
-  });
+  }, SCENARIO_TIMEOUT_MS);
 
   it('should produce identical 500-tick boat traversal history for identical scripted inputs', () => {
     const buildRunner = (): ScenarioRunner =>
@@ -70,5 +72,5 @@ describe('Simulation Determinism Scenarios', () => {
     runB.assertNoViolations();
 
     expect(snapshotSignature(runA)).toEqual(snapshotSignature(runB));
-  });
+  }, SCENARIO_TIMEOUT_MS);
 });

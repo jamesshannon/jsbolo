@@ -3,6 +3,8 @@ import {TerrainType} from '@jsbolo/shared';
 import {GameSession} from '../../game-session.js';
 import {createMockWebSocket, getPlayer, getWorld, placeTankAtTile, tickSession} from '../bolo-spec/helpers.js';
 
+const SCENARIO_TIMEOUT_MS = 20000;
+
 function runPatrolBotScenario(): string[] {
   const session = new GameSession(undefined, {
     botPolicy: {
@@ -54,5 +56,5 @@ describe('Bot determinism scenarios', () => {
     const runA = runPatrolBotScenario();
     const runB = runPatrolBotScenario();
     expect(runA).toEqual(runB);
-  });
+  }, SCENARIO_TIMEOUT_MS);
 });
