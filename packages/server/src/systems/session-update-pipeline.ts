@@ -57,6 +57,7 @@ export interface SessionUpdateCallbacks {
     byTankId: number;
   }): void;
   onBuilderActionRejected?(event: {tankId: number; text: string}): void;
+  onBuilderKilled?(event: {tankId: number}): void;
 }
 
 /**
@@ -149,6 +150,7 @@ export class SessionUpdatePipeline {
         onTerrainChanged: (tileX, tileY) => context.terrainChanges.add(`${tileX},${tileY}`),
         onForestDestroyed: (tileX, tileY) =>
           this.terrainEffects.trackForestRegrowth(`${tileX},${tileY}`),
+        onBuilderKilled: tankId => callbacks.onBuilderKilled?.({tankId}),
       }
     );
 

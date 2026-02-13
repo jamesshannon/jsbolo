@@ -305,6 +305,14 @@ export class GameSession {
             class: 'personal_notification',
           });
         },
+        onBuilderKilled: event => {
+          this.hudMessages.publishPersonal({
+            tick: this.tick,
+            playerId: event.tankId,
+            text: 'You just lost builder',
+            class: 'personal_notification',
+          });
+        },
       }
     );
 

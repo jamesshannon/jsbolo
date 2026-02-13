@@ -24,6 +24,7 @@ interface CombatCallbacks {
   scheduleTankRespawn(tankId: number): void;
   onTerrainChanged(tileX: number, tileY: number): void;
   onForestDestroyed(tileX: number, tileY: number): void;
+  onBuilderKilled?(ownerTankId: number): void;
 }
 
 interface CombatContext {
@@ -209,6 +210,7 @@ export class CombatSystem {
       shell.killByCollision();
       builder.kill();
       callbacks.emitSound(SOUND_MAN_DYING, builder.x, builder.y);
+      callbacks.onBuilderKilled?.(builder.ownerTankId);
       break;
     }
   }

@@ -1,8 +1,10 @@
 import {describe, it, expect} from 'vitest';
 import {
   SOUND_HIT_TANK,
+  SOUND_MAN_DYING,
   SOUND_SHOT_TREE,
   SOUND_TANK_SINKING,
+  BuilderOrder,
   TerrainType,
 } from '@jsbolo/shared';
 import {ServerTank} from '../../simulation/tank.js';
@@ -190,5 +192,60 @@ describe('CombatSystem', () => {
     // same-tick shell no longer has a valid tank collision target.
     expect(shells.size).toBe(1);
     expect(Array.from(shells.values())[0]?.alive).toBe(true);
+  });
+
+  it('publishes builder-killed callback when shell hits an exposed builder', () => {
+    const system = new CombatSystem();
+    const world = new ServerWorld();
+    world.setTerrainAt(80, 80, TerrainType.ROAD);
+
+    const owner = new ServerTank(20, 1, 80, 80);
+    owner.builder.order = BuilderOrder.PARACHUTING;
+    owner.builder.x = owner.x + 256;
+    owner.builder.y = owner.y;
+    owner.builder.targetX = owner.builder.x;
+    owner.builder.targetY = owner.builder.y;
+
+    const shells = new Map<number, any>();
+    shells.set(201, {
+      id: 201,
+      x: owner.builder.x,
+      y: owner.builder.y,
+      direction: 0,
+      ownerTankId: 999,
+      alive: true,
+      shouldExplode: false,
+      update() {},
+      getTilePosition: () => ({x: 80, y: 80}),
+      killByCollision() {
+        this.alive = false;
+      },
+    });
+
+    const sounds: number[] = [];
+    const killedBuilders: number[] = [];
+
+    system.updateShells(
+      shells,
+      {
+        world,
+        players: [{tank: owner}],
+        getPlayerByTankId: () => undefined,
+        pillboxes: [],
+        bases: [],
+      },
+      {
+        areTeamsAllied: () => false,
+        emitSound: (soundId) => sounds.push(soundId),
+        scheduleTankRespawn: () => {},
+        onTerrainChanged: () => {},
+        onForestDestroyed: () => {},
+        onBuilderKilled: ownerTankId => killedBuilders.push(ownerTankId),
+      }
+    );
+
+    expect(owner.builder.isDead()).toBe(true);
+    expect(sounds).toContain(SOUND_MAN_DYING);
+    expect(killedBuilders).toEqual([owner.id]);
   });
 });
