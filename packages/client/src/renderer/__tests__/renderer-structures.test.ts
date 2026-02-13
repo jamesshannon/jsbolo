@@ -135,8 +135,8 @@ describe('Renderer structures', () => {
 
     const hudCalls = drawSpriteCallsBySheet.get('/assets/sprites/hud.png') ?? [];
     // Neutral pillbox glyph.
-    expect(hudCalls.some(call => call.x === 16 && call.y === 0)).toBe(true);
-    // Neutral base glyph.
     expect(hudCalls.some(call => call.x === 0 && call.y === 0)).toBe(true);
+    // Neutral base glyph.
+    expect(hudCalls.some(call => call.x === 16 && call.y === 0)).toBe(true);
   });
 });

@@ -41,13 +41,15 @@ const HUD_ICON_SIZE = 16;
 // NOTE: These icon coordinates come from the shared Orona/WinBolo HUD atlas.
 // They are used for classic-looking base/pillbox glyphs in-world.
 const HUD_ICONS = {
-  BASE_NEUTRAL: {x: 0, y: 0, width: HUD_ICON_SIZE, height: HUD_ICON_SIZE},
-  PILL_NEUTRAL: {x: 16, y: 0, width: HUD_ICON_SIZE, height: HUD_ICON_SIZE},
-  BASE_HEALTHY_MASK: {x: 32, y: 0, width: HUD_ICON_SIZE, height: HUD_ICON_SIZE},
-  BASE_VULNERABLE_MASK: {x: 48, y: 0, width: HUD_ICON_SIZE, height: HUD_ICON_SIZE},
+  // NOTE: in this atlas, base/pillbox icon families are opposite of what their
+  // status-box labels might suggest, so we map by observed in-game appearance.
+  BASE_NEUTRAL: {x: 16, y: 0, width: HUD_ICON_SIZE, height: HUD_ICON_SIZE},
+  PILL_NEUTRAL: {x: 0, y: 0, width: HUD_ICON_SIZE, height: HUD_ICON_SIZE},
+  BASE_HEALTHY_MASK: {x: 80, y: 0, width: HUD_ICON_SIZE, height: HUD_ICON_SIZE},
+  BASE_VULNERABLE_MASK: {x: 96, y: 0, width: HUD_ICON_SIZE, height: HUD_ICON_SIZE},
   PILL_DEAD: {x: 64, y: 0, width: HUD_ICON_SIZE, height: HUD_ICON_SIZE},
-  PILL_HEALTHY_MASK: {x: 80, y: 0, width: HUD_ICON_SIZE, height: HUD_ICON_SIZE},
-  PILL_DAMAGED_MASK: {x: 96, y: 0, width: HUD_ICON_SIZE, height: HUD_ICON_SIZE},
+  PILL_HEALTHY_MASK: {x: 32, y: 0, width: HUD_ICON_SIZE, height: HUD_ICON_SIZE},
+  PILL_DAMAGED_MASK: {x: 48, y: 0, width: HUD_ICON_SIZE, height: HUD_ICON_SIZE},
 } as const;
 
 export class Renderer {
