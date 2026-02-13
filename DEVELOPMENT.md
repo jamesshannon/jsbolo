@@ -27,10 +27,16 @@
 - Added chat plumbing over protobuf client messages:
   - Client can send `chat` payloads (`global` and `allianceOnly` scope).
   - Server routes to HUD as `chat_global` / `chat_alliance` with server-side recipient filtering.
+- Added additional chat scopes with server-authoritative recipient filtering:
+  - nearby chat via `/n <message>` (radius-limited delivery),
+  - selected-recipient whisper via `/w <playerId> <message>` (sender + target only).
 - Added HUD chat input controls in client:
   - ticker bar now includes chat textbox, alliance-only toggle, and send button.
   - `Enter` focuses chat input, submit sends network chat, `Escape` exits input focus.
   - typing in chat no longer drives tank controls or builder hotkeys.
+- Added rich sender rendering in ticker:
+  - chat sender labels are styled by relation (self/friendly/hostile/neutral),
+  - preserving server-authored message content with escaped rendering.
 - Hardened HUD queue behavior in server:
   - message TTL expiry (12s window)
   - short-window duplicate coalescing (`(xN)` suffix)

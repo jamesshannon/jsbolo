@@ -181,8 +181,6 @@ Status: In progress as of February 13, 2026.
 
 ## HUD/Chat Deferred (Post-v1)
 
-- Nearby chat and selected-recipient chat.
-- Rich sender formatting and team-color names in ticker.
 - Runtime admin controls for HUD policy.
 - Localization/i18n string packs.
 

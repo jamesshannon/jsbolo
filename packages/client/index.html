@@ -288,6 +288,29 @@
         flex: 1 1 auto;
       }
 
+      .hud-sender {
+        font-weight: 700;
+      }
+
+      .hud-sender-self {
+        color: #101010;
+        background: #d5d5d5;
+        padding: 0 4px;
+        border-radius: 2px;
+      }
+
+      .hud-sender-friendly {
+        color: #28dd28;
+      }
+
+      .hud-sender-hostile {
+        color: #ff3c3c;
+      }
+
+      .hud-sender-neutral {
+        color: #e6e6e6;
+      }
+
       #hud-chat-form {
         display: flex;
         align-items: center;
@@ -516,7 +539,7 @@
             id="hud-chat-input"
             type="text"
             maxlength="160"
-            placeholder="Press Enter to chat"
+            placeholder="Enter chat (/n nearby, /w id msg)"
             aria-label="Chat message"
           />
           <button id="hud-chat-send" type="submit">Send</button>

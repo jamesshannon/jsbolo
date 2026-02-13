@@ -31,6 +31,7 @@ import {applyNetworkWorldEffects} from './network-world-effects.js';
 import {applyNetworkWelcomeState} from './network-welcome-state.js';
 import {deriveTankHudMarkers} from './hud-tank-status.js';
 import {deriveTickerMessagesFromServerHud} from './hud-message-stream.js';
+import {formatHudTickerHtml} from './hud-ticker-format.js';
 
 export class MultiplayerGame {
   private readonly input: KeyboardInput;
@@ -505,6 +506,14 @@ export class MultiplayerGame {
     return nearest;
   }
 
+  private getMyTeam(): number | null {
+    if (this.playerId === null) {
+      return null;
+    }
+    const tank = this.tanks.get(this.playerId);
+    return tank?.team ?? null;
+  }
+
   private enqueueHudMessage(message: string): void {
     const trimmedMessage = message.trim();
     if (!trimmedMessage) {
@@ -542,7 +551,11 @@ export class MultiplayerGame {
     if (!tickerElement) {
       return;
     }
-    tickerElement.textContent = text;
+    tickerElement.innerHTML = formatHudTickerHtml(text, {
+      myPlayerId: this.playerId,
+      myTeam: this.getMyTeam(),
+      tanks: this.tanks,
+    });
     this.currentTickerText = text;
   }
 

@@ -86,8 +86,8 @@ Clients may derive local cosmetic hints, but authoritative event messages come f
 
 - Global chat (`chat_global`)
 - Alliance chat (`chat_alliance`)
-
-v1 does not include nearby/selected-recipient chat. That is a deferred enhancement.
+- Nearby chat (`/n <message>`) with server-side radius filtering.
+- Selected-recipient whisper (`/w <playerId> <message>`) with server-side sender+target filtering.
 
 ## Explicit Exclusions (v1)
 
@@ -222,8 +222,5 @@ Phase D: Hardening
 
 ## Deferred Items
 
-- Nearby chat and selected-recipient chat.
-- Rich sender formatting and team-color name rendering.
 - Runtime admin controls for message policy.
 - Localization and i18n string packs.
-
