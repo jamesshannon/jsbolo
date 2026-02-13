@@ -1,5 +1,9 @@
 # Development Log
 
+## Policy Documents
+
+- HUD messaging and notification rules: `docs/hud-message-policy.md`
+
 ## Phase 1 Setup - Complete ✅
 
 ### Date: 2026-02-08
