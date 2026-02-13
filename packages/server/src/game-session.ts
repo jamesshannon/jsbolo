@@ -258,6 +258,14 @@ export class GameSession {
             byTankId: event.byTankId,
           });
         },
+        onBuilderActionRejected: event => {
+          this.hudMessages.publishPersonal({
+            tick: this.tick,
+            playerId: event.tankId,
+            text: event.text,
+            class: 'personal_notification',
+          });
+        },
       }
     );
 

@@ -30,6 +30,7 @@ export interface BuilderSystemCallbacks {
   onTrackForestRegrowth(tileX: number, tileY: number): void;
   onPlaceMine(team: number, tileX: number, tileY: number): boolean;
   onCreatePillbox(pillbox: ServerPillbox): void;
+  onActionRejected?(event: {tankId: number; text: string}): void;
 }
 
 export class BuilderSystem {
@@ -66,6 +67,10 @@ export class BuilderSystem {
             );
           }
         } else {
+          callbacks.onActionRejected?.({
+            tankId: tank.id,
+            text: 'Builder action failed: cannot harvest here.',
+          });
           console.log(
             `[BUILDER] Cannot harvest at (${builderTile.x}, ${builderTile.y}): terrain=${terrain} (need 5), trees=${builder.trees} (max 40)`
           );
@@ -84,6 +89,10 @@ export class BuilderSystem {
             callbacks.emitSound(SOUND_MAN_BUILDING, builder.x, builder.y);
           }
         } else {
+          callbacks.onActionRejected?.({
+            tankId: tank.id,
+            text: 'Builder action failed: cannot build road here.',
+          });
           builder.recallToTank(tank.x, tank.y);
         }
         break;
@@ -99,6 +108,10 @@ export class BuilderSystem {
             callbacks.emitSound(SOUND_MAN_BUILDING, builder.x, builder.y);
           }
         } else {
+          callbacks.onActionRejected?.({
+            tankId: tank.id,
+            text: 'Builder action failed: cannot build wall here.',
+          });
           builder.recallToTank(tank.x, tank.y);
         }
         break;
@@ -114,6 +127,10 @@ export class BuilderSystem {
             callbacks.emitSound(SOUND_MAN_BUILDING, builder.x, builder.y);
           }
         } else {
+          callbacks.onActionRejected?.({
+            tankId: tank.id,
+            text: 'Builder action failed: cannot build boat here.',
+          });
           builder.recallToTank(tank.x, tank.y);
         }
         break;
@@ -128,6 +145,10 @@ export class BuilderSystem {
             callbacks.emitSound(SOUND_MAN_LAY_MINE, builder.x, builder.y);
           }
         } else {
+          callbacks.onActionRejected?.({
+            tankId: tank.id,
+            text: 'Builder action failed: cannot place mine here.',
+          });
           builder.recallToTank(tank.x, tank.y);
         }
         break;
@@ -190,6 +211,10 @@ export class BuilderSystem {
     console.log(
       `[PILLBOX] Cannot place pillbox at (${tileX}, ${tileY}): terrain=${terrain}, hasPillbox=${builder.hasPillbox}, trees=${builder.trees}`
     );
+    callbacks.onActionRejected?.({
+      tankId: tank.id,
+      text: 'Builder action failed: cannot place pillbox here.',
+    });
     builder.recallToTank(tank.x, tank.y);
   }
 
@@ -226,10 +251,18 @@ export class BuilderSystem {
         console.log(
           `[PILLBOX] Cannot repair: need ${repairCost.toFixed(2)} trees, have ${builder.trees}`
         );
+        callbacks.onActionRejected?.({
+          tankId: tank.id,
+          text: 'Builder action failed: not enough trees to repair pillbox.',
+        });
         builder.recallToTank(tank.x, tank.y);
       }
     } else {
       console.log(`[PILLBOX] No damaged pillbox to repair at (${tileX}, ${tileY})`);
+      callbacks.onActionRejected?.({
+        tankId: tank.id,
+        text: 'Builder action failed: no damaged pillbox at target.',
+      });
       builder.recallToTank(tank.x, tank.y);
     }
   }

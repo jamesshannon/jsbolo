@@ -644,6 +644,41 @@ describe('GameSession Integration', () => {
       expect(acceptC.hudMessages).toBeUndefined();
     });
 
+    it('should send builder rejection HUD notifications only to the affected player', () => {
+      const ws1 = createMockWebSocket();
+      const ws2 = createMockWebSocket();
+      const playerId1 = session.addPlayer(ws1);
+      session.addPlayer(ws2);
+
+      const players = (session as any).players;
+      const player1 = players.get(playerId1);
+      const tank1 = player1.tank;
+      const builder = tank1.builder;
+      const world = (session as any).world;
+
+      builder.order = BuilderOrder.PLACING_PILLBOX;
+      builder.hasPillbox = true;
+      builder.x = (52 + 0.5) * 256;
+      builder.y = (50 + 0.5) * 256;
+      builder.targetX = builder.x;
+      builder.targetY = builder.y;
+      world.setTerrainAt(52, 50, TerrainType.FOREST);
+
+      // Flush join notifications before asserting personal delivery.
+      (session as any).broadcastState();
+      (ws1.send as any).mockClear();
+      (ws2.send as any).mockClear();
+
+      (session as any).update();
+      (session as any).broadcastState();
+
+      const message1 = decodeServerMessage((ws1.send as any).mock.calls.slice(-1)[0][0]);
+      const message2 = decodeServerMessage((ws2.send as any).mock.calls.slice(-1)[0][0]);
+
+      expect(message1.hudMessages?.some(m => m.text.includes('Builder action failed'))).toBe(true);
+      expect(message2.hudMessages).toBeUndefined();
+    });
+
     it('should send welcome message with map data', () => {
       const ws = createMockWebSocket();
       session.addPlayer(ws);

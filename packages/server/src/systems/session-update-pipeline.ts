@@ -56,6 +56,7 @@ export interface SessionUpdateCallbacks {
     newOwnerTeam: number;
     byTankId: number;
   }): void;
+  onBuilderActionRejected?(event: {tankId: number; text: string}): void;
 }
 
 /**
@@ -124,6 +125,8 @@ export class SessionUpdatePipeline {
               onPlaceMine: (team, tileX, tileY) =>
                 callbacks.placeMineForTeam(team, tileX, tileY),
               onCreatePillbox: pillbox => context.pillboxes.set(pillbox.id, pillbox),
+              onActionRejected: event =>
+                callbacks.onBuilderActionRejected?.(event),
             }
           ),
         onPillboxPickedUp: event => callbacks.onPillboxPickedUp?.(event),

@@ -20,6 +20,7 @@
 - Fixed HUD-only broadcast delivery:
   - server now sends update packets when only `hudMessages` changed (no terrain/entity deltas),
   - preventing dropped alliance/chat/notification ticks.
+- Added personal builder rejection notifications (invalid target / insufficient resources), delivered only to affected player.
 - Client HUD class visibility defaults now match policy:
   - global/alliance/personal/chat: enabled
   - system status: disabled by default

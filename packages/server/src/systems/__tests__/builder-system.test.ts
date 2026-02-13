@@ -70,6 +70,8 @@ describe('BuilderSystem', () => {
     builder.targetX = builder.x;
     builder.targetY = builder.y;
 
+    const rejections: Array<{tankId: number; text: string}> = [];
+
     system.update(
       tank,
       10,
@@ -87,11 +89,16 @@ describe('BuilderSystem', () => {
         onTrackForestRegrowth: () => {},
         onPlaceMine: () => false,
         onCreatePillbox: () => {},
+        onActionRejected: event => rejections.push(event),
       }
     );
 
     expect(builder.order).toBe(BuilderOrder.RETURNING);
     expect(builder.hasPillbox).toBe(true);
     expect(tank.carriedPillbox?.id).toBe(carried.id);
+    expect(rejections).toEqual([{
+      tankId: tank.id,
+      text: 'Builder action failed: cannot place pillbox here.',
+    }]);
   });
 });
