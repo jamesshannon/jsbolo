@@ -55,10 +55,10 @@ export class CombatSystem {
         this.checkShellTankCollisions(shell, context.players, callbacks);
       }
       if (shell.alive) {
-        this.checkShellPillboxCollisions(shell, context, callbacks);
+        this.checkShellPillboxCollisions(shell, context);
       }
       if (shell.alive) {
-        this.checkShellBaseCollisions(shell, context, callbacks);
+        this.checkShellBaseCollisions(shell, context);
       }
       if (shell.alive) {
         this.checkShellBuilderCollisions(shell, context.players, callbacks);
@@ -132,8 +132,7 @@ export class CombatSystem {
 
   private checkShellPillboxCollisions(
     shell: ServerShell,
-    context: CombatContext,
-    callbacks: CombatCallbacks
+    context: CombatContext
   ): void {
     for (const pillbox of context.pillboxes) {
       if (pillbox.isDead() || pillbox.inTank) {
@@ -152,24 +151,14 @@ export class CombatSystem {
       }
 
       shell.killByCollision();
-      const destroyed = pillbox.takeDamage(SHELL_DAMAGE);
-      if (!destroyed && shell.ownerTankId > 0) {
-        const owner = context.getPlayerByTankId(shell.ownerTankId);
-        if (
-          owner &&
-          !callbacks.areTeamsAllied(owner.tank.team, pillbox.ownerTeam)
-        ) {
-          pillbox.capture(owner.tank.team);
-        }
-      }
+      pillbox.takeShellHit();
       break;
     }
   }
 
   private checkShellBaseCollisions(
     shell: ServerShell,
-    context: CombatContext,
-    callbacks: CombatCallbacks
+    context: CombatContext
   ): void {
     for (const base of context.bases) {
       const pos = base.getWorldPosition();
@@ -182,13 +171,6 @@ export class CombatSystem {
 
       shell.killByCollision();
       base.takeDamage(SHELL_DAMAGE);
-
-      if (shell.ownerTankId > 0) {
-        const owner = context.getPlayerByTankId(shell.ownerTankId);
-        if (owner && !callbacks.areTeamsAllied(owner.tank.team, base.ownerTeam)) {
-          base.capture(owner.tank.team);
-        }
-      }
       break;
     }
   }

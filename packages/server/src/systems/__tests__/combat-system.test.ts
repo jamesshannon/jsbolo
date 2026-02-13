@@ -9,6 +9,8 @@ import {
 } from '@jsbolo/shared';
 import {ServerTank} from '../../simulation/tank.js';
 import {ServerWorld} from '../../simulation/world.js';
+import {ServerPillbox} from '../../simulation/pillbox.js';
+import {ServerBase} from '../../simulation/base.js';
 import {CombatSystem} from '../combat-system.js';
 
 describe('CombatSystem', () => {
@@ -247,5 +249,99 @@ describe('CombatSystem', () => {
     expect(owner.builder.isDead()).toBe(true);
     expect(sounds).toContain(SOUND_MAN_DYING);
     expect(killedBuilders).toEqual([owner.id]);
+  });
+
+  it('should damage pillboxes without transferring ownership on shell hit', () => {
+    const system = new CombatSystem();
+    const world = new ServerWorld();
+    world.setTerrainAt(50, 50, TerrainType.ROAD);
+
+    const attacker = new ServerTank(30, 4, 50, 50);
+    const pillbox = new ServerPillbox(50, 50, 9);
+    const initialArmor = pillbox.armor;
+
+    const shells = new Map<number, any>();
+    shells.set(301, {
+      id: 301,
+      x: (50 + 0.5) * 256,
+      y: (50 + 0.5) * 256,
+      direction: 0,
+      ownerTankId: attacker.id,
+      alive: true,
+      shouldExplode: false,
+      update() {},
+      getTilePosition: () => ({x: 50, y: 50}),
+      killByCollision() {
+        this.alive = false;
+      },
+    });
+
+    system.updateShells(
+      shells,
+      {
+        world,
+        players: [{tank: attacker}],
+        getPlayerByTankId: () => ({tank: attacker}),
+        pillboxes: [pillbox],
+        bases: [],
+      },
+      {
+        areTeamsAllied: () => false,
+        emitSound: () => {},
+        scheduleTankRespawn: () => {},
+        onTerrainChanged: () => {},
+        onForestDestroyed: () => {},
+      }
+    );
+
+    expect(pillbox.armor).toBe(initialArmor - 1);
+    expect(pillbox.ownerTeam).toBe(9);
+  });
+
+  it('should damage bases without transferring ownership on shell hit', () => {
+    const system = new CombatSystem();
+    const world = new ServerWorld();
+    world.setTerrainAt(50, 50, TerrainType.ROAD);
+
+    const attacker = new ServerTank(31, 4, 50, 50);
+    const base = new ServerBase(50, 50, 7);
+    const initialArmor = base.armor;
+
+    const shells = new Map<number, any>();
+    shells.set(302, {
+      id: 302,
+      x: (50 + 0.5) * 256,
+      y: (50 + 0.5) * 256,
+      direction: 0,
+      ownerTankId: attacker.id,
+      alive: true,
+      shouldExplode: false,
+      update() {},
+      getTilePosition: () => ({x: 50, y: 50}),
+      killByCollision() {
+        this.alive = false;
+      },
+    });
+
+    system.updateShells(
+      shells,
+      {
+        world,
+        players: [{tank: attacker}],
+        getPlayerByTankId: () => ({tank: attacker}),
+        pillboxes: [],
+        bases: [base],
+      },
+      {
+        areTeamsAllied: () => false,
+        emitSound: () => {},
+        scheduleTankRespawn: () => {},
+        onTerrainChanged: () => {},
+        onForestDestroyed: () => {},
+      }
+    );
+
+    expect(base.armor).toBe(initialArmor - 5);
+    expect(base.ownerTeam).toBe(7);
   });
 });

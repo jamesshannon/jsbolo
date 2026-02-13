@@ -1,15 +1,16 @@
 /**
  * Bolo Manual Spec: Pillboxes
  *
- * Manual Reference: docs/bolo-manual-reference.md § 9 "Pillboxes"
+ * Manual Reference: references/bolo-manual-reference.md § 9 "Pillboxes"
  *
  * Tests pillbox behavior - targeting, firing, damage, pickup/placement:
  * - Auto-targeting: 8-tile range, neutral shoots all, team-owned shoots enemies only
- * - Variable fire rate: starts at 6 ticks, slows to 100 over time
+ * - Variable fire rate: starts at 100 ticks; aggravation can lower to 6, then
+ *   cooldown returns toward 100 over time
  * - Aggravation mechanic: hit → speed halves, cooldown resets
  * - "In a straightforward confrontation, with a tank and a pillbox both firing
  *    at each other as fast as they can, a pillbox will win every time."
- * - Damage: 15 armor, 5 per hit (3 hits to disable)
+ * - Damage: 15 armor, 1 per shell hit (15 hits to disable)
  * - "Pillboxes can never be totally destroyed, just disabled."
  * - Pickup/placement/repair (NOT YET IMPLEMENTED)
  * - Forest concealment (NOT YET IMPLEMENTED)
@@ -21,7 +22,6 @@ import { ServerWorld } from '../../simulation/world.js';
 import {
   PILLBOX_MAX_ARMOR,
   PILLBOX_RANGE,
-  SHELL_DAMAGE,
   TILE_SIZE_WORLD,
   NEUTRAL_TEAM,
 } from '@jsbolo/shared';
@@ -103,13 +103,13 @@ describe('Bolo Manual Spec: 8. Pillboxes', () => {
   });
 
   describe('8b. Variable Fire Rate', () => {
-    it('should start with fire speed of 6 ticks between shots', () => {
+    it('should start with fire speed of 100 ticks between shots', () => {
       const pb = new ServerPillbox(50, 50);
-      expect(pb['speed']).toBe(6);
+      expect(pb['speed']).toBe(100);
     });
 
-    it('should increase fire interval over time (gets slower)', () => {
-      const pb = new ServerPillbox(50, 50);
+    it('should increase fire interval over time after aggravation (gets slower)', () => {
+      const pb = new ServerPillbox(50, 50, NEUTRAL_TEAM, 50);
       const initialSpeed = pb['speed'];
 
       // Run 33 updates (32 ticks to trigger speed increase + 1)
@@ -117,7 +117,7 @@ describe('Bolo Manual Spec: 8. Pillboxes', () => {
         pb.update();
       }
 
-      expect(pb['speed']).toBe(initialSpeed + 1); // 7
+      expect(pb['speed']).toBe(initialSpeed + 1); // 51
     });
 
     // "aggravation mechanic: halve speed when hit"
@@ -131,7 +131,7 @@ describe('Bolo Manual Spec: 8. Pillboxes', () => {
       const speedBefore = pb['speed'];
       expect(speedBefore).toBeGreaterThan(6);
 
-      pb.takeDamage(SHELL_DAMAGE);
+      pb.takeShellHit();
       expect(pb['speed']).toBe(Math.max(6, Math.floor(speedBefore / 2)));
     });
   });
@@ -142,19 +142,22 @@ describe('Bolo Manual Spec: 8. Pillboxes', () => {
       expect(pb.armor).toBe(PILLBOX_MAX_ARMOR); // 15
     });
 
-    it('should take 3 shell hits to disable (15 / 5 = 3)', () => {
+    it('should take 15 shell hits to disable (15 / 1 = 15)', () => {
       const pb = new ServerPillbox(50, 50);
-      pb.takeDamage(SHELL_DAMAGE); // 15 -> 10
-      pb.takeDamage(SHELL_DAMAGE); // 10 -> 5
+      for (let i = 0; i < 14; i++) {
+        pb.takeShellHit();
+      }
       expect(pb.isDead()).toBe(false);
-      pb.takeDamage(SHELL_DAMAGE); // 5 -> 0
+      pb.takeShellHit();
       expect(pb.isDead()).toBe(true);
     });
 
     // "Pillboxes can never be totally destroyed, just disabled"
     it('should be disabled (not destroyed) at 0 armor - can be picked up', () => {
       const pb = new ServerPillbox(50, 50);
-      pb.takeDamage(15); // Set to 0
+      for (let i = 0; i < 15; i++) {
+        pb.takeShellHit();
+      }
       expect(pb.isDead()).toBe(true);
       // Pillbox object still exists - can be picked up and repaired
       expect(pb.armor).toBe(0);

@@ -45,6 +45,8 @@ describe('SessionWorldBootstrap', () => {
     expect(pillbox.tileY).toBe(12);
     expect(pillbox.armor).toBe(90);
     expect(pillbox.ownerTeam).toBe(2);
+    // Map speed is clamped to the minimum supported fire interval (6 ticks).
+    expect(pillbox.getAttackSpeed()).toBe(6);
 
     const base = Array.from(result.bases.values())[0]!;
     expect(base.tileX).toBe(21);

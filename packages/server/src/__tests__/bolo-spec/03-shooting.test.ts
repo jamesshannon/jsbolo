@@ -1,7 +1,7 @@
 /**
  * Bolo Manual Spec: Shooting
  *
- * Manual Reference: docs/bolo-manual-reference.md § 4 "Shooting"
+ * Manual Reference: references/bolo-manual-reference.md § 4 "Shooting"
  * Also covers: § "Mine Clearing" (range adjustment for mine clearing)
  *
  * Tests shell firing, movement, collisions, and reload:
@@ -9,7 +9,7 @@
  * - Default range (7 tiles), adjustable 1-9 tiles
  * - Collisions with terrain (solid vs pass-through)
  * - Collisions with tanks, pillboxes, bases (128 unit hit radius)
- * - Damage (5 per hit)
+ * - Damage (tank/base: 5 per hit, pillbox shell-hit degradation: 1 per hit)
  * - Reload timer (13 ticks)
  * - Range adjustment for manual mine clearing
  */
@@ -185,30 +185,31 @@ describe('Bolo Manual Spec: 3. Shooting', () => {
   });
 
   describe('3d. Shell-Pillbox Collision', () => {
-    it('should deal 5 damage per hit to pillbox', () => {
+    it('should deal 1 damage per shell hit to pillbox', () => {
       const pb = new ServerPillbox(50, 50);
       const before = pb.armor;
-      pb.takeDamage(SHELL_DAMAGE);
-      expect(pb.armor).toBe(before - 5);
+      pb.takeShellHit();
+      expect(pb.armor).toBe(before - 1);
     });
 
-    it('should destroy pillbox after enough hits (15 / 5 = 3 hits)', () => {
+    it('should disable pillbox after enough hits (15 hits)', () => {
       const pb = new ServerPillbox(50, 50);
       expect(pb.armor).toBe(PILLBOX_MAX_ARMOR); // 15
 
-      pb.takeDamage(SHELL_DAMAGE); // 10
-      expect(pb.isDead()).toBe(false);
-      pb.takeDamage(SHELL_DAMAGE); // 5
-      expect(pb.isDead()).toBe(false);
-      pb.takeDamage(SHELL_DAMAGE); // 0
+      for (let i = 0; i < 14; i++) {
+        pb.takeShellHit();
+        expect(pb.isDead()).toBe(false);
+      }
+      pb.takeShellHit();
       expect(pb.isDead()).toBe(true);
     });
 
-    // "you can drive over the pillbox and pick it up... It will be repaired"
-    it('should capture pillbox when hit by enemy shell', () => {
-      const pb = new ServerPillbox(50, 50, 255); // neutral
-      pb.capture(3);
-      expect(pb.ownerTeam).toBe(3);
+    // Manual behavior: shell damage does not transfer ownership.
+    // Ownership changes when a disabled pillbox is picked up.
+    it('should not change ownership from shell hits alone', () => {
+      const pb = new ServerPillbox(50, 50, 1);
+      pb.takeShellHit();
+      expect(pb.ownerTeam).toBe(1);
     });
   });
 
@@ -220,10 +221,10 @@ describe('Bolo Manual Spec: 3. Shooting', () => {
       expect(base.armor).toBe(before - 5);
     });
 
-    it('should capture base when hit by enemy shell', () => {
-      const base = new ServerBase(50, 50, 255); // neutral
-      base.capture(2);
-      expect(base.ownerTeam).toBe(2);
+    it('should not change base ownership from shell damage alone', () => {
+      const base = new ServerBase(50, 50, 1);
+      base.takeDamage(SHELL_DAMAGE);
+      expect(base.ownerTeam).toBe(1);
     });
   });
 

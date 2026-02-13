@@ -37,8 +37,9 @@ export class SessionWorldBootstrap {
       for (const spawn of spawns) {
         const pillbox = new ServerPillbox(spawn.tileX, spawn.tileY, spawn.ownerTeam);
         pillbox.armor = spawn.armor;
-        // ASSUMPTION: map `speed` is currently not applied because server-side
-        // pillbox cadence uses dynamic aggravation behavior.
+        // Preserve map-authored pillbox cadence (6..100 ticks between shots).
+        // Invalid values are clamped by `setAttackSpeed`.
+        pillbox.setAttackSpeed(spawn.speed);
         pillboxes.set(pillbox.id, pillbox);
       }
       this.log(`  Spawned ${spawns.length} pillboxes from map`);

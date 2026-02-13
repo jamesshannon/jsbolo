@@ -6,6 +6,7 @@ import {
   TILE_SIZE_PIXELS,
   TerrainType,
   BuilderOrder,
+  NEUTRAL_TEAM,
   type Tank as NetworkTank,
   type Shell,
   type Builder,
@@ -75,17 +76,18 @@ export class Renderer {
     myPlayerId: number | null
   ): void {
     this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+    const myTeam = myPlayerId !== null ? tanks.get(myPlayerId)?.team ?? null : null;
 
     this.renderTerrain(world);
 
     // Render all bases
     for (const baseData of bases.values()) {
-      this.renderBase(baseData);
+      this.renderBase(baseData, myTeam);
     }
 
     // Render all pillboxes
     for (const pillboxData of pillboxes.values()) {
-      this.renderPillbox(pillboxData);
+      this.renderPillbox(pillboxData, myTeam);
     }
 
     // Render all shells
@@ -95,7 +97,7 @@ export class Renderer {
 
     // Render all tanks
     for (const [tankId, tankData] of tanks) {
-      this.renderNetworkTank(tankData, tankId === myPlayerId);
+      this.renderNetworkTank(tankData, tankId === myPlayerId, myTeam);
     }
 
     // Render all builders
@@ -144,24 +146,14 @@ export class Renderer {
         tileDef = TERRAIN_TILES[cell.terrain] || TERRAIN_TILES[TerrainType.GRASS];
       }
 
+      const drawTileY = cell.hasMine ? tileDef.y + 10 : tileDef.y;
       this.baseSprites.drawTile(
         this.ctx,
         tileDef.x,
-        tileDef.y,
+        drawTileY,
         screenX,
         screenY
       );
-
-      // Draw mine indicator if present
-      if (cell.hasMine) {
-        this.ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
-        this.ctx.fillRect(
-          screenX,
-          screenY,
-          TILE_SIZE_PIXELS,
-          TILE_SIZE_PIXELS
-        );
-      }
     });
   }
 
@@ -201,7 +193,11 @@ export class Renderer {
   /**
    * Render tank from network state
    */
-  private renderNetworkTank(tankData: NetworkTank, isLocalPlayer: boolean): void {
+  private renderNetworkTank(
+    tankData: NetworkTank,
+    isLocalPlayer: boolean,
+    myTeam: number | null
+  ): void {
     if (tankData.x === undefined || tankData.y === undefined) {
       return;
     }
@@ -222,6 +218,7 @@ export class Renderer {
       screenPos.x - TILE_SIZE_PIXELS / 2,
       screenPos.y - TILE_SIZE_PIXELS / 2
     );
+    this.drawTankTurretMarker(screenPos.x, screenPos.y, tankData.direction, tankData.team, myTeam, isLocalPlayer);
 
     // Draw targeting reticle (only for local player)
     if (isLocalPlayer && tankData.firingRange !== undefined) {
@@ -337,13 +334,18 @@ export class Renderer {
 
     const screenPos = this.camera.worldToScreen(pixelX, pixelY);
 
-    // Draw builder as a small green circle (placeholder)
-    this.ctx.save();
-    this.ctx.fillStyle = '#00ff00'; // Green
-    this.ctx.beginPath();
-    this.ctx.arc(screenPos.x, screenPos.y, 4, 0, Math.PI * 2);
-    this.ctx.fill();
+    const animationFrame = Math.floor(performance.now() / 150) % 3;
+    const tileX = builderData.order === BuilderOrder.PARACHUTING ? 16 : 17;
+    const tileY = builderData.order === BuilderOrder.PARACHUTING ? 1 : animationFrame;
+    this.styledSprites.drawTile(
+      this.ctx,
+      tileX,
+      tileY,
+      screenPos.x - TILE_SIZE_PIXELS / 2,
+      screenPos.y - TILE_SIZE_PIXELS / 2
+    );
 
+    this.ctx.save();
     // Draw a line to target location if moving
     if (
       builderData.order === BuilderOrder.WAITING ||
@@ -371,7 +373,10 @@ export class Renderer {
   /**
    * Render pillbox
    */
-  private renderPillbox(pillboxData: Pillbox): void {
+  private renderPillbox(
+    pillboxData: Pillbox,
+    myTeam: number | null
+  ): void {
     if (
       pillboxData.tileX === undefined ||
       pillboxData.tileY === undefined ||
@@ -380,179 +385,137 @@ export class Renderer {
       return;
     }
 
-    // Convert tile to pixel coordinates (center of tile)
-    const pixelX = (pillboxData.tileX + 0.5) * TILE_SIZE_PIXELS;
-    const pixelY = (pillboxData.tileY + 0.5) * TILE_SIZE_PIXELS;
+    const worldX = pillboxData.tileX * TILE_SIZE_PIXELS;
+    const worldY = pillboxData.tileY * TILE_SIZE_PIXELS;
+    const camPos = this.camera.getPosition();
+    const screenX = worldX - camPos.x;
+    const screenY = worldY - camPos.y;
+    const centerX = screenX + (TILE_SIZE_PIXELS / 2);
+    const centerY = screenY + (TILE_SIZE_PIXELS / 2);
 
-    const screenPos = this.camera.worldToScreen(pixelX, pixelY);
+    // Classic sprite encoding: pillboxes live on base.png row 2, column=armor (0..15).
+    const armorTile = Math.max(0, Math.min(15, Math.round(pillboxData.armor)));
+    this.baseSprites.drawTile(this.ctx, armorTile, 2, screenX, screenY);
 
-    // Draw pillbox as a square with team color
     this.ctx.save();
-
-    // Color based on team (neutral = gray, team colors otherwise)
-    let color = '#606060'; // Neutral dark gray
-    if (pillboxData.ownerTeam !== 255) {
-      // Team colors (simple palette)
-      const teamColors = [
-        '#ff0000',
-        '#00ff00',
-        '#0000ff',
-        '#ffff00',
-        '#ff00ff',
-        '#00ffff',
-        '#ff8800',
-        '#8800ff',
-      ];
-      color = teamColors[pillboxData.ownerTeam % teamColors.length] ?? '#ffffff';
+    const markerColor = this.getRelationColor(pillboxData.ownerTeam, myTeam, '#de2f2f');
+    if (pillboxData.ownerTeam === NEUTRAL_TEAM) {
+      this.drawCheckerAccent(centerX, centerY, markerColor);
+    } else {
+      this.drawPillboxGunMarkers(centerX, centerY, markerColor);
     }
-
-    // Draw larger pillbox body (20x20)
-    this.ctx.fillStyle = color;
-    this.ctx.fillRect(
-      screenPos.x - 10,
-      screenPos.y - 10,
-      20,
-      20
-    );
-
-    // Draw black border
-    this.ctx.strokeStyle = '#000000';
-    this.ctx.lineWidth = 2;
-    this.ctx.strokeRect(
-      screenPos.x - 10,
-      screenPos.y - 10,
-      20,
-      20
-    );
-
-    // Draw white inner border for visibility
-    this.ctx.strokeStyle = '#ffffff';
-    this.ctx.lineWidth = 1;
-    this.ctx.strokeRect(
-      screenPos.x - 9,
-      screenPos.y - 9,
-      18,
-      18
-    );
-
-    // Draw health bar above pillbox
-    if (pillboxData.armor > 0) {
-      const barWidth = 16;
-      const barHeight = 3;
-      const healthPercent = pillboxData.armor / 15; // PILLBOX_MAX_ARMOR
-
-      this.ctx.fillStyle = '#ff0000';
-      this.ctx.fillRect(
-        screenPos.x - barWidth / 2,
-        screenPos.y - 12,
-        barWidth,
-        barHeight
-      );
-
-      this.ctx.fillStyle = '#00ff00';
-      this.ctx.fillRect(
-        screenPos.x - barWidth / 2,
-        screenPos.y - 12,
-        barWidth * healthPercent,
-        barHeight
-      );
-    }
-
     this.ctx.restore();
   }
 
   /**
    * Render base (refueling station)
    */
-  private renderBase(baseData: Base): void {
+  private renderBase(baseData: Base, myTeam: number | null): void {
     if (baseData.tileX === undefined || baseData.tileY === undefined) {
       return;
     }
 
-    // Convert tile to pixel coordinates (center of tile)
-    const pixelX = (baseData.tileX + 0.5) * TILE_SIZE_PIXELS;
-    const pixelY = (baseData.tileY + 0.5) * TILE_SIZE_PIXELS;
+    const worldX = baseData.tileX * TILE_SIZE_PIXELS;
+    const worldY = baseData.tileY * TILE_SIZE_PIXELS;
+    const camPos = this.camera.getPosition();
+    const screenX = worldX - camPos.x;
+    const screenY = worldY - camPos.y;
+    const centerX = screenX + (TILE_SIZE_PIXELS / 2);
+    const centerY = screenY + (TILE_SIZE_PIXELS / 2);
 
-    const screenPos = this.camera.worldToScreen(pixelX, pixelY);
+    // Classic sprite encoding: base lives on base.png (16, 0).
+    this.baseSprites.drawTile(this.ctx, 16, 0, screenX, screenY);
 
-    // Draw base as a larger square with team color
     this.ctx.save();
-
-    // Color based on team (neutral = blue-gray, team colors otherwise)
-    let color = '#4466aa'; // Neutral blue-gray
-    if (baseData.ownerTeam !== 255) {
-      // Team colors (simple palette)
-      const teamColors = [
-        '#ff0000',
-        '#00ff00',
-        '#0000ff',
-        '#ffff00',
-        '#ff00ff',
-        '#00ffff',
-        '#ff8800',
-        '#8800ff',
-      ];
-      color = teamColors[baseData.ownerTeam % teamColors.length] ?? '#ffffff';
-    }
-
-    // Draw larger base body (28x28)
-    this.ctx.fillStyle = color;
-    this.ctx.fillRect(screenPos.x - 14, screenPos.y - 14, 28, 28);
-
-    // Draw black border
-    this.ctx.strokeStyle = '#000000';
-    this.ctx.lineWidth = 2;
-    this.ctx.strokeRect(screenPos.x - 14, screenPos.y - 14, 28, 28);
-
-    // Draw white inner border
-    this.ctx.strokeStyle = '#ffffff';
-    this.ctx.lineWidth = 1;
-    this.ctx.strokeRect(screenPos.x - 13, screenPos.y - 13, 26, 26);
-
-    // Draw cross pattern to distinguish from pillboxes
-    this.ctx.strokeStyle = '#000000';
-    this.ctx.lineWidth = 2;
-    this.ctx.beginPath();
-    this.ctx.moveTo(screenPos.x - 14, screenPos.y);
-    this.ctx.lineTo(screenPos.x + 14, screenPos.y);
-    this.ctx.moveTo(screenPos.x, screenPos.y - 14);
-    this.ctx.lineTo(screenPos.x, screenPos.y + 14);
-    this.ctx.stroke();
-
-    // Draw health bar above base
-    if (baseData.armor > 0) {
-      const barWidth = 28;
-      const barHeight = 3;
-      const healthPercent = baseData.armor / 90; // BASE_MAX_ARMOR
-
-      this.ctx.fillStyle = '#ff0000';
-      this.ctx.fillRect(
-        screenPos.x - barWidth / 2,
-        screenPos.y - 20,
-        barWidth,
-        barHeight
-      );
-
-      this.ctx.fillStyle = '#00ff00';
-      this.ctx.fillRect(
-        screenPos.x - barWidth / 2,
-        screenPos.y - 20,
-        barWidth * healthPercent,
-        barHeight
-      );
-    }
-
-    // Draw resource indicators (shells/mines) below base
-    this.ctx.fillStyle = '#ffffff';
-    this.ctx.font = '8px monospace';
-    this.ctx.textAlign = 'center';
-    this.ctx.fillText(
-      `S:${baseData.shells} M:${baseData.mines}`,
-      screenPos.x,
-      screenPos.y + 22
-    );
-
+    const ringColor = this.getRelationColor(baseData.ownerTeam, myTeam, '#26d93b');
+    this.drawBaseOwnershipRing(centerX, centerY, ringColor, baseData.ownerTeam === NEUTRAL_TEAM);
     this.ctx.restore();
+  }
+
+  private getRelationColor(
+    ownerTeam: number,
+    myTeam: number | null,
+    neutralColor: string
+  ): string {
+    if (ownerTeam === NEUTRAL_TEAM) {
+      return neutralColor;
+    }
+    if (myTeam === null) {
+      return '#e5e5e5';
+    }
+    return ownerTeam === myTeam ? '#26d93b' : '#de2f2f';
+  }
+
+  private drawTankTurretMarker(
+    centerX: number,
+    centerY: number,
+    direction: number,
+    team: number,
+    myTeam: number | null,
+    isLocalPlayer: boolean
+  ): void {
+    const markerColor = isLocalPlayer
+      ? '#0a0a0a'
+      : (myTeam !== null && team === myTeam ? '#26d93b' : '#de2f2f');
+    const angle = ((256 - direction) * 2 * Math.PI) / 256;
+    const tipX = centerX + Math.cos(angle) * 10;
+    const tipY = centerY + Math.sin(angle) * 10;
+
+    this.ctx.save();
+    this.ctx.strokeStyle = markerColor;
+    this.ctx.lineWidth = 3;
+    this.ctx.beginPath();
+    this.ctx.moveTo(centerX, centerY);
+    this.ctx.lineTo(tipX, tipY);
+    this.ctx.stroke();
+    this.ctx.restore();
+  }
+
+  private drawPillboxGunMarkers(
+    centerX: number,
+    centerY: number,
+    color: string
+  ): void {
+    const offsets = [
+      {x: 0, y: -9},
+      {x: 9, y: 0},
+      {x: 0, y: 9},
+      {x: -9, y: 0},
+    ];
+    this.ctx.fillStyle = color;
+    for (const offset of offsets) {
+      this.ctx.fillRect(centerX + offset.x - 1, centerY + offset.y - 1, 3, 3);
+    }
+  }
+
+  private drawCheckerAccent(
+    centerX: number,
+    centerY: number,
+    color: string
+  ): void {
+    this.ctx.fillStyle = color;
+    for (let y = -6; y <= 2; y += 4) {
+      for (let x = -6; x <= 2; x += 4) {
+        this.ctx.fillRect(centerX + x, centerY + y, 2, 2);
+      }
+    }
+  }
+
+  private drawBaseOwnershipRing(
+    centerX: number,
+    centerY: number,
+    color: string,
+    dotted: boolean
+  ): void {
+    this.ctx.strokeStyle = color;
+    this.ctx.lineWidth = 2;
+    if (dotted) {
+      this.ctx.setLineDash([2, 2]);
+    }
+    this.ctx.beginPath();
+    this.ctx.arc(centerX, centerY, 10, 0, Math.PI * 2);
+    this.ctx.stroke();
+    this.ctx.setLineDash([]);
   }
 
   /**

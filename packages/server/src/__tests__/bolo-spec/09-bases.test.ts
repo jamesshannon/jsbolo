@@ -10,7 +10,7 @@
  * - Transfer rate: 1 armor/shells/mines per tick (with 2-tick cooldown)
  * - Starting stocks: 90 armor, 40 shells, 40 mines
  * - Neutral bases refuel anyone; team bases only refuel friendlies
- * - Capture via shell hit or drive-over (when neutral)
+ * - Capture via drive-over (neutral or armor-depleted enemy base)
  * - Self-replenishment over time (NOT YET IMPLEMENTED)
  * - "The object of the game is, eventually, to have captured all of these
  *    refueling bases."
@@ -111,10 +111,10 @@ describe('Bolo Manual Spec: 9. Bases', () => {
   });
 
   describe('9b. Capture', () => {
-    it('should capture base when shot by enemy shell', () => {
+    it('should not change ownership when only taking shell damage', () => {
       const base = new ServerBase(50, 50, NEUTRAL_TEAM);
-      base.capture(3);
-      expect(base.ownerTeam).toBe(3);
+      base.takeDamage(5);
+      expect(base.ownerTeam).toBe(NEUTRAL_TEAM);
     });
 
     it('should allow changing ownership via capture', () => {
