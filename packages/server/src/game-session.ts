@@ -589,6 +589,8 @@ export class GameSession {
       text,
       players: this.players.values(),
       class: 'global_notification',
+      // Ownership swings are high-signal events and should survive queue pressure.
+      priority: 'high',
     });
   }
 

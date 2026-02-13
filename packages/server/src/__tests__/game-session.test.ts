@@ -726,6 +726,33 @@ describe('GameSession Integration', () => {
       expect(alliance3.hudMessages).toBeUndefined();
     });
 
+    it('should seed reconnecting/new players with recent global HUD tail only', () => {
+      const ws1 = createMockWebSocket();
+      const ws2 = createMockWebSocket();
+      const playerId1 = session.addPlayer(ws1);
+
+      // Flush initial join/welcome packets.
+      (session as any).broadcastState();
+      (ws1.send as any).mockClear();
+
+      // Emit enough global messages to exceed retained history.
+      for (let i = 0; i < 30; i++) {
+        session.handlePlayerChat(playerId1, `seed-${i}`);
+      }
+
+      session.addPlayer(ws2);
+      (session as any).broadcastState();
+
+      const message2 = decodeServerMessage((ws2.send as any).mock.calls.slice(-1)[0][0]);
+      const texts = (message2.hudMessages ?? []).map(m => m.text);
+      const seededChats = texts.filter(text => text.includes('seed-'));
+
+      // Service keeps only the recent global tail instead of replaying full history.
+      expect(seededChats).toHaveLength(24);
+      expect(seededChats.some(text => text.includes('seed-0'))).toBe(false);
+      expect(seededChats.some(text => text.includes('seed-29'))).toBe(true);
+    });
+
     it('should send welcome message with map data', () => {
       const ws = createMockWebSocket();
       session.addPlayer(ws);

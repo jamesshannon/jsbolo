@@ -12,6 +12,7 @@ interface PublishGlobalArgs {
   text: string;
   players: Iterable<HudRecipient>;
   class?: HudMessageClass;
+  priority?: HudMessagePriority;
 }
 
 interface PublishAllianceArgs {
@@ -21,6 +22,7 @@ interface PublishAllianceArgs {
   players: Iterable<HudRecipient>;
   areTeamsAllied: (teamA: number, teamB: number) => boolean;
   class?: HudMessageClass;
+  priority?: HudMessagePriority;
 }
 
 interface PublishPersonalArgs {
@@ -28,6 +30,14 @@ interface PublishPersonalArgs {
   text: string;
   playerId: number;
   class?: HudMessageClass;
+  priority?: HudMessagePriority;
+}
+
+type HudMessagePriority = 'high' | 'normal' | 'low';
+
+interface QueueEntry {
+  message: HudMessage;
+  priority: HudMessagePriority;
 }
 
 const MAX_QUEUE_PER_PLAYER = 64;
@@ -44,7 +54,7 @@ const COALESCE_WINDOW_TICKS = 100; // 2 seconds at 50 TPS
  */
 export class HudMessageService {
   private nextId = 1;
-  private readonly queues = new Map<number, HudMessage[]>();
+  private readonly queues = new Map<number, QueueEntry[]>();
   private readonly globalHistory: HudMessage[] = [];
 
   publishGlobal(args: PublishGlobalArgs): void {
@@ -53,9 +63,10 @@ export class HudMessageService {
       class: args.class ?? 'global_notification',
       text: args.text,
     });
+    const priority = args.priority ?? this.getDefaultPriority(message.class);
     this.pushToGlobalHistory(message);
     for (const player of args.players) {
-      this.enqueue(player.id, message);
+      this.enqueue(player.id, message, priority);
     }
   }
 
@@ -65,21 +76,25 @@ export class HudMessageService {
         player.tank.team === args.sourceTeam ||
         args.areTeamsAllied(args.sourceTeam, player.tank.team)
       ) {
-        this.enqueue(player.id, this.createMessage({
+        const message = this.createMessage({
           tick: args.tick,
           class: args.class ?? 'alliance_notification',
           text: args.text,
-        }));
+        });
+        const priority = args.priority ?? this.getDefaultPriority(message.class);
+        this.enqueue(player.id, message, priority);
       }
     }
   }
 
   publishPersonal(args: PublishPersonalArgs): void {
-    this.enqueue(args.playerId, this.createMessage({
+    const message = this.createMessage({
       tick: args.tick,
       class: args.class ?? 'personal_notification',
       text: args.text,
-    }));
+    });
+    const priority = args.priority ?? this.getDefaultPriority(message.class);
+    this.enqueue(args.playerId, message, priority);
   }
 
   /**
@@ -88,11 +103,15 @@ export class HudMessageService {
   seedPlayerFromRecentGlobal(playerId: number, currentTick: number): void {
     this.pruneGlobalHistory(currentTick);
     for (const message of this.globalHistory) {
-      this.enqueue(playerId, this.createMessage({
-        tick: message.tick,
-        class: message.class,
-        text: message.text,
-      }));
+      this.enqueue(
+        playerId,
+        this.createMessage({
+          tick: message.tick,
+          class: message.class,
+          text: message.text,
+        }),
+        this.getDefaultPriority(message.class)
+      );
     }
   }
 
@@ -103,7 +122,7 @@ export class HudMessageService {
     }
 
     this.queues.set(playerId, []);
-    return queued;
+    return queued.map(entry => entry.message);
   }
 
   private createMessage(args: {
@@ -119,30 +138,36 @@ export class HudMessageService {
     };
   }
 
-  private enqueue(playerId: number, message: HudMessage): void {
+  private enqueue(
+    playerId: number,
+    message: HudMessage,
+    priority: HudMessagePriority
+  ): void {
     const queue = this.queues.get(playerId) ?? [];
     this.pruneExpired(queue, message.tick);
 
-    const last = queue[queue.length - 1];
+    const last = queue[queue.length - 1]?.message;
     if (last && this.canCoalesce(last, message)) {
+      const lastEntry = queue[queue.length - 1]!;
       queue[queue.length - 1] = {
-        ...last,
-        text: this.bumpCoalescedText(last.text),
+        ...lastEntry,
+        message: {
+          ...lastEntry.message,
+          text: this.bumpCoalescedText(lastEntry.message.text),
+        },
       };
       this.queues.set(playerId, queue);
       return;
     }
 
-    queue.push(message);
-    if (queue.length > MAX_QUEUE_PER_PLAYER) {
-      queue.shift();
-    }
+    queue.push({message, priority});
+    this.trimOverflow(queue);
     this.queues.set(playerId, queue);
   }
 
-  private pruneExpired(queue: HudMessage[], currentTick: number): void {
+  private pruneExpired(queue: QueueEntry[], currentTick: number): void {
     const minTick = currentTick - MESSAGE_TTL_TICKS;
-    while (queue.length > 0 && queue[0]!.tick < minTick) {
+    while (queue.length > 0 && queue[0]!.message.tick < minTick) {
       queue.shift();
     }
   }
@@ -177,6 +202,42 @@ export class HudMessageService {
     const minTick = currentTick - MESSAGE_TTL_TICKS;
     while (this.globalHistory.length > 0 && this.globalHistory[0]!.tick < minTick) {
       this.globalHistory.shift();
+    }
+  }
+
+  /**
+   * Enforce bounded queues while preserving high-signal events under pressure.
+   * Drops oldest low-priority entries first, then normal, then high.
+   */
+  private trimOverflow(queue: QueueEntry[]): void {
+    while (queue.length > MAX_QUEUE_PER_PLAYER) {
+      const lowIndex = queue.findIndex(entry => entry.priority === 'low');
+      if (lowIndex >= 0) {
+        queue.splice(lowIndex, 1);
+        continue;
+      }
+
+      const normalIndex = queue.findIndex(entry => entry.priority === 'normal');
+      if (normalIndex >= 0) {
+        queue.splice(normalIndex, 1);
+        continue;
+      }
+
+      queue.shift();
+    }
+  }
+
+  private getDefaultPriority(messageClass: HudMessageClass): HudMessagePriority {
+    switch (messageClass) {
+      case 'system_status':
+      case 'personal_notification':
+        return 'low';
+      case 'global_notification':
+      case 'alliance_notification':
+      case 'chat_global':
+      case 'chat_alliance':
+      default:
+        return 'normal';
     }
   }
 }

@@ -27,12 +27,14 @@
 - Hardened HUD queue behavior in server:
   - message TTL expiry (12s window)
   - short-window duplicate coalescing (`(xN)` suffix)
+  - priority-aware overflow trimming (drop oldest low, then normal, preserve high-signal events)
   - recent global history seeding for newly joined/reconnected players
 - Client HUD class visibility defaults now match policy:
   - global/alliance/personal/chat: enabled
   - system status: disabled by default
 - Added tests for:
   - server recipient routing and broadcaster payload isolation
+  - queue overflow policy and reconnect-tail seeding behavior
   - client HUD message class filtering
   - network decode path preserving `hudMessages` through client update callbacks
 
