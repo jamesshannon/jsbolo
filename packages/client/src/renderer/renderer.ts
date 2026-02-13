@@ -37,9 +37,23 @@ const TERRAIN_TILES: Record<TerrainType, {x: number; y: number}> = {
   [TerrainType.DEEP_SEA]: {x: 0, y: 0},      // '^' - deep sea fallback
 };
 
+const HUD_ICON_SIZE = 16;
+// NOTE: These icon coordinates come from the shared Orona/WinBolo HUD atlas.
+// They are used for classic-looking base/pillbox glyphs in-world.
+const HUD_ICONS = {
+  BASE_NEUTRAL: {x: 0, y: 0, width: HUD_ICON_SIZE, height: HUD_ICON_SIZE},
+  PILL_NEUTRAL: {x: 16, y: 0, width: HUD_ICON_SIZE, height: HUD_ICON_SIZE},
+  BASE_HEALTHY_MASK: {x: 32, y: 0, width: HUD_ICON_SIZE, height: HUD_ICON_SIZE},
+  BASE_VULNERABLE_MASK: {x: 48, y: 0, width: HUD_ICON_SIZE, height: HUD_ICON_SIZE},
+  PILL_DEAD: {x: 64, y: 0, width: HUD_ICON_SIZE, height: HUD_ICON_SIZE},
+  PILL_HEALTHY_MASK: {x: 80, y: 0, width: HUD_ICON_SIZE, height: HUD_ICON_SIZE},
+  PILL_DAMAGED_MASK: {x: 96, y: 0, width: HUD_ICON_SIZE, height: HUD_ICON_SIZE},
+} as const;
+
 export class Renderer {
   private baseSprites: SpriteSheet;
   private styledSprites: SpriteSheet;
+  private hudSprites: SpriteSheet;
 
   constructor(
     private readonly ctx: CanvasRenderingContext2D,
@@ -47,10 +61,15 @@ export class Renderer {
   ) {
     this.baseSprites = new SpriteSheet('/assets/sprites/base.png');
     this.styledSprites = new SpriteSheet('/assets/sprites/styled.png');
+    this.hudSprites = new SpriteSheet('/assets/sprites/hud.png');
   }
 
   async loadAssets(): Promise<void> {
-    await Promise.all([this.baseSprites.load(), this.styledSprites.load()]);
+    await Promise.all([
+      this.baseSprites.load(),
+      this.styledSprites.load(),
+      this.hudSprites.load(),
+    ]);
   }
 
   /**
@@ -393,18 +412,32 @@ export class Renderer {
     const centerX = screenX + (TILE_SIZE_PIXELS / 2);
     const centerY = screenY + (TILE_SIZE_PIXELS / 2);
 
-    // Classic sprite encoding: pillboxes live on base.png row 2, column=armor (0..15).
+    // Keep the armor-indexed damage progression from base.png visible, but subtle.
+    // This preserves classic "changes with hits" behavior while using clearer glyphs.
     const armorTile = Math.max(0, Math.min(15, Math.round(pillboxData.armor)));
-    this.baseSprites.drawTile(this.ctx, armorTile, 2, screenX, screenY);
-
     this.ctx.save();
-    const markerColor = this.getRelationColor(pillboxData.ownerTeam, myTeam, '#de2f2f');
-    if (pillboxData.ownerTeam === NEUTRAL_TEAM) {
-      this.drawCheckerAccent(centerX, centerY, markerColor);
-    } else {
-      this.drawPillboxGunMarkers(centerX, centerY, markerColor);
-    }
+    this.ctx.globalAlpha = 0.35;
+    this.baseSprites.drawTile(this.ctx, armorTile, 2, screenX, screenY);
     this.ctx.restore();
+
+    if (pillboxData.armor <= 0) {
+      this.drawHudIcon(HUD_ICONS.PILL_DEAD, centerX, centerY);
+      return;
+    }
+
+    if (pillboxData.ownerTeam === NEUTRAL_TEAM) {
+      this.drawHudIcon(HUD_ICONS.PILL_NEUTRAL, centerX, centerY);
+      return;
+    }
+
+    const relationColor = this.getRelationColor(pillboxData.ownerTeam, myTeam, '#d7bf2f');
+    // Assumption: the "damaged" HUD mask at x=96 is used as low-health proxy for
+    // readability until we have full per-hit dedicated pillbox icon states.
+    const mask = pillboxData.armor <= 5
+      ? HUD_ICONS.PILL_DAMAGED_MASK
+      : HUD_ICONS.PILL_HEALTHY_MASK;
+    const tintColor = pillboxData.armor <= 2 ? '#de2f2f' : relationColor;
+    this.drawTintedHudMask(mask, centerX, centerY, tintColor);
   }
 
   /**
@@ -420,16 +453,19 @@ export class Renderer {
     const camPos = this.camera.getPosition();
     const screenX = worldX - camPos.x;
     const screenY = worldY - camPos.y;
-    const centerX = screenX + (TILE_SIZE_PIXELS / 2);
-    const centerY = screenY + (TILE_SIZE_PIXELS / 2);
+    const centerX = screenX + TILE_SIZE_PIXELS / 2;
+    const centerY = screenY + TILE_SIZE_PIXELS / 2;
 
-    // Classic sprite encoding: base lives on base.png (16, 0).
-    this.baseSprites.drawTile(this.ctx, 16, 0, screenX, screenY);
+    if (baseData.ownerTeam === NEUTRAL_TEAM) {
+      this.drawHudIcon(HUD_ICONS.BASE_NEUTRAL, centerX, centerY);
+      return;
+    }
 
-    this.ctx.save();
-    const ringColor = this.getRelationColor(baseData.ownerTeam, myTeam, '#26d93b');
-    this.drawBaseOwnershipRing(centerX, centerY, ringColor, baseData.ownerTeam === NEUTRAL_TEAM);
-    this.ctx.restore();
+    const relationColor = this.getRelationColor(baseData.ownerTeam, myTeam, '#26d93b');
+    const mask = baseData.armor <= 9
+      ? HUD_ICONS.BASE_VULNERABLE_MASK
+      : HUD_ICONS.BASE_HEALTHY_MASK;
+    this.drawTintedHudMask(mask, centerX, centerY, relationColor);
   }
 
   private getRelationColor(
@@ -471,51 +507,32 @@ export class Renderer {
     this.ctx.restore();
   }
 
-  private drawPillboxGunMarkers(
+  private drawHudIcon(
+    src: {x: number; y: number; width: number; height: number},
     centerX: number,
-    centerY: number,
-    color: string
+    centerY: number
   ): void {
-    const offsets = [
-      {x: 0, y: -9},
-      {x: 9, y: 0},
-      {x: 0, y: 9},
-      {x: -9, y: 0},
-    ];
-    this.ctx.fillStyle = color;
-    for (const offset of offsets) {
-      this.ctx.fillRect(centerX + offset.x - 1, centerY + offset.y - 1, 3, 3);
-    }
+    this.hudSprites.drawSprite(
+      this.ctx,
+      src,
+      Math.round(centerX - HUD_ICON_SIZE / 2),
+      Math.round(centerY - HUD_ICON_SIZE / 2)
+    );
   }
 
-  private drawCheckerAccent(
+  private drawTintedHudMask(
+    src: {x: number; y: number; width: number; height: number},
     centerX: number,
     centerY: number,
-    color: string
+    tint: string
   ): void {
-    this.ctx.fillStyle = color;
-    for (let y = -6; y <= 2; y += 4) {
-      for (let x = -6; x <= 2; x += 4) {
-        this.ctx.fillRect(centerX + x, centerY + y, 2, 2);
-      }
-    }
-  }
-
-  private drawBaseOwnershipRing(
-    centerX: number,
-    centerY: number,
-    color: string,
-    dotted: boolean
-  ): void {
-    this.ctx.strokeStyle = color;
-    this.ctx.lineWidth = 2;
-    if (dotted) {
-      this.ctx.setLineDash([2, 2]);
-    }
-    this.ctx.beginPath();
-    this.ctx.arc(centerX, centerY, 10, 0, Math.PI * 2);
-    this.ctx.stroke();
-    this.ctx.setLineDash([]);
+    const x = Math.round(centerX - HUD_ICON_SIZE / 2);
+    const y = Math.round(centerY - HUD_ICON_SIZE / 2);
+    this.ctx.save();
+    this.ctx.fillStyle = tint;
+    this.ctx.fillRect(x, y, HUD_ICON_SIZE, HUD_ICON_SIZE);
+    this.ctx.restore();
+    this.hudSprites.drawSprite(this.ctx, src, x, y);
   }
 
   /**

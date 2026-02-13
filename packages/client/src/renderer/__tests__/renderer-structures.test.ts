@@ -4,13 +4,16 @@ import {Camera} from '../camera.js';
 import {Renderer} from '../renderer.js';
 
 type DrawCall = {x: number; y: number};
+type DrawSpriteCall = {x: number; y: number; width: number; height: number};
 
 const drawCallsBySheet = new Map<string, DrawCall[]>();
+const drawSpriteCallsBySheet = new Map<string, DrawSpriteCall[]>();
 
 vi.mock('../sprite-sheet.js', () => {
   class MockSpriteSheet {
     constructor(private readonly imagePath: string) {
       drawCallsBySheet.set(this.imagePath, []);
+      drawSpriteCallsBySheet.set(this.imagePath, []);
     }
 
     async load(): Promise<void> {}
@@ -21,6 +24,18 @@ vi.mock('../sprite-sheet.js', () => {
       y: number
     ): void {
       drawCallsBySheet.get(this.imagePath)?.push({x, y});
+    }
+
+    drawSprite(
+      _ctx: CanvasRenderingContext2D,
+      src: {x: number; y: number; width: number; height: number}
+    ): void {
+      drawSpriteCallsBySheet.get(this.imagePath)?.push({
+        x: src.x,
+        y: src.y,
+        width: src.width,
+        height: src.height,
+      });
     }
   }
 
@@ -70,9 +85,10 @@ function createWorldStub() {
 describe('Renderer structures', () => {
   beforeEach(() => {
     drawCallsBySheet.clear();
+    drawSpriteCallsBySheet.clear();
   });
 
-  it('renders pillboxes from base sheet using armor column on row 2', () => {
+  it('renders pillbox damage from base sheet and structure glyphs from hud sheet', () => {
     const ctx = createContext();
     const camera = new Camera(640, 480);
     camera.centerOn(320, 240);
@@ -100,17 +116,27 @@ describe('Renderer structures', () => {
       [10, {id: 10, tileX: 20, tileY: 20, armor: 6, ownerTeam: 255, inTank: false}],
     ]);
 
+    const bases = new Map<number, Base>([
+      [20, {id: 20, tileX: 21, tileY: 20, armor: 90, shells: 10, mines: 10, ownerTeam: 255}],
+    ]);
+
     renderer.renderMultiplayer(
       world,
       tanks,
       new Map<number, Shell>(),
       new Map<number, Builder>(),
       pillboxes,
-      new Map<number, Base>(),
+      bases,
       1
     );
 
     const baseCalls = drawCallsBySheet.get('/assets/sprites/base.png') ?? [];
     expect(baseCalls.some(call => call.x === 6 && call.y === 2)).toBe(true);
+
+    const hudCalls = drawSpriteCallsBySheet.get('/assets/sprites/hud.png') ?? [];
+    // Neutral pillbox glyph.
+    expect(hudCalls.some(call => call.x === 16 && call.y === 0)).toBe(true);
+    // Neutral base glyph.
+    expect(hudCalls.some(call => call.x === 0 && call.y === 0)).toBe(true);
   });
 });
