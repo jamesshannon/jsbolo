@@ -753,6 +753,29 @@ describe('GameSession Integration', () => {
       expect(seededChats.some(text => text.includes('seed-29'))).toBe(true);
     });
 
+    it('should publish global HUD notification when match ends', () => {
+      const ws = createMockWebSocket();
+      session.addPlayer(ws);
+      const bases = Array.from((session as any).bases.values());
+
+      // Force win condition: all bases owned by one team.
+      for (const base of bases) {
+        base.ownerTeam = 0;
+      }
+
+      // Flush welcome/join packets before validating win HUD.
+      (session as any).broadcastState();
+      (ws.send as any).mockClear();
+
+      (session as any).update();
+      (session as any).broadcastState();
+
+      const message = decodeServerMessage((ws.send as any).mock.calls.slice(-1)[0][0]);
+      expect(message.hudMessages?.some(m => m.text.includes('won the match'))).toBe(true);
+      expect(message.matchEnded).toBe(true);
+      expect(message.winningTeams).toEqual([0]);
+    });
+
     it('should send welcome message with map data', () => {
       const ws = createMockWebSocket();
       session.addPlayer(ws);

@@ -279,6 +279,7 @@ export class GameSession {
           this.spawnShellFromPillbox(pillboxId, x, y, direction),
         onMatchEnded: () => {
           this.matchEndAnnounced = false;
+          this.publishMatchEndHudMessage();
         },
         onBaseCaptured: event => {
           this.publishStructureCaptureHudMessage({
@@ -602,6 +603,28 @@ export class GameSession {
       players: this.players.values(),
       areTeamsAllied: (teamA, teamB) => this.areTeamsAllied(teamA, teamB),
       class: 'alliance_notification',
+    });
+  }
+
+  /**
+   * Emit a one-time global match result ticker when win condition is reached.
+   */
+  private publishMatchEndHudMessage(): void {
+    const winners = this.matchState.getWinningTeams();
+    if (winners.length === 0) {
+      return;
+    }
+
+    const text = winners.length === 1
+      ? `Team ${winners[0]} won the match`
+      : `Teams ${winners.join(', ')} won the match`;
+
+    this.hudMessages.publishGlobal({
+      tick: this.tick,
+      text,
+      players: this.players.values(),
+      class: 'global_notification',
+      priority: 'high',
     });
   }
 
