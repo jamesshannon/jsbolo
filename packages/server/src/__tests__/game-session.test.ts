@@ -685,7 +685,7 @@ describe('GameSession Integration', () => {
       const ws3 = createMockWebSocket();
       const playerId1 = session.addPlayer(ws1);
       const playerId2 = session.addPlayer(ws2);
-      session.addPlayer(ws3);
+      const playerId3 = session.addPlayer(ws3);
 
       const players = (session as any).players;
       const team1 = players.get(playerId1).tank.team;
@@ -724,6 +724,43 @@ describe('GameSession Integration', () => {
       expect(alliance1.hudMessages?.some(m => m.class === 'chat_alliance' && m.text.includes('ally only'))).toBe(true);
       expect(alliance2.hudMessages?.some(m => m.class === 'chat_alliance' && m.text.includes('ally only'))).toBe(true);
       expect(alliance3.hudMessages).toBeUndefined();
+
+      // Nearby chat should only reach players within local radius.
+      const tank1 = players.get(playerId1).tank;
+      const tank2 = players.get(playerId2).tank;
+      const tank3 = players.get(playerId3).tank;
+      tank1.x = 100 * 256;
+      tank1.y = 100 * 256;
+      tank2.x = 108 * 256;
+      tank2.y = 100 * 256;
+      tank3.x = 220 * 256;
+      tank3.y = 220 * 256;
+
+      (ws1.send as any).mockClear();
+      (ws2.send as any).mockClear();
+      (ws3.send as any).mockClear();
+
+      session.handlePlayerChat(playerId1, '/n local ping');
+      (session as any).broadcastState();
+      const nearby1 = decodeServerMessage((ws1.send as any).mock.calls.slice(-1)[0][0]);
+      const nearby2 = decodeServerMessage((ws2.send as any).mock.calls.slice(-1)[0][0]);
+      const nearby3 = decodeServerMessage((ws3.send as any).mock.calls.slice(-1)[0][0]);
+      expect(nearby1.hudMessages?.some(m => m.text.includes('(nearby): local ping'))).toBe(true);
+      expect(nearby2.hudMessages?.some(m => m.text.includes('(nearby): local ping'))).toBe(true);
+      expect(nearby3.hudMessages).toBeUndefined();
+
+      // Whisper should reach only sender and target.
+      (ws1.send as any).mockClear();
+      (ws2.send as any).mockClear();
+      (ws3.send as any).mockClear();
+      session.handlePlayerChat(playerId1, '/w 2 secret plan');
+      (session as any).broadcastState();
+      const whisper1 = decodeServerMessage((ws1.send as any).mock.calls.slice(-1)[0][0]);
+      const whisper2 = decodeServerMessage((ws2.send as any).mock.calls.slice(-1)[0][0]);
+      const whisper3 = decodeServerMessage((ws3.send as any).mock.calls.slice(-1)[0][0]);
+      expect(whisper1.hudMessages?.some(m => m.text.includes('to Player 2 (whisper): secret plan'))).toBe(true);
+      expect(whisper2.hudMessages?.some(m => m.text.includes('Player 1 (whisper): secret plan'))).toBe(true);
+      expect(whisper3.hudMessages).toBeUndefined();
     });
 
     it('should seed reconnecting/new players with recent global HUD tail only', () => {

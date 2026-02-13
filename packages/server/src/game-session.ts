@@ -6,6 +6,7 @@ import {
   TICK_LENGTH_MS,
   TANK_RESPAWN_TICKS,
   NEUTRAL_TEAM,
+  TILE_SIZE_WORLD,
   type PlayerInput,
   encodeServerMessage,
   type WelcomeMessage,
@@ -52,6 +53,7 @@ const DEFAULT_BOT_POLICY: BotPolicyOptions = {
   botAllianceMode: 'all-bots',
 };
 const MAX_CHAT_MESSAGE_LENGTH = 160;
+const NEARBY_CHAT_RADIUS_TILES = 24;
 
 export class GameSession {
   private readonly world: ServerWorld;
@@ -222,12 +224,39 @@ export class GameSession {
       return;
     }
 
+    const whisperMatch = sanitized.match(/^\/w\s+(\d+)\s+(.+)$/i);
+    if (whisperMatch) {
+      const recipientId = Number(whisperMatch[1]);
+      const whisperText = (whisperMatch[2] ?? '').trim().slice(0, MAX_CHAT_MESSAGE_LENGTH);
+      if (!Number.isFinite(recipientId) || !whisperText) {
+        return;
+      }
+      this.publishWhisperChat(playerId, recipientId, whisperText);
+      return;
+    }
+
+    const nearbyMatch = sanitized.match(/^\/n\s+(.+)$/i);
+    if (nearbyMatch) {
+      const nearbyText = (nearbyMatch[1] ?? '').trim().slice(0, MAX_CHAT_MESSAGE_LENGTH);
+      if (!nearbyText) {
+        return;
+      }
+      this.publishNearbyChat(playerId, nearbyText);
+      return;
+    }
+
     const messageText = `Player ${playerId}: ${sanitized}`;
-    if (options?.allianceOnly) {
+    if (options?.allianceOnly || /^\/a\s+/i.test(sanitized)) {
+      const allianceText = /^\/a\s+/i.test(sanitized)
+        ? sanitized.replace(/^\/a\s+/i, '').trim().slice(0, MAX_CHAT_MESSAGE_LENGTH)
+        : sanitized;
+      if (!allianceText) {
+        return;
+      }
       this.hudMessages.publishAlliance({
         tick: this.tick,
         sourceTeam: player.tank.team,
-        text: messageText,
+        text: `Player ${playerId}: ${allianceText}`,
         players: this.players.values(),
         areTeamsAllied: (teamA, teamB) => this.areTeamsAllied(teamA, teamB),
         class: 'chat_alliance',
@@ -241,6 +270,61 @@ export class GameSession {
       players: this.players.values(),
       class: 'chat_global',
     });
+  }
+
+  private publishNearbyChat(senderPlayerId: number, text: string): void {
+    const sender = this.players.get(senderPlayerId);
+    if (!sender) {
+      return;
+    }
+
+    const radiusWorldUnits = NEARBY_CHAT_RADIUS_TILES * TILE_SIZE_WORLD;
+    const radiusSquared = radiusWorldUnits * radiusWorldUnits;
+    const senderX = sender.tank.x;
+    const senderY = sender.tank.y;
+    const messageText = `Player ${senderPlayerId} (nearby): ${text}`;
+
+    for (const recipient of this.players.values()) {
+      const dx = recipient.tank.x - senderX;
+      const dy = recipient.tank.y - senderY;
+      const distanceSquared = (dx * dx) + (dy * dy);
+      if (distanceSquared > radiusSquared) {
+        continue;
+      }
+      this.hudMessages.publishPersonal({
+        tick: this.tick,
+        playerId: recipient.id,
+        text: messageText,
+        class: 'chat_global',
+      });
+    }
+  }
+
+  private publishWhisperChat(
+    senderPlayerId: number,
+    recipientPlayerId: number,
+    text: string
+  ): void {
+    const sender = this.players.get(senderPlayerId);
+    const recipient = this.players.get(recipientPlayerId);
+    if (!sender || !recipient) {
+      return;
+    }
+
+    this.hudMessages.publishPersonal({
+      tick: this.tick,
+      playerId: senderPlayerId,
+      text: `to Player ${recipientPlayerId} (whisper): ${text}`,
+      class: 'chat_alliance',
+    });
+    if (recipientPlayerId !== senderPlayerId) {
+      this.hudMessages.publishPersonal({
+        tick: this.tick,
+        playerId: recipientPlayerId,
+        text: `Player ${senderPlayerId} (whisper): ${text}`,
+        class: 'chat_alliance',
+      });
+    }
   }
 
   private update(): void {
