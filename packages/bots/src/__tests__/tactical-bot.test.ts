@@ -87,7 +87,7 @@ describe('TacticalBot', () => {
         shells: 3,
       },
       visibleBases: [
-        {id: 1, x: 1300, y: 1000, ownerTeam: 0, armor: 80, shells: 30, mines: 10},
+        {id: 1, x: 1800, y: 1000, ownerTeam: 0, armor: 80, shells: 30, mines: 10},
         {id: 2, x: 1700, y: 1000, ownerTeam: 1, armor: 80, shells: 30, mines: 10},
       ],
     }));
@@ -95,6 +95,25 @@ describe('TacticalBot', () => {
     expect(command.accelerating).toBe(true);
     expect(command.shooting).toBe(false);
     expect(command.rangeAdjustment).toBe(RangeAdjustment.NONE);
+  });
+
+  it('holds position to refuel when already in base refuel range', () => {
+    const bot = new TacticalBot();
+    const command = bot.think(createObservation({
+      self: {
+        ...createObservation().self,
+        armor: 12,
+        shells: 2,
+      },
+      visibleBases: [
+        // ~1 tile away
+        {id: 1, x: 1000 + 256, y: 1000, ownerTeam: 0, armor: 80, shells: 30, mines: 10},
+      ],
+    }));
+
+    expect(command.accelerating).toBe(false);
+    expect(command.braking).toBe(true);
+    expect(command.shooting).toBe(false);
   });
 
   it('engages a nearby enemy when aligned and weapon ready', () => {
@@ -128,6 +147,32 @@ describe('TacticalBot', () => {
     }));
 
     expect(command.accelerating).toBe(true);
+    expect(command.shooting).toBe(false);
+  });
+
+  it('disengages when enemy is point-blank', () => {
+    const bot = new TacticalBot();
+    const command = bot.think(createObservation({
+      tick: 3,
+      enemies: [{
+        id: 2,
+        team: 1,
+        x: 1000 + 128,
+        y: 1000,
+        direction: 0,
+        speed: 0,
+        armor: 40,
+        shells: 40,
+        mines: 0,
+        trees: 0,
+        onBoat: false,
+        reload: 0,
+        firingRange: 7,
+      }],
+    }));
+
+    expect(command.accelerating).toBe(false);
+    expect(command.braking).toBe(true);
     expect(command.shooting).toBe(false);
   });
 });

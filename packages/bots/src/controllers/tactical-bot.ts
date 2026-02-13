@@ -1,4 +1,4 @@
-import {RangeAdjustment} from '@jsbolo/shared';
+import {BASE_REFUEL_RANGE, RangeAdjustment} from '@jsbolo/shared';
 import {
   type BotBaseState,
   type BotCommand,
@@ -16,6 +16,8 @@ const AIM_TOLERANCE_RADIANS = Math.PI / 12; // 15 degrees
 const DANGER_SHELL_DISTANCE = 2.5 * 256;
 const LOW_ARMOR_THRESHOLD = 18;
 const LOW_SHELL_THRESHOLD = 8;
+const CLOSE_ENGAGEMENT_DISTANCE = 2 * 256;
+const CLOSE_ENGAGEMENT_DISTANCE_SQUARED = CLOSE_ENGAGEMENT_DISTANCE * CLOSE_ENGAGEMENT_DISTANCE;
 
 /**
  * Tactical bot with basic strategy:
@@ -43,12 +45,29 @@ export class TacticalBot implements BotController {
     if (shouldRefuel) {
       const supplyBase = this.findNearestResupplyBase(observation.visibleBases ?? [], observation.self.team, observation.self.x, observation.self.y);
       if (supplyBase) {
+        const dx = supplyBase.x - observation.self.x;
+        const dy = supplyBase.y - observation.self.y;
+        const distanceSquared = (dx * dx) + (dy * dy);
+        // Sit near base to let refuel pulses replenish armor/shells/mines.
+        if (distanceSquared <= BASE_REFUEL_RANGE * BASE_REFUEL_RANGE) {
+          return {
+            accelerating: false,
+            braking: true,
+            turningClockwise: false,
+            turningCounterClockwise: false,
+            shooting: false,
+            rangeAdjustment: RangeAdjustment.NONE,
+          };
+        }
         return this.navigateTowards(observation, supplyBase.x, supplyBase.y, false);
       }
     }
 
     const nearestEnemy = this.findNearestTank(observation);
     if (nearestEnemy) {
+      if (nearestEnemy.distanceSquared <= CLOSE_ENGAGEMENT_DISTANCE_SQUARED) {
+        return this.createCloseRangeDisengageCommand(observation.tick);
+      }
       return this.navigateTowards(
         observation,
         nearestEnemy.x,
@@ -122,6 +141,18 @@ export class TacticalBot implements BotController {
     return {
       accelerating: true,
       braking: false,
+      turningClockwise: clockwise,
+      turningCounterClockwise: !clockwise,
+      shooting: false,
+      rangeAdjustment: RangeAdjustment.NONE,
+    };
+  }
+
+  private createCloseRangeDisengageCommand(tick: number): BotCommand {
+    const clockwise = (tick % 2) === 0;
+    return {
+      accelerating: false,
+      braking: true,
       turningClockwise: clockwise,
       turningCounterClockwise: !clockwise,
       shooting: false,
