@@ -115,6 +115,9 @@ export class PlayerSimulationSystem {
 
       tank.update(inputForTick, terrainSpeed, checkCollision);
       this.updateBoatState(tank, prevTile, context.world, callbacks);
+      if (this.handleDeepSeaHazard(tank, context.world, callbacks)) {
+        continue;
+      }
       this.updateWaterDrain(tank, context.world, callbacks);
 
       if (player.lastInput.shooting && tank.canShoot()) {
@@ -206,6 +209,31 @@ export class PlayerSimulationSystem {
     }
 
     tank.waterTickCounter = 0;
+  }
+
+  /**
+   * Manual rule: deep sea without boat is instant death.
+   * Returns true when tank was killed and remaining per-tick actions should stop.
+   */
+  private handleDeepSeaHazard(
+    tank: ServerTank,
+    world: SimulationWorldView,
+    callbacks: PlayerSimulationCallbacks
+  ): boolean {
+    const currentTile = tank.getTilePosition();
+    const terrain = world.getTerrainAt(currentTile.x, currentTile.y);
+    if (terrain !== TerrainType.DEEP_SEA || tank.onBoat) {
+      return false;
+    }
+
+    // Use takeDamage to preserve standard death flow and respawn scheduling.
+    const killed = tank.takeDamage(Math.max(1, tank.armor));
+    if (killed) {
+      console.log(`Tank ${tank.id} sank in deep sea at (${currentTile.x}, ${currentTile.y})`);
+      callbacks.emitSound(SOUND_TANK_SINKING, tank.x, tank.y);
+      callbacks.scheduleTankRespawn(tank.id);
+    }
+    return killed;
   }
 
   private tryPickupDisabledPillbox(

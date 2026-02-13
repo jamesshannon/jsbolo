@@ -57,7 +57,7 @@ export const TERRAIN_DESCRIPTIONS: Record<TerrainType, string> = {
  */
 export const TERRAIN_TANK_SPEED: Record<TerrainType, number> = {
   [TerrainType.BUILDING]: 0.0,
-  [TerrainType.RIVER]: 0.2, // TEMPORARY: Allow slow river crossing for testing (should be 0.0 without boat)
+  [TerrainType.RIVER]: 0.2,
   [TerrainType.SWAMP]: 0.25,
   [TerrainType.CRATER]: 0.5,
   [TerrainType.ROAD]: 1.0,

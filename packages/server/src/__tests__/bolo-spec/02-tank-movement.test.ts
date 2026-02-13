@@ -1,7 +1,7 @@
 /**
  * Bolo Manual Spec: Tank Movement
  *
- * Manual Reference: docs/bolo-manual-reference.md § 2 "Tank Movement"
+ * Manual Reference: references/bolo-manual-reference.md § 2 "Tank Movement"
  *
  * Tests all aspects of tank movement mechanics:
  * - Terrain speed modifiers (road 1.0x, grass 0.75x, swamp 0.25x, etc.)
@@ -272,9 +272,22 @@ describe('Bolo Manual Spec: 2. Tank Movement', () => {
     });
 
     // Full deep-sea death mechanic (kill tank on entering deep sea without boat)
-    it.skip('should kill tank that enters deep sea without boat', () => {
-      // Not yet implemented: deep sea should instantly destroy the tank
-      // Currently deep sea just has 0 speed (impassable) but doesn't kill
+    it('should kill tank that enters deep sea without boat', () => {
+      const session = new GameSession();
+      const ws = createMockWebSocket();
+      const id = session.addPlayer(ws);
+      const player = getPlayer(session, id);
+      const world = getWorld(session);
+
+      fillArea(world, 48, 48, 10, 10, TerrainType.DEEP_SEA);
+      placeTankAtTile(player.tank, 50, 50);
+      player.tank.onBoat = false;
+      player.tank.armor = 40;
+
+      tickSession(session, 1);
+
+      expect(player.tank.isDead()).toBe(true);
+      expect(player.tank.armor).toBeLessThanOrEqual(0);
     });
   });
 });

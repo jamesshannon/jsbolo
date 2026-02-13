@@ -420,7 +420,7 @@ export class ServerWorld {
 
       case TerrainType.ROAD:
         // Roads are NOT damaged by explosions in Bolo
-        // (They can only be damaged by direct hits from shells or tanks)
+        // (and in this implementation they also ignore direct shell hits).
         break;
 
       case TerrainType.BOAT:

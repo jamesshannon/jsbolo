@@ -2,6 +2,7 @@ import {
   BASE_REFUEL_RANGE,
   NEUTRAL_TEAM,
   PILLBOX_RANGE,
+  TILE_SIZE_WORLD,
 } from '@jsbolo/shared';
 import type {ServerBase} from '../simulation/base.js';
 import type {ServerPillbox} from '../simulation/pillbox.js';
@@ -119,11 +120,13 @@ export class StructureSimulationSystem {
           continue;
         }
 
-        if (!base.isTankInRange(tank.x, tank.y, BASE_REFUEL_RANGE)) {
-          continue;
-        }
+        const tankTileX = Math.floor(tank.x / TILE_SIZE_WORLD);
+        const tankTileY = Math.floor(tank.y / TILE_SIZE_WORLD);
+        const isDrivingOnBaseTile = tankTileX === base.tileX && tankTileY === base.tileY;
 
-        if (base.ownerTeam === NEUTRAL_TEAM) {
+        // Manual nuance: neutral/depleted-base capture occurs by driving onto the base,
+        // not by merely entering refuel proximity.
+        if (isDrivingOnBaseTile && base.ownerTeam === NEUTRAL_TEAM) {
           const previousOwnerTeam = base.ownerTeam;
           base.capture(tank.team);
           callbacks.onBaseCaptured?.({
@@ -132,7 +135,11 @@ export class StructureSimulationSystem {
             newOwnerTeam: tank.team,
             capturingTankId: tank.id,
           });
-        } else if (base.armor <= 0 && !callbacks.areTeamsAllied(base.ownerTeam, tank.team)) {
+        } else if (
+          isDrivingOnBaseTile &&
+          base.armor <= 0 &&
+          !callbacks.areTeamsAllied(base.ownerTeam, tank.team)
+        ) {
           const previousOwnerTeam = base.ownerTeam;
           base.capture(tank.team);
           callbacks.onBaseCaptured?.({
@@ -143,7 +150,9 @@ export class StructureSimulationSystem {
           });
         }
 
-        base.refuelTank(tank);
+        if (base.isTankInRange(tank.x, tank.y, BASE_REFUEL_RANGE)) {
+          base.refuelTank(tank);
+        }
       }
     }
   }

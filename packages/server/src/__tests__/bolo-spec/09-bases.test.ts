@@ -1,7 +1,7 @@
 /**
  * Bolo Manual Spec: Refueling Bases
  *
- * Manual Reference: docs/bolo-manual-reference.md § 10 "Bases"
+ * Manual Reference: references/bolo-manual-reference.md § 10 "Bases"
  *
  * Tests base mechanics - refueling and capture:
  * - "the first thing you must do before you can attack pillboxes or other tanks
@@ -142,6 +142,24 @@ describe('Bolo Manual Spec: 9. Bases', () => {
       expect(base.ownerTeam).toBe(player.tank.team);
     });
 
+    it('should not auto-capture neutral base when only in refuel range', () => {
+      const session = new GameSession();
+      const ws = { send: () => {}, readyState: 1 } as any;
+      const playerId = session.addPlayer(ws);
+
+      const player = (session as any).players.get(playerId);
+      const base = Array.from((session as any).bases.values())[0];
+      base.ownerTeam = NEUTRAL_TEAM;
+      base.armor = BASE_STARTING_ARMOR;
+
+      const basePos = base.getWorldPosition();
+      player.tank.x = basePos.x + TILE_SIZE_WORLD; // within 1.5-tile refuel range
+      player.tank.y = basePos.y;
+
+      (session as any).update();
+      expect(base.ownerTeam).toBe(NEUTRAL_TEAM);
+    });
+
     // "it can shoot your base and deplete the armour that it has.
     //  When the armour is all gone, there is nothing to stop the enemy
     //  tank from driving onto your base and capturing it."
@@ -164,6 +182,27 @@ describe('Bolo Manual Spec: 9. Bases', () => {
 
       (session as any).update();
       expect(base.ownerTeam).toBe(player2.tank.team);
+    });
+
+    it('should not allow enemy capture from refuel range when not driving on base tile', () => {
+      const session = new GameSession();
+      const ws1 = { send: () => {}, readyState: 1 } as any;
+      const ws2 = { send: () => {}, readyState: 1 } as any;
+      const p1 = session.addPlayer(ws1);
+      const p2 = session.addPlayer(ws2);
+      const player1 = (session as any).players.get(p1);
+      const player2 = (session as any).players.get(p2);
+      const base = Array.from((session as any).bases.values())[0];
+
+      base.ownerTeam = player1.tank.team;
+      base.armor = 0;
+
+      const basePos = base.getWorldPosition();
+      player2.tank.x = basePos.x + TILE_SIZE_WORLD; // within range, not on base tile
+      player2.tank.y = basePos.y;
+
+      (session as any).update();
+      expect(base.ownerTeam).toBe(player1.tank.team);
     });
   });
 
