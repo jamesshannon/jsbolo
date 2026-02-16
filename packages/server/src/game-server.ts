@@ -90,7 +90,9 @@ export class GameServer {
       } else if (message.type === 'chat') {
         conn.session.handlePlayerChat(conn.playerId, message.chat.text, {
           allianceOnly: message.chat.allianceOnly,
-          recipientPlayerIds: message.chat.recipientPlayerIds,
+          ...(message.chat.recipientPlayerIds !== undefined && {
+            recipientPlayerIds: message.chat.recipientPlayerIds,
+          }),
         });
       } else if (message.type === 'remote_view') {
         conn.session.handleRemoteView(

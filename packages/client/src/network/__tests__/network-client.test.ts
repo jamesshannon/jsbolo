@@ -124,7 +124,9 @@ describe('NetworkClient', () => {
     );
 
     expect(onUpdate).toHaveBeenCalledTimes(1);
-    expect(onUpdate.mock.calls[0][0].hudMessages).toEqual([{
+    const firstUpdatePayload = onUpdate.mock.calls[0]?.[0];
+    expect(firstUpdatePayload).toBeDefined();
+    expect(firstUpdatePayload?.hudMessages).toEqual([{
       id: 10,
       tick: 1,
       class: 'global_notification',
