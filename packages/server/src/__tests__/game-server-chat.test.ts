@@ -10,6 +10,14 @@ function createMockWss() {
   };
 }
 
+function getLastServerMessage(ws: {send: {mock: {calls: Array<[Uint8Array]>}}}) {
+  const lastCall = ws.send.mock.calls.slice(-1)[0];
+  if (!lastCall) {
+    return null;
+  }
+  return decodeServerMessage(lastCall[0]);
+}
+
 describe('GameServer chat dispatch', () => {
   it('routes decoded chat messages to session chat handler', () => {
     const session = new GameSession();
@@ -102,9 +110,9 @@ describe('GameServer chat dispatch', () => {
     );
     (session as any).broadcastState();
 
-    const global1 = decodeServerMessage(ws1.send.mock.calls.slice(-1)[0][0]);
-    const global2 = decodeServerMessage(ws2.send.mock.calls.slice(-1)[0][0]);
-    const global3 = decodeServerMessage(ws3.send.mock.calls.slice(-1)[0][0]);
+    const global1 = getLastServerMessage(ws1)!;
+    const global2 = getLastServerMessage(ws2)!;
+    const global3 = getLastServerMessage(ws3)!;
     expect(global1.hudMessages?.some(m => m.class === 'chat_global' && m.text.includes('global smoke'))).toBe(true);
     expect(global2.hudMessages?.some(m => m.class === 'chat_global' && m.text.includes('global smoke'))).toBe(true);
     expect(global3.hudMessages?.some(m => m.class === 'chat_global' && m.text.includes('global smoke'))).toBe(true);
@@ -131,12 +139,12 @@ describe('GameServer chat dispatch', () => {
     );
     (session as any).broadcastState();
 
-    const alliance1 = decodeServerMessage(ws1.send.mock.calls.slice(-1)[0][0]);
-    const alliance2 = decodeServerMessage(ws2.send.mock.calls.slice(-1)[0][0]);
-    const alliance3 = decodeServerMessage(ws3.send.mock.calls.slice(-1)[0][0]);
+    const alliance1 = getLastServerMessage(ws1)!;
+    const alliance2 = getLastServerMessage(ws2)!;
+    const alliance3 = getLastServerMessage(ws3);
     expect(alliance1.hudMessages?.some(m => m.class === 'chat_alliance' && m.text.includes('alliance smoke'))).toBe(true);
     expect(alliance2.hudMessages?.some(m => m.class === 'chat_alliance' && m.text.includes('alliance smoke'))).toBe(true);
-    expect(alliance3.hudMessages).toBeUndefined();
+    expect(alliance3?.hudMessages).toBeUndefined();
 
     ws1.send.mockClear();
     ws2.send.mockClear();
@@ -155,11 +163,11 @@ describe('GameServer chat dispatch', () => {
     );
     (session as any).broadcastState();
 
-    const direct1 = decodeServerMessage(ws1.send.mock.calls.slice(-1)[0][0]);
-    const direct2 = decodeServerMessage(ws2.send.mock.calls.slice(-1)[0][0]);
-    const direct3 = decodeServerMessage(ws3.send.mock.calls.slice(-1)[0][0]);
+    const direct1 = getLastServerMessage(ws1)!;
+    const direct2 = getLastServerMessage(ws2)!;
+    const direct3 = getLastServerMessage(ws3);
     expect(direct1.hudMessages?.some(m => m.class === 'chat_alliance' && m.text.includes('to Players'))).toBe(true);
     expect(direct2.hudMessages?.some(m => m.class === 'chat_alliance' && m.text.includes('direct smoke'))).toBe(true);
-    expect(direct3.hudMessages).toBeUndefined();
+    expect(direct3?.hudMessages).toBeUndefined();
   });
 });

@@ -219,12 +219,25 @@ export class GameSession {
    * `null` resets to normal tank-centered view.
    */
   public handleRemoteView(playerId: number, pillboxId: number | null): void {
-    if (!this.players.has(playerId)) {
+    const player = this.players.get(playerId);
+    if (!player) {
       return;
     }
 
     if (pillboxId === null) {
       this.remoteViewPillboxByPlayer.delete(playerId);
+      return;
+    }
+
+    const pillbox = this.pillboxes.get(pillboxId);
+    if (!pillbox || !this.canUseRemoteViewPillbox(player, pillbox)) {
+      this.remoteViewPillboxByPlayer.delete(playerId);
+      this.hudMessages.publishPersonal({
+        tick: this.tick,
+        playerId,
+        text: 'Pillbox view unavailable: invalid remote pillbox target.',
+        class: 'personal_notification',
+      });
       return;
     }
 
@@ -647,6 +660,7 @@ export class GameSession {
       matchEndAnnounced: this.matchEndAnnounced,
       getHudMessagesForPlayer: playerId => this.hudMessages.drainForPlayer(playerId),
       getAllianceSnapshots: () => this.buildAllianceSnapshots(),
+      getPlayerViewCenterTile: playerId => this.getPlayerViewCenterTile(playerId),
     });
     this.matchEndAnnounced = result.matchEndAnnounced;
   }
@@ -942,6 +956,45 @@ export class GameSession {
           this.areTeamsAllied(allianceId, otherAllianceId)
       ),
     }));
+  }
+
+  private getPlayerViewCenterTile(playerId: number): {tileX: number; tileY: number} | null {
+    const player = this.players.get(playerId);
+    if (!player) {
+      return null;
+    }
+
+    const requestedRemoteViewId = this.remoteViewPillboxByPlayer.get(playerId);
+    if (requestedRemoteViewId === undefined) {
+      return player.tank.getTilePosition();
+    }
+
+    const pillbox = this.pillboxes.get(requestedRemoteViewId);
+    if (!pillbox || !this.canUseRemoteViewPillbox(player, pillbox)) {
+      this.remoteViewPillboxByPlayer.delete(playerId);
+      return player.tank.getTilePosition();
+    }
+
+    return {
+      tileX: pillbox.tileX,
+      tileY: pillbox.tileY,
+    };
+  }
+
+  /**
+   * Remote camera targets are limited to own/allied active pillboxes.
+   */
+  private canUseRemoteViewPillbox(
+    player: Pick<SessionPlayer, 'tank'>,
+    pillbox: Pick<ServerPillbox, 'inTank' | 'ownerTeam'>
+  ): boolean {
+    if (pillbox.inTank || pillbox.ownerTeam === NEUTRAL_TEAM) {
+      return false;
+    }
+    return (
+      pillbox.ownerTeam === player.tank.team ||
+      this.areTeamsAllied(player.tank.team, pillbox.ownerTeam)
+    );
   }
 
   private createBotSocket(): WebSocket {

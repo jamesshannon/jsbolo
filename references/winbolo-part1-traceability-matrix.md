@@ -125,7 +125,7 @@ Last audited: 2026-02-16
 
 | ID | Requirement | Manual Evidence | Owner Candidates | Test Candidates | Status | Notes |
 |---|---|---|---|---|---|---|
-| `REM-01` | Pillbox-view mode cycles through own/allied pillboxes; cursor keys navigate neighboring pillboxes. | `§2.9.12`, p.16 | `packages/client/src/game/multiplayer-game.ts`, `packages/client/src/game/remote-pillbox-view.ts`, `packages/client/src/renderer/camera.ts` | `packages/client/src/__tests__/remote-pillbox-view.test.ts` | `mapped` | Implemented v1 remote pillbox camera mode (`V` toggle + directional navigation). Remaining parity gap: alliance-owned pillboxes are not yet included because alliance state is not in the client snapshot. |
+| `REM-01` | Pillbox-view mode cycles through own/allied pillboxes; cursor keys navigate neighboring pillboxes. | `§2.9.12`, p.16 | `packages/client/src/game/multiplayer-game.ts`, `packages/client/src/game/remote-pillbox-view.ts`, `packages/client/src/renderer/camera.ts`, `packages/server/src/game-session.ts`, `packages/server/src/systems/session-state-broadcaster.ts` | `packages/client/src/__tests__/remote-pillbox-view.test.ts`, `packages/server/src/__tests__/game-session.test.ts`, `packages/server/src/systems/__tests__/session-state-broadcaster.test.ts`, `packages/server/src/__tests__/game-server-chat.test.ts` | `verified` | Remote camera selection includes local/allied pillboxes, navigation is directional, and final camera center is server-authoritative per player. Terrain streaming now sends only current-view terrain plus a `+1` tile prefetch ring to smooth edge reveal under latency. HUD messages remain visible regardless of active view source. |
 
 ### 2.9.13 Notes (Normative Mechanical Clause)
 
@@ -157,4 +157,4 @@ Last audited: 2026-02-16
 
 ## Immediate Non-Deferred Gaps
 
-1. Remote pillbox mode still lacks alliance-pillbox selection parity in the client snapshot: `REM-01`.
+1. None currently identified in this matrix scope.

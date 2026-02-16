@@ -4,7 +4,7 @@ import {ServerPillbox} from '../../simulation/pillbox.js';
 import {ServerTank} from '../../simulation/tank.js';
 import {ServerWorld} from '../../simulation/world.js';
 import {SessionStateBroadcaster} from '../session-state-broadcaster.js';
-import {TerrainType, decodeServerMessage} from '@jsbolo/shared';
+import {TILE_SIZE_WORLD, TerrainType, decodeServerMessage} from '@jsbolo/shared';
 
 function createMockWs() {
   return {
@@ -20,7 +20,7 @@ describe('SessionStateBroadcaster', () => {
     const wsA = createMockWs();
     const wsB = createMockWs();
     const tankA = new ServerTank(1, 0, 50, 50);
-    const tankB = new ServerTank(2, 1, 60, 60);
+    const tankB = new ServerTank(2, 1, 58, 58);
 
     broadcaster.broadcastState({
       tick: 1,
@@ -57,14 +57,13 @@ describe('SessionStateBroadcaster', () => {
     expect(result.didBroadcast).toBe(true);
     const message = decodeServerMessage((wsB.send as any).mock.calls[0][0]);
     expect(message.removedTankIds).toContain(tankA.id);
-    expect(message.removedBuilderIds).toContain(tankA.builder.id);
   });
 
   it('should include terrain updates and clear pending terrain keys', () => {
     const broadcaster = new SessionStateBroadcaster(() => {});
     const world = new ServerWorld();
     const ws = createMockWs();
-    const tank = new ServerTank(10, 0, 50, 50);
+    const tank = new ServerTank(10, 0, 6, 6);
     const terrainChanges = new Set<string>(['5,6']);
 
     world.setTerrainAt(5, 6, TerrainType.GRASS);
@@ -84,9 +83,84 @@ describe('SessionStateBroadcaster', () => {
     });
 
     const message = decodeServerMessage((ws.send as any).mock.calls[0][0]);
-    expect(message.terrainUpdates).toHaveLength(1);
-    expect(message.terrainUpdates[0]).toMatchObject({x: 5, y: 6});
+    expect(message.terrainUpdates?.some(update => update.x === 5 && update.y === 6)).toBe(true);
     expect(terrainChanges.size).toBe(0);
+  });
+
+  it('should filter tank visibility per player viewport while always including self tank', () => {
+    const broadcaster = new SessionStateBroadcaster(() => {});
+    const world = new ServerWorld();
+    const wsA = createMockWs();
+    const wsB = createMockWs();
+    const tankA = new ServerTank(1, 0, 10, 10);
+    const tankB = new ServerTank(2, 1, 100, 100);
+
+    broadcaster.broadcastState({
+      tick: 1,
+      players: [
+        {id: 1, ws: wsA, tank: tankA},
+        {id: 2, ws: wsB, tank: tankB},
+      ],
+      shells: [],
+      pillboxes: [],
+      bases: [],
+      world,
+      terrainChanges: new Set<string>(),
+      soundEvents: [],
+      matchEnded: false,
+      winningTeams: [],
+      matchEndAnnounced: false,
+    });
+
+    const updateA = decodeServerMessage((wsA.send as any).mock.calls[0][0]);
+    const updateB = decodeServerMessage((wsB.send as any).mock.calls[0][0]);
+
+    expect(updateA.tanks?.map(tank => tank.id)).toContain(1);
+    expect(updateA.tanks?.map(tank => tank.id)).not.toContain(2);
+    expect(updateB.tanks?.map(tank => tank.id)).toContain(2);
+    expect(updateB.tanks?.map(tank => tank.id)).not.toContain(1);
+  });
+
+  it('should stream +1 prefetch terrain ring when camera window advances', () => {
+    const broadcaster = new SessionStateBroadcaster(() => {});
+    const world = new ServerWorld();
+    const ws = createMockWs();
+    const tank = new ServerTank(10, 0, 50, 50);
+
+    broadcaster.broadcastState({
+      tick: 1,
+      players: [{id: 10, ws, tank}],
+      shells: [],
+      pillboxes: [],
+      bases: [],
+      world,
+      terrainChanges: new Set<string>(),
+      soundEvents: [],
+      matchEnded: false,
+      winningTeams: [],
+      matchEndAnnounced: false,
+    });
+
+    ws.send.mockClear();
+    tank.x += TILE_SIZE_WORLD;
+
+    broadcaster.broadcastState({
+      tick: 2,
+      players: [{id: 10, ws, tank}],
+      shells: [],
+      pillboxes: [],
+      bases: [],
+      world,
+      terrainChanges: new Set<string>(),
+      soundEvents: [],
+      matchEnded: false,
+      winningTeams: [],
+      matchEndAnnounced: false,
+    });
+
+    const update = decodeServerMessage((ws.send as any).mock.calls[0][0]);
+    expect(update.terrainUpdates).toHaveLength(19);
+    expect(update.terrainUpdates?.every(entry => entry.x === 62)).toBe(true);
   });
 
   it('should announce match end only once', () => {

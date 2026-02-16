@@ -1,4 +1,5 @@
 import {
+  TILE_SIZE_WORLD,
   type AllianceSnapshot,
   encodeServerMessage,
   type HudMessage,
@@ -20,12 +21,25 @@ interface BroadcastPlayer {
   tank: ServerTank;
 }
 
-interface PreviousBroadcastState {
+interface ViewCenterTile {
+  tileX: number;
+  tileY: number;
+}
+
+interface ViewWindow {
+  minX: number;
+  maxX: number;
+  minY: number;
+  maxY: number;
+}
+
+interface PlayerBroadcastState {
   tanks: Map<number, string>;
   shells: Set<number>;
   builders: Map<number, string>;
   pillboxes: Map<number, string>;
   bases: Map<number, string>;
+  terrainWindow: ViewWindow | null;
 }
 
 export interface SessionBroadcastContext {
@@ -42,6 +56,7 @@ export interface SessionBroadcastContext {
   matchEndAnnounced: boolean;
   getHudMessagesForPlayer?: (playerId: number) => HudMessage[];
   getAllianceSnapshots?: () => AllianceSnapshot[];
+  getPlayerViewCenterTile?: (playerId: number) => ViewCenterTile | null;
 }
 
 export interface SessionBroadcastResult {
@@ -57,13 +72,15 @@ export interface SessionBroadcastResult {
  * - Keeps per-entity hash/diff logic in one testable component.
  */
 export class SessionStateBroadcaster {
-  private previousState: PreviousBroadcastState = {
-    tanks: new Map<number, string>(),
-    shells: new Set<number>(),
-    builders: new Map<number, string>(),
-    pillboxes: new Map<number, string>(),
-    bases: new Map<number, string>(),
-  };
+  /**
+   * Client canvas is currently fixed at 640x480 with 32px tiles => 20x15 tiles.
+   * Visibility windows mirror that viewport from server-side simulation coordinates.
+   */
+  private static readonly VIEWPORT_WIDTH_TILES = 20;
+  private static readonly VIEWPORT_HEIGHT_TILES = 15;
+  private static readonly TERRAIN_PREFETCH_TILES = 1;
+
+  private readonly previousStateByPlayerId = new Map<number, PlayerBroadcastState>();
   private previousAllianceHash = '';
 
   constructor(
@@ -74,196 +91,39 @@ export class SessionStateBroadcaster {
     // Materialize players once so we can iterate for diffing and sending.
     // `Map#values()` is a one-shot iterator and would otherwise be exhausted.
     const players = Array.from(context.players);
-
-    const tanks = [];
-    const builders = [];
-    const currentTankIds = new Set<number>();
-    const currentBuilderIds = new Set<number>();
-
-    for (const player of players) {
-      const tank = player.tank;
-      currentTankIds.add(tank.id);
-      const currentHash = this.getTankStateHash(tank);
-      const previousHash = this.previousState.tanks.get(tank.id);
-
-      if (currentHash !== previousHash) {
-        tanks.push({
-          id: tank.id,
-          x: Math.round(tank.x),
-          y: Math.round(tank.y),
-          direction: tank.direction,
-          speed: tank.speed,
-          armor: tank.armor,
-          shells: tank.shells,
-          mines: tank.mines,
-          trees: tank.trees,
-          team: tank.team,
-          allianceId: tank.team,
-          onBoat: tank.onBoat,
-          reload: tank.reload,
-          firingRange: tank.firingRange,
-          carriedPillbox: tank.carriedPillbox?.id ?? null,
-        });
-        this.previousState.tanks.set(tank.id, currentHash);
-      }
-
-      const builder = tank.builder;
-      currentBuilderIds.add(builder.id);
-      const builderHash = this.getBuilderStateHash(builder);
-      const previousBuilderHash = this.previousState.builders.get(builder.id);
-
-      if (builderHash !== previousBuilderHash) {
-        builders.push({
-          id: builder.id,
-          ownerTankId: builder.ownerTankId,
-          x: Math.round(builder.x),
-          y: Math.round(builder.y),
-          targetX: Math.round(builder.targetX),
-          targetY: Math.round(builder.targetY),
-          order: builder.order,
-          trees: builder.trees,
-          hasMine: builder.hasMine,
-          hasPillbox: builder.hasPillbox,
-          team: builder.team,
-          allianceId: builder.team,
-          respawnCounter: builder.respawnCounter,
-        });
-        this.previousState.builders.set(builder.id, builderHash);
+    const playerIds = new Set(players.map(player => player.id));
+    for (const cachedPlayerId of this.previousStateByPlayerId.keys()) {
+      if (!playerIds.has(cachedPlayerId)) {
+        this.previousStateByPlayerId.delete(cachedPlayerId);
       }
     }
 
-    const removedTankIds: number[] = [];
-    for (const previousTankId of this.previousState.tanks.keys()) {
-      if (!currentTankIds.has(previousTankId)) {
-        removedTankIds.push(previousTankId);
-        this.previousState.tanks.delete(previousTankId);
-      }
-    }
-
-    const removedBuilderIds: number[] = [];
-    for (const previousBuilderId of this.previousState.builders.keys()) {
-      if (!currentBuilderIds.has(previousBuilderId)) {
-        removedBuilderIds.push(previousBuilderId);
-        this.previousState.builders.delete(previousBuilderId);
-      }
-    }
-
-    // Shells are always included when broadcasting to ensure client can clear dead shells.
-    const shells = [];
-    const currentShellIds = new Set<number>();
-    for (const shell of context.shells) {
-      shells.push({
-        id: shell.id,
-        x: Math.round(shell.x),
-        y: Math.round(shell.y),
-        direction: shell.direction,
-        ownerTankId: shell.ownerTankId,
-      });
-      currentShellIds.add(shell.id);
-    }
-    this.previousState.shells = currentShellIds;
-
-    const pillboxes = [];
-    const currentPillboxIds = new Set<number>();
-    for (const pillbox of context.pillboxes) {
-      currentPillboxIds.add(pillbox.id);
-      const currentHash = this.getPillboxStateHash(pillbox);
-      const previousHash = this.previousState.pillboxes.get(pillbox.id);
-
-      if (currentHash !== previousHash) {
-        pillboxes.push({
-          id: pillbox.id,
-          tileX: pillbox.tileX,
-          tileY: pillbox.tileY,
-          armor: pillbox.armor,
-          ownerTeam: pillbox.ownerTeam,
-          inTank: pillbox.inTank,
-        });
-        this.previousState.pillboxes.set(pillbox.id, currentHash);
-      }
-    }
-    const removedPillboxIds: number[] = [];
-    for (const previousPillboxId of this.previousState.pillboxes.keys()) {
-      if (!currentPillboxIds.has(previousPillboxId)) {
-        removedPillboxIds.push(previousPillboxId);
-        this.previousState.pillboxes.delete(previousPillboxId);
-      }
-    }
-
-    const bases = [];
-    const currentBaseIds = new Set<number>();
-    for (const base of context.bases) {
-      currentBaseIds.add(base.id);
-      const currentHash = this.getBaseStateHash(base);
-      const previousHash = this.previousState.bases.get(base.id);
-
-      if (currentHash !== previousHash) {
-        bases.push({
-          id: base.id,
-          tileX: base.tileX,
-          tileY: base.tileY,
-          armor: base.armor,
-          shells: base.shells,
-          mines: base.mines,
-          ownerTeam: base.ownerTeam,
-        });
-        this.previousState.bases.set(base.id, currentHash);
-      }
-    }
-    const removedBaseIds: number[] = [];
-    for (const previousBaseId of this.previousState.bases.keys()) {
-      if (!currentBaseIds.has(previousBaseId)) {
-        removedBaseIds.push(previousBaseId);
-        this.previousState.bases.delete(previousBaseId);
-      }
-    }
-
-    const terrainUpdates: TerrainUpdate[] = [];
     const mapData = context.world.getMapData();
+    const mapHeight = mapData.length;
+    const mapWidth = mapData[0]?.length ?? 0;
+
+    const changedTerrainEntries: TerrainUpdate[] = [];
     for (const key of context.terrainChanges) {
       const [xStr, yStr] = key.split(',');
       const x = Number(xStr);
       const y = Number(yStr);
+      if (!Number.isFinite(x) || !Number.isFinite(y)) {
+        continue;
+      }
+      if (x < 0 || y < 0 || x >= mapWidth || y >= mapHeight) {
+        continue;
+      }
       const cell = mapData[y]![x]!;
 
       this.log(
         `[DEBUG] Broadcasting terrain update: (${x}, ${y}) terrain=${cell.terrain} (was potentially road)`
       );
 
-      terrainUpdates.push({
-        x,
-        y,
-        terrain: cell.terrain,
-        terrainLife: cell.terrainLife,
-        ...(cell.direction !== undefined && {direction: cell.direction}),
-      });
+      changedTerrainEntries.push(this.toTerrainUpdate(x, y, cell));
     }
-    context.terrainChanges.clear();
 
-    const update: UpdateMessage = {
-      type: 'update',
-      tick: context.tick,
-      shells,
-      ...(tanks.length > 0 && {tanks}),
-      ...(builders.length > 0 && {builders}),
-      ...(pillboxes.length > 0 && {pillboxes}),
-      ...(bases.length > 0 && {bases}),
-      ...(removedTankIds.length > 0 && {removedTankIds}),
-      ...(removedBuilderIds.length > 0 && {removedBuilderIds}),
-      ...(removedPillboxIds.length > 0 && {removedPillboxIds}),
-      ...(removedBaseIds.length > 0 && {removedBaseIds}),
-      ...(terrainUpdates.length > 0 && {terrainUpdates}),
-      ...(context.soundEvents.length > 0 && {soundEvents: context.soundEvents}),
-      ...(context.getAllianceSnapshots && {
-        alliances: context.getAllianceSnapshots(),
-      }),
-      ...(context.matchEnded &&
-        !context.matchEndAnnounced && {
-          matchEnded: context.matchEnded,
-          winningTeams: context.winningTeams,
-        }),
-    };
-    const allianceHash = JSON.stringify(update.alliances ?? []);
+    const allianceSnapshots = context.getAllianceSnapshots?.();
+    const allianceHash = JSON.stringify(allianceSnapshots ?? []);
     const hasAllianceChanges = allianceHash !== this.previousAllianceHash;
     if (hasAllianceChanges) {
       this.previousAllianceHash = allianceHash;
@@ -277,47 +137,334 @@ export class SessionStateBroadcaster {
       const hudMessages = context.getHudMessagesForPlayer?.(player.id) ?? [];
       hudByPlayerId.set(player.id, hudMessages);
     }
-    const hasHudChanges = Array.from(hudByPlayerId.values()).some(
-      messages => messages.length > 0
-    );
 
-    const hasChanges =
-      tanks.length > 0 ||
-      shells.length > 0 ||
-      builders.length > 0 ||
-      pillboxes.length > 0 ||
-      bases.length > 0 ||
-      removedTankIds.length > 0 ||
-      removedBuilderIds.length > 0 ||
-      removedPillboxIds.length > 0 ||
-      removedBaseIds.length > 0 ||
-      terrainUpdates.length > 0 ||
-      context.soundEvents.length > 0 ||
-      hasAllianceChanges ||
-      (context.matchEnded && !context.matchEndAnnounced) ||
-      hasHudChanges;
-
-    if (!hasChanges) {
-      return {
-        didBroadcast: false,
-        matchEndAnnounced: context.matchEndAnnounced,
-      };
-    }
-
+    let didBroadcast = false;
     for (const player of players) {
-      if (player.ws.readyState === 1) {
-        const hudMessages = hudByPlayerId.get(player.id) ?? [];
-        const message = encodeServerMessage({
-          ...update,
-          ...(hudMessages.length > 0 && {hudMessages}),
-        });
-        player.ws.send(message);
+      const state = this.getOrCreatePlayerState(player.id);
+      const centerTile = context.getPlayerViewCenterTile?.(player.id) ?? {
+        tileX: Math.floor(player.tank.x / TILE_SIZE_WORLD),
+        tileY: Math.floor(player.tank.y / TILE_SIZE_WORLD),
+      };
+      const dynamicWindow = this.getViewWindow(centerTile, 0, mapWidth, mapHeight);
+      const terrainWindow = this.getViewWindow(
+        centerTile,
+        SessionStateBroadcaster.TERRAIN_PREFETCH_TILES,
+        mapWidth,
+        mapHeight
+      );
+
+      const tanks: NonNullable<UpdateMessage['tanks']> = [];
+      const currentTankIds = new Set<number>();
+      for (const candidate of players) {
+        const shouldInclude =
+          candidate.id === player.id ||
+          this.isWorldPositionInWindow(candidate.tank.x, candidate.tank.y, dynamicWindow);
+        if (!shouldInclude) {
+          continue;
+        }
+
+        currentTankIds.add(candidate.tank.id);
+        const currentHash = this.getTankStateHash(candidate.tank);
+        if (state.tanks.get(candidate.tank.id) !== currentHash) {
+          tanks.push({
+            id: candidate.tank.id,
+            x: Math.round(candidate.tank.x),
+            y: Math.round(candidate.tank.y),
+            direction: candidate.tank.direction,
+            speed: candidate.tank.speed,
+            armor: candidate.tank.armor,
+            shells: candidate.tank.shells,
+            mines: candidate.tank.mines,
+            trees: candidate.tank.trees,
+            team: candidate.tank.team,
+            allianceId: candidate.tank.team,
+            onBoat: candidate.tank.onBoat,
+            reload: candidate.tank.reload,
+            firingRange: candidate.tank.firingRange,
+            carriedPillbox: candidate.tank.carriedPillbox?.id ?? null,
+          });
+          state.tanks.set(candidate.tank.id, currentHash);
+        }
       }
+
+      const removedTankIds: number[] = [];
+      for (const previousTankId of state.tanks.keys()) {
+        if (!currentTankIds.has(previousTankId)) {
+          removedTankIds.push(previousTankId);
+          state.tanks.delete(previousTankId);
+        }
+      }
+
+      const builders: NonNullable<UpdateMessage['builders']> = [];
+      const currentBuilderIds = new Set<number>();
+      for (const candidate of players) {
+        const builder = candidate.tank.builder;
+        const shouldInclude =
+          builder.ownerTankId === player.id ||
+          this.isWorldPositionInWindow(builder.x, builder.y, dynamicWindow);
+        if (!shouldInclude) {
+          continue;
+        }
+
+        currentBuilderIds.add(builder.id);
+        const currentHash = this.getBuilderStateHash(builder);
+        if (state.builders.get(builder.id) !== currentHash) {
+          builders.push({
+            id: builder.id,
+            ownerTankId: builder.ownerTankId,
+            x: Math.round(builder.x),
+            y: Math.round(builder.y),
+            targetX: Math.round(builder.targetX),
+            targetY: Math.round(builder.targetY),
+            order: builder.order,
+            trees: builder.trees,
+            hasMine: builder.hasMine,
+            hasPillbox: builder.hasPillbox,
+            team: builder.team,
+            allianceId: builder.team,
+            respawnCounter: builder.respawnCounter,
+          });
+          state.builders.set(builder.id, currentHash);
+        }
+      }
+
+      const removedBuilderIds: number[] = [];
+      for (const previousBuilderId of state.builders.keys()) {
+        if (!currentBuilderIds.has(previousBuilderId)) {
+          removedBuilderIds.push(previousBuilderId);
+          state.builders.delete(previousBuilderId);
+        }
+      }
+
+      // Shells are always included whenever an update is sent to keep client shell
+      // lifecycle deterministic without explicit shell removal ids.
+      const shells: NonNullable<UpdateMessage['shells']> = [];
+      const currentShellIds = new Set<number>();
+      for (const shell of context.shells) {
+        if (!this.isWorldPositionInWindow(shell.x, shell.y, dynamicWindow)) {
+          continue;
+        }
+        shells.push({
+          id: shell.id,
+          x: Math.round(shell.x),
+          y: Math.round(shell.y),
+          direction: shell.direction,
+          ownerTankId: shell.ownerTankId,
+        });
+        currentShellIds.add(shell.id);
+      }
+      const hasShellChanges =
+        shells.length > 0 || !this.areIdSetsEqual(currentShellIds, state.shells);
+      state.shells = currentShellIds;
+
+      // Pillboxes and bases are global strategic structures shown in HUD status
+      // panes regardless of current viewport source, so keep these streams global.
+      const pillboxes: NonNullable<UpdateMessage['pillboxes']> = [];
+      const currentPillboxIds = new Set<number>();
+      for (const pillbox of context.pillboxes) {
+        currentPillboxIds.add(pillbox.id);
+        const currentHash = this.getPillboxStateHash(pillbox);
+        if (state.pillboxes.get(pillbox.id) !== currentHash) {
+          pillboxes.push({
+            id: pillbox.id,
+            tileX: pillbox.tileX,
+            tileY: pillbox.tileY,
+            armor: pillbox.armor,
+            ownerTeam: pillbox.ownerTeam,
+            inTank: pillbox.inTank,
+          });
+          state.pillboxes.set(pillbox.id, currentHash);
+        }
+      }
+      const removedPillboxIds: number[] = [];
+      for (const previousPillboxId of state.pillboxes.keys()) {
+        if (!currentPillboxIds.has(previousPillboxId)) {
+          removedPillboxIds.push(previousPillboxId);
+          state.pillboxes.delete(previousPillboxId);
+        }
+      }
+
+      const bases: NonNullable<UpdateMessage['bases']> = [];
+      const currentBaseIds = new Set<number>();
+      for (const base of context.bases) {
+        currentBaseIds.add(base.id);
+        const currentHash = this.getBaseStateHash(base);
+        if (state.bases.get(base.id) !== currentHash) {
+          bases.push({
+            id: base.id,
+            tileX: base.tileX,
+            tileY: base.tileY,
+            armor: base.armor,
+            shells: base.shells,
+            mines: base.mines,
+            ownerTeam: base.ownerTeam,
+          });
+          state.bases.set(base.id, currentHash);
+        }
+      }
+      const removedBaseIds: number[] = [];
+      for (const previousBaseId of state.bases.keys()) {
+        if (!currentBaseIds.has(previousBaseId)) {
+          removedBaseIds.push(previousBaseId);
+          state.bases.delete(previousBaseId);
+        }
+      }
+
+      const terrainUpdateByKey = new Map<string, TerrainUpdate>();
+      for (const changed of changedTerrainEntries) {
+        if (this.isTileInWindow(changed.x, changed.y, terrainWindow)) {
+          terrainUpdateByKey.set(`${changed.x},${changed.y}`, changed);
+        }
+      }
+
+      for (let y = terrainWindow.minY; y <= terrainWindow.maxY; y++) {
+        for (let x = terrainWindow.minX; x <= terrainWindow.maxX; x++) {
+          if (state.terrainWindow && this.isTileInWindow(x, y, state.terrainWindow)) {
+            continue;
+          }
+          const cell = mapData[y]![x]!;
+          terrainUpdateByKey.set(`${x},${y}`, this.toTerrainUpdate(x, y, cell));
+        }
+      }
+      state.terrainWindow = terrainWindow;
+      const terrainUpdates = Array.from(terrainUpdateByKey.values());
+
+      const soundEvents = context.soundEvents;
+      const hudMessages = hudByPlayerId.get(player.id) ?? [];
+
+      const hasEntityChanges =
+        tanks.length > 0 ||
+        builders.length > 0 ||
+        pillboxes.length > 0 ||
+        bases.length > 0 ||
+        removedTankIds.length > 0 ||
+        removedBuilderIds.length > 0 ||
+        removedPillboxIds.length > 0 ||
+        removedBaseIds.length > 0;
+      const hasTerrainChanges = terrainUpdates.length > 0;
+      const hasPlayerChanges =
+        hasEntityChanges ||
+        hasShellChanges ||
+        hasTerrainChanges ||
+        soundEvents.length > 0 ||
+        hudMessages.length > 0 ||
+        hasAllianceChanges ||
+        (context.matchEnded && !context.matchEndAnnounced);
+
+      if (!hasPlayerChanges || player.ws.readyState !== 1) {
+        continue;
+      }
+
+      const update: UpdateMessage = {
+        type: 'update',
+        tick: context.tick,
+        shells,
+        ...(tanks.length > 0 && {tanks}),
+        ...(builders.length > 0 && {builders}),
+        ...(pillboxes.length > 0 && {pillboxes}),
+        ...(bases.length > 0 && {bases}),
+        ...(removedTankIds.length > 0 && {removedTankIds}),
+        ...(removedBuilderIds.length > 0 && {removedBuilderIds}),
+        ...(removedPillboxIds.length > 0 && {removedPillboxIds}),
+        ...(removedBaseIds.length > 0 && {removedBaseIds}),
+        ...(terrainUpdates.length > 0 && {terrainUpdates}),
+        ...(soundEvents.length > 0 && {soundEvents}),
+        ...(allianceSnapshots !== undefined && {alliances: allianceSnapshots}),
+        ...(context.matchEnded &&
+          !context.matchEndAnnounced && {
+            matchEnded: context.matchEnded,
+            winningTeams: context.winningTeams,
+          }),
+        ...(hudMessages.length > 0 && {hudMessages}),
+      };
+      player.ws.send(encodeServerMessage(update));
+      didBroadcast = true;
     }
+
+    context.terrainChanges.clear();
 
     return {
-      didBroadcast: true,
+      didBroadcast,
       matchEndAnnounced: context.matchEnded ? true : context.matchEndAnnounced,
+    };
+  }
+
+  private getOrCreatePlayerState(playerId: number): PlayerBroadcastState {
+    const existing = this.previousStateByPlayerId.get(playerId);
+    if (existing) {
+      return existing;
+    }
+
+    const created: PlayerBroadcastState = {
+      tanks: new Map<number, string>(),
+      shells: new Set<number>(),
+      builders: new Map<number, string>(),
+      pillboxes: new Map<number, string>(),
+      bases: new Map<number, string>(),
+      terrainWindow: null,
+    };
+    this.previousStateByPlayerId.set(playerId, created);
+    return created;
+  }
+
+  private getViewWindow(
+    centerTile: ViewCenterTile,
+    prefetchTiles: number,
+    mapWidth: number,
+    mapHeight: number
+  ): ViewWindow {
+    const halfWidth = Math.ceil(SessionStateBroadcaster.VIEWPORT_WIDTH_TILES / 2) + prefetchTiles;
+    const halfHeight = Math.ceil(SessionStateBroadcaster.VIEWPORT_HEIGHT_TILES / 2) + prefetchTiles;
+    return {
+      minX: Math.max(0, centerTile.tileX - halfWidth),
+      maxX: Math.min(mapWidth - 1, centerTile.tileX + halfWidth),
+      minY: Math.max(0, centerTile.tileY - halfHeight),
+      maxY: Math.min(mapHeight - 1, centerTile.tileY + halfHeight),
+    };
+  }
+
+  private isWorldPositionInWindow(
+    worldX: number,
+    worldY: number,
+    window: ViewWindow
+  ): boolean {
+    const tileX = Math.floor(worldX / TILE_SIZE_WORLD);
+    const tileY = Math.floor(worldY / TILE_SIZE_WORLD);
+    return this.isTileInWindow(tileX, tileY, window);
+  }
+
+  private isTileInWindow(tileX: number, tileY: number, window: ViewWindow): boolean {
+    return (
+      tileX >= window.minX &&
+      tileX <= window.maxX &&
+      tileY >= window.minY &&
+      tileY <= window.maxY
+    );
+  }
+
+  private areIdSetsEqual(a: ReadonlySet<number>, b: ReadonlySet<number>): boolean {
+    if (a.size !== b.size) {
+      return false;
+    }
+    for (const id of a) {
+      if (!b.has(id)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private toTerrainUpdate(
+    x: number,
+    y: number,
+    cell: {terrain: number; terrainLife: number; direction?: number}
+  ): TerrainUpdate {
+    return {
+      x,
+      y,
+      terrain: cell.terrain,
+      terrainLife: cell.terrainLife,
+      ...(cell.direction !== undefined && {direction: cell.direction}),
     };
   }
 
