@@ -14,12 +14,20 @@
   - `HUD-02`: local tank relation marker now renders with an explicit hollow-style class (`hud-chip-self-hollow`) and UI tests assert this behavior.
 - Remote pillbox view v1 implemented:
   - Toggle key: `V` (non-chat focus only).
-  - Camera locks to selected owned pillbox; arrow-key movement inputs are reused for directional selection while in view mode.
+  - Camera locks to selected own/allied pillbox; arrow-key movement inputs are reused for directional selection while in view mode.
   - Added deterministic selection helpers + tests in `packages/client/src/game/remote-pillbox-view.ts`.
-  - Current limitation: alliance-owned pillboxes are not yet included because alliance graph data is not present in client snapshots.
+  - Camera center is server-authoritative; invalid/unauthorized remote targets are rejected server-side and view falls back to tank-centered camera.
+  - State streaming now uses per-player visibility windows and terrain-only `+1` prefetch ring updates.
 - Spawn parity improvement for map-defined starts:
   - If a map start tile is non-water, server now adjusts to nearest water tile so spawn begins on boat.
   - Procedural fallback spawns remain unchanged (center-map fallback).
+- Visibility streaming hardening:
+  - Added scenario-level visibility smoke tests in `packages/server/src/__tests__/scenarios/visibility-streaming.test.ts`.
+  - Covered dynamic entity filtering, hidden-entity removal suppression, terrain prefetch behavior, and remote-view camera scoping.
+  - Fixed a server bug where tank-centered view coordinates were passed as `{x,y}` instead of `{tileX,tileY}` to the broadcaster callback.
+- Quality gate hardening:
+  - CI now runs package `build` in addition to type-check and tests for client/server/shared matrix jobs.
+  - Fixed strict TypeScript issues in test/server code found by workspace-wide `type-check`/`build`.
 
 ### Date: 2026-02-13
 

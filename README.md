@@ -4,34 +4,43 @@ A modern TypeScript implementation of the classic Bolo tank warfare game.
 
 ## Status
 
-This project is actively in development.
+This repo is in active development with a playable multiplayer core.
 
-- `DEVELOPMENT.md` is the authoritative progress log.
-- `ROADMAP.md` contains the current four-phase plan.
+- `DEVELOPMENT.md` is the current engineering log.
+- `ROADMAP.md` tracks planned phases.
+- Manual parity tracking lives in `references/winbolo-part1-traceability-matrix.md`.
 
-Current implementation includes multiplayer server simulation, tank combat, builder workflows, pillboxes, bases (partial), mines, terrain effects, and client audio/rendering support.
+Implemented highlights include:
+
+- Server-authoritative simulation and visibility windows
+- Protocol Buffers binary network protocol over WebSocket
+- Pillboxes, bases, mines, builder workflows, terrain effects
+- Remote pillbox view (`V`) with server-authoritative camera source
+- HUD ticker and chat with server-side recipient filtering
+- Bot v1 with startup configuration
 
 ## Tech Stack
 
 - Language: TypeScript
+- Workspace: pnpm monorepo
 - Client: Vite + Canvas 2D
-- Server: Node.js + WebSocket (`ws`)
-- Shared protocol/types: workspace package (`@jsbolo/shared`)
-- Package manager: pnpm workspaces
-
-Networking now uses Protocol Buffers (binary WebSocket payloads) via `@jsbolo/shared`.
+- Server: Node.js + `ws`
+- Shared protocol/types: `@jsbolo/shared`
+- Bots package: `@jsbolo/bots`
 
 ## Project Structure
 
 ```text
 jsbolo/
 ├── packages/
-│   ├── shared/    # Shared types, constants, protocol helpers
-│   ├── client/    # Browser game client
-│   └── server/    # Multiplayer game server
+│   ├── shared/   # protocol, shared types, constants
+│   ├── server/   # authoritative simulation + websocket server
+│   ├── client/   # browser renderer/input/HUD
+│   └── bots/     # built-in bot profiles and bot contracts
+├── docs/
+├── references/
 ├── DEVELOPMENT.md
-├── ROADMAP.md
-└── pnpm-workspace.yaml
+└── ROADMAP.md
 ```
 
 ## Prerequisites
@@ -43,57 +52,64 @@ jsbolo/
 
 ```bash
 pnpm install
-pnpm build
+pnpm -r build
 ```
 
-## Running Locally
+## Run Locally
 
-### Option 1: Helper Script (client + server)
+### Helper script (recommended)
 
 ```bash
 ./restart-dev.sh
 ```
 
-### Option 2: Start Individually
+### Start manually
 
 ```bash
-# Terminal 1: server
-cd packages/server
-pnpm dev
+# Terminal 1
+cd packages/server && pnpm dev
 
-# Terminal 2: client
-cd packages/client
-pnpm dev
+# Terminal 2
+cd packages/client && pnpm dev
 ```
 
-### Default Ports
+### Ports
 
 - Client dev server: `http://localhost:3000`
-- Backend game server: `ws://localhost:8080`
-- Alternate backend port usage during development: `8081` (if configured)
+- Game WebSocket server: `ws://localhost:8080`
+- Server control/status HTTP API: `http://localhost:8081` (non-production default)
 
-## Testing
+## Bot Startup Configuration
+
+Used by `restart-dev.sh` and `packages/server/src/main.ts`:
+
+- `ALLOW_BOTS` (`true`/`false`)
+- `MAX_BOTS` (integer)
+- `BOT_ALLIANCE_MODE` (`all-bots` or `none`)
+- `BOT_COUNT` (integer startup bots)
+- `BOT_PROFILE` (`tactical`, `patrol`, `idle`)
+- `ALLOW_BOT_ONLY_SIM` (`true`/`false`)
+
+## Testing and Quality
 
 ```bash
-# Entire workspace
-pnpm -r test
-
-# Type-check
 pnpm -r type-check
-
-# Build
+pnpm -r test
 pnpm -r build
 ```
 
-## Controls (Current)
+CI (`.github/workflows/ci.yml`) enforces type-check, test, build, and runtime protocol smoke checks on pull requests.
 
-- Move: `Q` / `W` / `ArrowUp`
+## Controls (current defaults)
+
+- Accelerate: `Q` / `W` / `ArrowUp`
 - Brake: `Z` / `S` / `ArrowDown`
 - Turn: `A` / `D` / `ArrowLeft` / `ArrowRight` / numpad `/` `*`
 - Shoot: `Space` / numpad `0`
 - Range: `+` / `-`
-- Builder actions: `T`, `D`, `R`, `W`, `B`, `P`, `M`, `C`/`Esc`
+- Builder: `T`, `D`, `R`, `W`, `B`, `P`, `M`, `C`/`Esc`
+- Remote pillbox view toggle: `V`
 
 ## License
 
-GPL-2.0 (inherited from original Bolo ecosystem assets and project direction).
+GPL-2.0
