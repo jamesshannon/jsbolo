@@ -28,7 +28,7 @@ Last audited: 2026-02-16
 
 | ID | Requirement | Manual Evidence | Owner Candidates | Test Candidates | Status | Notes |
 |---|---|---|---|---|---|---|
-| `BGN-01` | Tank begins out at sea on a boat. | `§2.9.2`, p.9 | `packages/server/src/simulation/map-loader.ts`, `packages/server/src/systems/session-player-manager.ts` | `packages/server/src/__tests__/bolo-spec/01-tank-spawning.test.ts`, `packages/server/src/systems/__tests__/session-player-manager.test.ts` | `mapped` | Map-defined starts now auto-adjust to nearest water tile for boat spawn. Remaining gap: procedural/fallback spawns are still center-map and not force-sea by default. |
+| `BGN-01` | Tank begins out at sea on a boat. | `§2.9.2`, p.9 | `packages/server/src/simulation/map-loader.ts`, `packages/server/src/systems/session-player-manager.ts` | `packages/server/src/__tests__/bolo-spec/01-tank-spawning.test.ts`, `packages/server/src/systems/__tests__/session-player-manager.test.ts` | `deferred` | Deferred by product decision: fallback/procedural spawns will remain as-is for now; map-start sea adjustment remains as partial parity support. |
 | `BGN-02` | Boats cannot pass under low floating bridges; player must disembark or destroy bridge. | `§2.9.2`, p.9 | `packages/server/src/systems/player-simulation-system.ts`, `packages/server/src/simulation/world.ts` | `packages/server/src/__tests__/bolo-spec/06-boats.test.ts` | `verified` | Explicit spec coverage added for disembark when crossing `RIVER -> ROAD` bridge tile. |
 | `BGN-03` | Boats are sunk by one hit; tank dumped into water; deep sea without boat kills immediately. | `§2.9.2`, p.9 | `packages/server/src/systems/combat-system.ts`, `packages/server/src/systems/player-simulation-system.ts`, `packages/server/src/simulation/world.ts` | `packages/server/src/__tests__/bolo-spec/06-boats.test.ts`, `packages/server/src/__tests__/bolo-spec/02-tank-movement.test.ts` | `verified` |  |
 
@@ -151,10 +151,10 @@ Last audited: 2026-02-16
 ## Deferred Scope (Product Decision)
 
 1. Input/keybinding parity and configurability: `DRV-01`, `DRV-02`, `MIN-01`, `CLR-02`.
-2. Map selection UX parity: `MAP-01`.
-3. Legacy brains/bot menu semantics: `BRN-01`, `BRN-02`, `BRN-03`, `BRN-04`.
+2. Spawn/boot parity for universal sea starts: `BGN-01`.
+3. Map selection UX parity: `MAP-01`.
+4. Legacy brains/bot menu semantics: `BRN-01`, `BRN-02`, `BRN-03`, `BRN-04`.
 
 ## Immediate Non-Deferred Gaps
 
-1. Spawn/boot parity mapping remains incomplete: `BGN-01`.
-2. Remote pillbox mode still lacks alliance-pillbox selection parity in the client snapshot: `REM-01`.
+1. Remote pillbox mode still lacks alliance-pillbox selection parity in the client snapshot: `REM-01`.
