@@ -830,6 +830,7 @@ export const jsbolo = $root.jsbolo = (() => {
          * @property {number|null} [reload] Tank reload
          * @property {number|null} [firingRange] Tank firingRange
          * @property {number|null} [carriedPillbox] Tank carriedPillbox
+         * @property {number|null} [allianceId] Tank allianceId
          */
 
         /**
@@ -959,12 +960,26 @@ export const jsbolo = $root.jsbolo = (() => {
          */
         Tank.prototype.carriedPillbox = null;
 
+        /**
+         * Tank allianceId.
+         * @member {number|null|undefined} allianceId
+         * @memberof jsbolo.Tank
+         * @instance
+         */
+        Tank.prototype.allianceId = null;
+
         // OneOf field names bound to virtual getters and setters
         let $oneOfFields;
 
         // Virtual OneOf for proto3 optional field
         Object.defineProperty(Tank.prototype, "_carriedPillbox", {
             get: $util.oneOfGetter($oneOfFields = ["carriedPillbox"]),
+            set: $util.oneOfSetter($oneOfFields)
+        });
+
+        // Virtual OneOf for proto3 optional field
+        Object.defineProperty(Tank.prototype, "_allianceId", {
+            get: $util.oneOfGetter($oneOfFields = ["allianceId"]),
             set: $util.oneOfSetter($oneOfFields)
         });
 
@@ -1020,6 +1035,8 @@ export const jsbolo = $root.jsbolo = (() => {
                 writer.uint32(/* id 13, wireType 5 =*/109).float(message.firingRange);
             if (message.carriedPillbox != null && Object.hasOwnProperty.call(message, "carriedPillbox"))
                 writer.uint32(/* id 14, wireType 0 =*/112).uint32(message.carriedPillbox);
+            if (message.allianceId != null && Object.hasOwnProperty.call(message, "allianceId"))
+                writer.uint32(/* id 15, wireType 0 =*/120).uint32(message.allianceId);
             return writer;
         };
 
@@ -1112,6 +1129,10 @@ export const jsbolo = $root.jsbolo = (() => {
                         message.carriedPillbox = reader.uint32();
                         break;
                     }
+                case 15: {
+                        message.allianceId = reader.uint32();
+                        break;
+                    }
                 default:
                     reader.skipType(tag & 7);
                     break;
@@ -1192,6 +1213,11 @@ export const jsbolo = $root.jsbolo = (() => {
                 if (!$util.isInteger(message.carriedPillbox))
                     return "carriedPillbox: integer expected";
             }
+            if (message.allianceId != null && message.hasOwnProperty("allianceId")) {
+                properties._allianceId = 1;
+                if (!$util.isInteger(message.allianceId))
+                    return "allianceId: integer expected";
+            }
             return null;
         };
 
@@ -1235,6 +1261,8 @@ export const jsbolo = $root.jsbolo = (() => {
                 message.firingRange = Number(object.firingRange);
             if (object.carriedPillbox != null)
                 message.carriedPillbox = object.carriedPillbox >>> 0;
+            if (object.allianceId != null)
+                message.allianceId = object.allianceId >>> 0;
             return message;
         };
 
@@ -1297,6 +1325,11 @@ export const jsbolo = $root.jsbolo = (() => {
                 if (options.oneofs)
                     object._carriedPillbox = "carriedPillbox";
             }
+            if (message.allianceId != null && message.hasOwnProperty("allianceId")) {
+                object.allianceId = message.allianceId;
+                if (options.oneofs)
+                    object._allianceId = "allianceId";
+            }
             return object;
         };
 
@@ -1347,6 +1380,7 @@ export const jsbolo = $root.jsbolo = (() => {
          * @property {boolean|null} [hasPillbox] Builder hasPillbox
          * @property {number|null} [team] Builder team
          * @property {number|null} [respawnCounter] Builder respawnCounter
+         * @property {number|null} [allianceId] Builder allianceId
          */
 
         /**
@@ -1461,6 +1495,23 @@ export const jsbolo = $root.jsbolo = (() => {
         Builder.prototype.respawnCounter = 0;
 
         /**
+         * Builder allianceId.
+         * @member {number|null|undefined} allianceId
+         * @memberof jsbolo.Builder
+         * @instance
+         */
+        Builder.prototype.allianceId = null;
+
+        // OneOf field names bound to virtual getters and setters
+        let $oneOfFields;
+
+        // Virtual OneOf for proto3 optional field
+        Object.defineProperty(Builder.prototype, "_allianceId", {
+            get: $util.oneOfGetter($oneOfFields = ["allianceId"]),
+            set: $util.oneOfSetter($oneOfFields)
+        });
+
+        /**
          * Creates a new Builder instance using the specified properties.
          * @function create
          * @memberof jsbolo.Builder
@@ -1508,6 +1559,8 @@ export const jsbolo = $root.jsbolo = (() => {
                 writer.uint32(/* id 11, wireType 0 =*/88).uint32(message.team);
             if (message.respawnCounter != null && Object.hasOwnProperty.call(message, "respawnCounter"))
                 writer.uint32(/* id 12, wireType 0 =*/96).uint32(message.respawnCounter);
+            if (message.allianceId != null && Object.hasOwnProperty.call(message, "allianceId"))
+                writer.uint32(/* id 13, wireType 0 =*/104).uint32(message.allianceId);
             return writer;
         };
 
@@ -1592,6 +1645,10 @@ export const jsbolo = $root.jsbolo = (() => {
                         message.respawnCounter = reader.uint32();
                         break;
                     }
+                case 13: {
+                        message.allianceId = reader.uint32();
+                        break;
+                    }
                 default:
                     reader.skipType(tag & 7);
                     break;
@@ -1627,6 +1684,7 @@ export const jsbolo = $root.jsbolo = (() => {
         Builder.verify = function verify(message) {
             if (typeof message !== "object" || message === null)
                 return "object expected";
+            let properties = {};
             if (message.id != null && message.hasOwnProperty("id"))
                 if (!$util.isInteger(message.id))
                     return "id: integer expected";
@@ -1677,6 +1735,11 @@ export const jsbolo = $root.jsbolo = (() => {
             if (message.respawnCounter != null && message.hasOwnProperty("respawnCounter"))
                 if (!$util.isInteger(message.respawnCounter))
                     return "respawnCounter: integer expected";
+            if (message.allianceId != null && message.hasOwnProperty("allianceId")) {
+                properties._allianceId = 1;
+                if (!$util.isInteger(message.allianceId))
+                    return "allianceId: integer expected";
+            }
             return null;
         };
 
@@ -1766,6 +1829,8 @@ export const jsbolo = $root.jsbolo = (() => {
                 message.team = object.team >>> 0;
             if (object.respawnCounter != null)
                 message.respawnCounter = object.respawnCounter >>> 0;
+            if (object.allianceId != null)
+                message.allianceId = object.allianceId >>> 0;
             return message;
         };
 
@@ -1820,6 +1885,11 @@ export const jsbolo = $root.jsbolo = (() => {
                 object.team = message.team;
             if (message.respawnCounter != null && message.hasOwnProperty("respawnCounter"))
                 object.respawnCounter = message.respawnCounter;
+            if (message.allianceId != null && message.hasOwnProperty("allianceId")) {
+                object.allianceId = message.allianceId;
+                if (options.oneofs)
+                    object._allianceId = "allianceId";
+            }
             return object;
         };
 
@@ -1850,6 +1920,259 @@ export const jsbolo = $root.jsbolo = (() => {
         };
 
         return Builder;
+    })();
+
+    jsbolo.AllianceSnapshot = (function() {
+
+        /**
+         * Properties of an AllianceSnapshot.
+         * @memberof jsbolo
+         * @interface IAllianceSnapshot
+         * @property {number|null} [allianceId] AllianceSnapshot allianceId
+         * @property {Array.<number>|null} [alliedAllianceIds] AllianceSnapshot alliedAllianceIds
+         */
+
+        /**
+         * Constructs a new AllianceSnapshot.
+         * @memberof jsbolo
+         * @classdesc Represents an AllianceSnapshot.
+         * @implements IAllianceSnapshot
+         * @constructor
+         * @param {jsbolo.IAllianceSnapshot=} [properties] Properties to set
+         */
+        function AllianceSnapshot(properties) {
+            this.alliedAllianceIds = [];
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null)
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * AllianceSnapshot allianceId.
+         * @member {number} allianceId
+         * @memberof jsbolo.AllianceSnapshot
+         * @instance
+         */
+        AllianceSnapshot.prototype.allianceId = 0;
+
+        /**
+         * AllianceSnapshot alliedAllianceIds.
+         * @member {Array.<number>} alliedAllianceIds
+         * @memberof jsbolo.AllianceSnapshot
+         * @instance
+         */
+        AllianceSnapshot.prototype.alliedAllianceIds = $util.emptyArray;
+
+        /**
+         * Creates a new AllianceSnapshot instance using the specified properties.
+         * @function create
+         * @memberof jsbolo.AllianceSnapshot
+         * @static
+         * @param {jsbolo.IAllianceSnapshot=} [properties] Properties to set
+         * @returns {jsbolo.AllianceSnapshot} AllianceSnapshot instance
+         */
+        AllianceSnapshot.create = function create(properties) {
+            return new AllianceSnapshot(properties);
+        };
+
+        /**
+         * Encodes the specified AllianceSnapshot message. Does not implicitly {@link jsbolo.AllianceSnapshot.verify|verify} messages.
+         * @function encode
+         * @memberof jsbolo.AllianceSnapshot
+         * @static
+         * @param {jsbolo.IAllianceSnapshot} message AllianceSnapshot message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        AllianceSnapshot.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.allianceId != null && Object.hasOwnProperty.call(message, "allianceId"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.allianceId);
+            if (message.alliedAllianceIds != null && message.alliedAllianceIds.length) {
+                writer.uint32(/* id 2, wireType 2 =*/18).fork();
+                for (let i = 0; i < message.alliedAllianceIds.length; ++i)
+                    writer.uint32(message.alliedAllianceIds[i]);
+                writer.ldelim();
+            }
+            return writer;
+        };
+
+        /**
+         * Encodes the specified AllianceSnapshot message, length delimited. Does not implicitly {@link jsbolo.AllianceSnapshot.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof jsbolo.AllianceSnapshot
+         * @static
+         * @param {jsbolo.IAllianceSnapshot} message AllianceSnapshot message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        AllianceSnapshot.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes an AllianceSnapshot message from the specified reader or buffer.
+         * @function decode
+         * @memberof jsbolo.AllianceSnapshot
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {jsbolo.AllianceSnapshot} AllianceSnapshot
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        AllianceSnapshot.decode = function decode(reader, length, error) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.jsbolo.AllianceSnapshot();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.allianceId = reader.uint32();
+                        break;
+                    }
+                case 2: {
+                        if (!(message.alliedAllianceIds && message.alliedAllianceIds.length))
+                            message.alliedAllianceIds = [];
+                        if ((tag & 7) === 2) {
+                            let end2 = reader.uint32() + reader.pos;
+                            while (reader.pos < end2)
+                                message.alliedAllianceIds.push(reader.uint32());
+                        } else
+                            message.alliedAllianceIds.push(reader.uint32());
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes an AllianceSnapshot message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof jsbolo.AllianceSnapshot
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {jsbolo.AllianceSnapshot} AllianceSnapshot
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        AllianceSnapshot.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies an AllianceSnapshot message.
+         * @function verify
+         * @memberof jsbolo.AllianceSnapshot
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        AllianceSnapshot.verify = function verify(message) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (message.allianceId != null && message.hasOwnProperty("allianceId"))
+                if (!$util.isInteger(message.allianceId))
+                    return "allianceId: integer expected";
+            if (message.alliedAllianceIds != null && message.hasOwnProperty("alliedAllianceIds")) {
+                if (!Array.isArray(message.alliedAllianceIds))
+                    return "alliedAllianceIds: array expected";
+                for (let i = 0; i < message.alliedAllianceIds.length; ++i)
+                    if (!$util.isInteger(message.alliedAllianceIds[i]))
+                        return "alliedAllianceIds: integer[] expected";
+            }
+            return null;
+        };
+
+        /**
+         * Creates an AllianceSnapshot message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof jsbolo.AllianceSnapshot
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {jsbolo.AllianceSnapshot} AllianceSnapshot
+         */
+        AllianceSnapshot.fromObject = function fromObject(object) {
+            if (object instanceof $root.jsbolo.AllianceSnapshot)
+                return object;
+            let message = new $root.jsbolo.AllianceSnapshot();
+            if (object.allianceId != null)
+                message.allianceId = object.allianceId >>> 0;
+            if (object.alliedAllianceIds) {
+                if (!Array.isArray(object.alliedAllianceIds))
+                    throw TypeError(".jsbolo.AllianceSnapshot.alliedAllianceIds: array expected");
+                message.alliedAllianceIds = [];
+                for (let i = 0; i < object.alliedAllianceIds.length; ++i)
+                    message.alliedAllianceIds[i] = object.alliedAllianceIds[i] >>> 0;
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from an AllianceSnapshot message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof jsbolo.AllianceSnapshot
+         * @static
+         * @param {jsbolo.AllianceSnapshot} message AllianceSnapshot
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        AllianceSnapshot.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.arrays || options.defaults)
+                object.alliedAllianceIds = [];
+            if (options.defaults)
+                object.allianceId = 0;
+            if (message.allianceId != null && message.hasOwnProperty("allianceId"))
+                object.allianceId = message.allianceId;
+            if (message.alliedAllianceIds && message.alliedAllianceIds.length) {
+                object.alliedAllianceIds = [];
+                for (let j = 0; j < message.alliedAllianceIds.length; ++j)
+                    object.alliedAllianceIds[j] = message.alliedAllianceIds[j];
+            }
+            return object;
+        };
+
+        /**
+         * Converts this AllianceSnapshot to JSON.
+         * @function toJSON
+         * @memberof jsbolo.AllianceSnapshot
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        AllianceSnapshot.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for AllianceSnapshot
+         * @function getTypeUrl
+         * @memberof jsbolo.AllianceSnapshot
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        AllianceSnapshot.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/jsbolo.AllianceSnapshot";
+        };
+
+        return AllianceSnapshot;
     })();
 
     jsbolo.Shell = (function() {
@@ -4070,6 +4393,7 @@ export const jsbolo = $root.jsbolo = (() => {
          * @property {Array.<jsbolo.IBase>|null} [bases] WelcomeMessage bases
          * @property {boolean|null} [matchEnded] WelcomeMessage matchEnded
          * @property {Array.<number>|null} [winningTeams] WelcomeMessage winningTeams
+         * @property {Array.<jsbolo.IAllianceSnapshot>|null} [alliances] WelcomeMessage alliances
          */
 
         /**
@@ -4085,6 +4409,7 @@ export const jsbolo = $root.jsbolo = (() => {
             this.pillboxes = [];
             this.bases = [];
             this.winningTeams = [];
+            this.alliances = [];
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null)
@@ -4171,6 +4496,14 @@ export const jsbolo = $root.jsbolo = (() => {
          */
         WelcomeMessage.prototype.winningTeams = $util.emptyArray;
 
+        /**
+         * WelcomeMessage alliances.
+         * @member {Array.<jsbolo.IAllianceSnapshot>} alliances
+         * @memberof jsbolo.WelcomeMessage
+         * @instance
+         */
+        WelcomeMessage.prototype.alliances = $util.emptyArray;
+
         // OneOf field names bound to virtual getters and setters
         let $oneOfFields;
 
@@ -4231,6 +4564,9 @@ export const jsbolo = $root.jsbolo = (() => {
                     writer.uint32(message.winningTeams[i]);
                 writer.ldelim();
             }
+            if (message.alliances != null && message.alliances.length)
+                for (let i = 0; i < message.alliances.length; ++i)
+                    $root.jsbolo.AllianceSnapshot.encode(message.alliances[i], writer.uint32(/* id 11, wireType 2 =*/90).fork()).ldelim();
             return writer;
         };
 
@@ -4318,6 +4654,12 @@ export const jsbolo = $root.jsbolo = (() => {
                                 message.winningTeams.push(reader.uint32());
                         } else
                             message.winningTeams.push(reader.uint32());
+                        break;
+                    }
+                case 11: {
+                        if (!(message.alliances && message.alliances.length))
+                            message.alliances = [];
+                        message.alliances.push($root.jsbolo.AllianceSnapshot.decode(reader, reader.uint32()));
                         break;
                     }
                 default:
@@ -4412,6 +4754,15 @@ export const jsbolo = $root.jsbolo = (() => {
                     if (!$util.isInteger(message.winningTeams[i]))
                         return "winningTeams: integer[] expected";
             }
+            if (message.alliances != null && message.hasOwnProperty("alliances")) {
+                if (!Array.isArray(message.alliances))
+                    return "alliances: array expected";
+                for (let i = 0; i < message.alliances.length; ++i) {
+                    let error = $root.jsbolo.AllianceSnapshot.verify(message.alliances[i]);
+                    if (error)
+                        return "alliances." + error;
+                }
+            }
             return null;
         };
 
@@ -4479,6 +4830,16 @@ export const jsbolo = $root.jsbolo = (() => {
                 for (let i = 0; i < object.winningTeams.length; ++i)
                     message.winningTeams[i] = object.winningTeams[i] >>> 0;
             }
+            if (object.alliances) {
+                if (!Array.isArray(object.alliances))
+                    throw TypeError(".jsbolo.WelcomeMessage.alliances: array expected");
+                message.alliances = [];
+                for (let i = 0; i < object.alliances.length; ++i) {
+                    if (typeof object.alliances[i] !== "object")
+                        throw TypeError(".jsbolo.WelcomeMessage.alliances: object expected");
+                    message.alliances[i] = $root.jsbolo.AllianceSnapshot.fromObject(object.alliances[i]);
+                }
+            }
             return message;
         };
 
@@ -4500,6 +4861,7 @@ export const jsbolo = $root.jsbolo = (() => {
                 object.pillboxes = [];
                 object.bases = [];
                 object.winningTeams = [];
+                object.alliances = [];
             }
             if (options.defaults) {
                 object.playerId = 0;
@@ -4542,6 +4904,11 @@ export const jsbolo = $root.jsbolo = (() => {
                 object.winningTeams = [];
                 for (let j = 0; j < message.winningTeams.length; ++j)
                     object.winningTeams[j] = message.winningTeams[j];
+            }
+            if (message.alliances && message.alliances.length) {
+                object.alliances = [];
+                for (let j = 0; j < message.alliances.length; ++j)
+                    object.alliances[j] = $root.jsbolo.AllianceSnapshot.toObject(message.alliances[j], options);
             }
             return object;
         };
@@ -4596,6 +4963,7 @@ export const jsbolo = $root.jsbolo = (() => {
          * @property {boolean|null} [matchEnded] UpdateMessage matchEnded
          * @property {Array.<number>|null} [winningTeams] UpdateMessage winningTeams
          * @property {Array.<jsbolo.IHudMessage>|null} [hudMessages] UpdateMessage hudMessages
+         * @property {Array.<jsbolo.IAllianceSnapshot>|null} [alliances] UpdateMessage alliances
          */
 
         /**
@@ -4620,6 +4988,7 @@ export const jsbolo = $root.jsbolo = (() => {
             this.soundEvents = [];
             this.winningTeams = [];
             this.hudMessages = [];
+            this.alliances = [];
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null)
@@ -4746,6 +5115,14 @@ export const jsbolo = $root.jsbolo = (() => {
          */
         UpdateMessage.prototype.hudMessages = $util.emptyArray;
 
+        /**
+         * UpdateMessage alliances.
+         * @member {Array.<jsbolo.IAllianceSnapshot>} alliances
+         * @memberof jsbolo.UpdateMessage
+         * @instance
+         */
+        UpdateMessage.prototype.alliances = $util.emptyArray;
+
         // OneOf field names bound to virtual getters and setters
         let $oneOfFields;
 
@@ -4837,6 +5214,9 @@ export const jsbolo = $root.jsbolo = (() => {
             if (message.hudMessages != null && message.hudMessages.length)
                 for (let i = 0; i < message.hudMessages.length; ++i)
                     $root.jsbolo.HudMessage.encode(message.hudMessages[i], writer.uint32(/* id 15, wireType 2 =*/122).fork()).ldelim();
+            if (message.alliances != null && message.alliances.length)
+                for (let i = 0; i < message.alliances.length; ++i)
+                    $root.jsbolo.AllianceSnapshot.encode(message.alliances[i], writer.uint32(/* id 16, wireType 2 =*/130).fork()).ldelim();
             return writer;
         };
 
@@ -4982,6 +5362,12 @@ export const jsbolo = $root.jsbolo = (() => {
                         if (!(message.hudMessages && message.hudMessages.length))
                             message.hudMessages = [];
                         message.hudMessages.push($root.jsbolo.HudMessage.decode(reader, reader.uint32()));
+                        break;
+                    }
+                case 16: {
+                        if (!(message.alliances && message.alliances.length))
+                            message.alliances = [];
+                        message.alliances.push($root.jsbolo.AllianceSnapshot.decode(reader, reader.uint32()));
                         break;
                     }
                 default:
@@ -5135,6 +5521,15 @@ export const jsbolo = $root.jsbolo = (() => {
                         return "hudMessages." + error;
                 }
             }
+            if (message.alliances != null && message.hasOwnProperty("alliances")) {
+                if (!Array.isArray(message.alliances))
+                    return "alliances: array expected";
+                for (let i = 0; i < message.alliances.length; ++i) {
+                    let error = $root.jsbolo.AllianceSnapshot.verify(message.alliances[i]);
+                    if (error)
+                        return "alliances." + error;
+                }
+            }
             return null;
         };
 
@@ -5269,6 +5664,16 @@ export const jsbolo = $root.jsbolo = (() => {
                     message.hudMessages[i] = $root.jsbolo.HudMessage.fromObject(object.hudMessages[i]);
                 }
             }
+            if (object.alliances) {
+                if (!Array.isArray(object.alliances))
+                    throw TypeError(".jsbolo.UpdateMessage.alliances: array expected");
+                message.alliances = [];
+                for (let i = 0; i < object.alliances.length; ++i) {
+                    if (typeof object.alliances[i] !== "object")
+                        throw TypeError(".jsbolo.UpdateMessage.alliances: object expected");
+                    message.alliances[i] = $root.jsbolo.AllianceSnapshot.fromObject(object.alliances[i]);
+                }
+            }
             return message;
         };
 
@@ -5299,6 +5704,7 @@ export const jsbolo = $root.jsbolo = (() => {
                 object.soundEvents = [];
                 object.winningTeams = [];
                 object.hudMessages = [];
+                object.alliances = [];
             }
             if (options.defaults)
                 object.tick = 0;
@@ -5373,6 +5779,11 @@ export const jsbolo = $root.jsbolo = (() => {
                 object.hudMessages = [];
                 for (let j = 0; j < message.hudMessages.length; ++j)
                     object.hudMessages[j] = $root.jsbolo.HudMessage.toObject(message.hudMessages[j], options);
+            }
+            if (message.alliances && message.alliances.length) {
+                object.alliances = [];
+                for (let j = 0; j < message.alliances.length; ++j)
+                    object.alliances[j] = $root.jsbolo.AllianceSnapshot.toObject(message.alliances[j], options);
             }
             return object;
         };

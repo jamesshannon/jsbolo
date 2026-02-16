@@ -100,21 +100,24 @@ export class Renderer {
     builders: Map<number, Builder>,
     pillboxes: Map<number, Pillbox>,
     bases: Map<number, Base>,
-    myPlayerId: number | null
+    myPlayerId: number | null,
+    myAllianceAllies: ReadonlySet<number> | null = null
   ): void {
     this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
-    const myTeam = myPlayerId !== null ? tanks.get(myPlayerId)?.team ?? null : null;
+    const myAllianceId = myPlayerId !== null
+      ? (tanks.get(myPlayerId)?.allianceId ?? tanks.get(myPlayerId)?.team ?? null)
+      : null;
 
     this.renderTerrain(world);
 
     // Render all bases
     for (const baseData of bases.values()) {
-      this.renderBase(baseData, myTeam);
+      this.renderBase(baseData, myAllianceId, myAllianceAllies);
     }
 
     // Render all pillboxes
     for (const pillboxData of pillboxes.values()) {
-      this.renderPillbox(pillboxData, myTeam);
+      this.renderPillbox(pillboxData, myAllianceId, myAllianceAllies);
     }
 
     // Render all shells
@@ -124,7 +127,12 @@ export class Renderer {
 
     // Render all tanks
     for (const [tankId, tankData] of tanks) {
-      this.renderNetworkTank(tankData, tankId === myPlayerId, myTeam);
+      this.renderNetworkTank(
+        tankData,
+        tankId === myPlayerId,
+        myAllianceId,
+        myAllianceAllies
+      );
     }
 
     // Render all builders
@@ -223,7 +231,8 @@ export class Renderer {
   private renderNetworkTank(
     tankData: NetworkTank,
     isLocalPlayer: boolean,
-    myTeam: number | null
+    myAllianceId: number | null,
+    myAllianceAllies: ReadonlySet<number> | null
   ): void {
     if (tankData.x === undefined || tankData.y === undefined) {
       return;
@@ -245,7 +254,15 @@ export class Renderer {
       screenPos.x - TILE_SIZE_PIXELS / 2,
       screenPos.y - TILE_SIZE_PIXELS / 2
     );
-    this.drawTankTurretMarker(screenPos.x, screenPos.y, tankData.direction, tankData.team, myTeam, isLocalPlayer);
+    this.drawTankTurretMarker(
+      screenPos.x,
+      screenPos.y,
+      tankData.direction,
+      tankData.allianceId ?? tankData.team,
+      myAllianceId,
+      myAllianceAllies,
+      isLocalPlayer
+    );
 
     // Draw targeting reticle (only for local player)
     if (isLocalPlayer && tankData.firingRange !== undefined) {
@@ -402,7 +419,8 @@ export class Renderer {
    */
   private renderPillbox(
     pillboxData: Pillbox,
-    myTeam: number | null
+    myAllianceId: number | null,
+    myAllianceAllies: ReadonlySet<number> | null
   ): void {
     if (
       pillboxData.tileX === undefined ||
@@ -438,7 +456,12 @@ export class Renderer {
       return;
     }
 
-    const relationColor = this.getRelationColor(pillboxData.ownerTeam, myTeam, '#d7bf2f');
+    const relationColor = this.getRelationColor(
+      pillboxData.ownerTeam,
+      myAllianceId,
+      myAllianceAllies,
+      '#d7bf2f'
+    );
     // Assumption: the "damaged" HUD mask at x=96 is used as low-health proxy for
     // readability until we have full per-hit dedicated pillbox icon states.
     const mask = pillboxData.armor <= 5
@@ -451,7 +474,11 @@ export class Renderer {
   /**
    * Render base (refueling station)
    */
-  private renderBase(baseData: Base, myTeam: number | null): void {
+  private renderBase(
+    baseData: Base,
+    myAllianceId: number | null,
+    myAllianceAllies: ReadonlySet<number> | null
+  ): void {
     if (baseData.tileX === undefined || baseData.tileY === undefined) {
       return;
     }
@@ -469,7 +496,12 @@ export class Renderer {
       return;
     }
 
-    const relationColor = this.getRelationColor(baseData.ownerTeam, myTeam, '#26d93b');
+    const relationColor = this.getRelationColor(
+      baseData.ownerTeam,
+      myAllianceId,
+      myAllianceAllies,
+      '#26d93b'
+    );
     const mask = baseData.armor <= 9
       ? HUD_ICONS.BASE_VULNERABLE_MASK
       : HUD_ICONS.BASE_HEALTHY_MASK;
@@ -478,31 +510,37 @@ export class Renderer {
 
   private getRelationColor(
     ownerTeam: number,
-    myTeam: number | null,
+    myAllianceId: number | null,
+    myAllianceAllies: ReadonlySet<number> | null,
     neutralColor: string
   ): string {
     const palette = getRelationPalette(this.colorMode);
     if (ownerTeam === NEUTRAL_TEAM) {
       return neutralColor;
     }
-    if (myTeam === null) {
+    if (myAllianceId === null) {
       return palette.neutral;
     }
-    return ownerTeam === myTeam ? palette.friendly : palette.hostile;
+    return ownerTeam === myAllianceId || myAllianceAllies?.has(ownerTeam)
+      ? palette.friendly
+      : palette.hostile;
   }
 
   private drawTankTurretMarker(
     centerX: number,
     centerY: number,
     direction: number,
-    team: number,
-    myTeam: number | null,
+    allianceId: number,
+    myAllianceId: number | null,
+    myAllianceAllies: ReadonlySet<number> | null,
     isLocalPlayer: boolean
   ): void {
     const palette = getRelationPalette(this.colorMode);
+    const isFriendly = myAllianceId !== null &&
+      (allianceId === myAllianceId || myAllianceAllies?.has(allianceId) === true);
     const markerColor = isLocalPlayer
       ? palette.self
-      : (myTeam !== null && team === myTeam ? palette.friendly : palette.hostile);
+      : (isFriendly ? palette.friendly : palette.hostile);
     const angle = ((256 - direction) * 2 * Math.PI) / 256;
     const tipX = centerX + Math.cos(angle) * 10;
     const tipY = centerY + Math.sin(angle) * 10;

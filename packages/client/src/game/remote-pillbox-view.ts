@@ -1,4 +1,6 @@
 import type {Pillbox} from '@shared';
+import type {AllianceRelations} from './alliance-relations.js';
+import {isFriendlyToLocalAlliance} from './alliance-relations.js';
 
 export type RemotePillboxDirection = 'up' | 'down' | 'left' | 'right';
 
@@ -17,20 +19,23 @@ const DIRECTION_VECTORS: Record<RemotePillboxDirection, DirectionVector> = {
 /**
  * Return eligible pillboxes for remote camera mode.
  *
- * ASSUMPTION:
- * Alliance membership is not currently present in the client snapshot, so this
- * v1 implementation scopes eligibility to pillboxes owned by the local team.
+ * Includes locally owned and allied pillboxes.
  */
 export function listRemoteViewPillboxes(
   pillboxes: Iterable<Pillbox>,
-  myTeam: number | null
+  myAllianceId: number | null,
+  allianceRelations: AllianceRelations
 ): Pillbox[] {
-  if (myTeam === null) {
+  if (myAllianceId === null) {
     return [];
   }
 
   return Array.from(pillboxes)
-    .filter(pillbox => !pillbox.inTank && pillbox.ownerTeam === myTeam)
+    .filter(
+      pillbox =>
+        !pillbox.inTank &&
+        isFriendlyToLocalAlliance(myAllianceId, pillbox.ownerTeam, allianceRelations)
+    )
     .sort((a, b) => a.id - b.id);
 }
 
@@ -112,4 +117,3 @@ function distanceSquared(ax: number, ay: number, bx: number, by: number): number
   const dy = ay - by;
   return dx * dx + dy * dy;
 }
-

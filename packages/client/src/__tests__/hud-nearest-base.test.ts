@@ -40,7 +40,8 @@ describe('hud-nearest-base', () => {
       [base(1, 2, 101, 100), base(2, 2, 110, 100)],
       {
         isVisible: (x: number) => x < 3500,
-      }
+      },
+      new Map()
     );
 
     expect(selected?.id).toBe(1);
@@ -52,7 +53,8 @@ describe('hud-nearest-base', () => {
       [base(1, 255, 101, 100), base(2, 7, 100, 100)],
       {
         isVisible: () => true,
-      }
+      },
+      new Map()
     );
 
     expect(selected).toBeNull();

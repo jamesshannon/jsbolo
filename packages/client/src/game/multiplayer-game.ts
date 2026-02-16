@@ -44,6 +44,12 @@ import {
 import {selectNearestFriendlyVisibleBase} from './hud-nearest-base.js';
 import {formatHudTickerHtml} from './hud-ticker-format.js';
 import {
+  buildAllianceRelations,
+  getTankAllianceId,
+  isFriendlyToLocalAlliance,
+  type AllianceRelations,
+} from './alliance-relations.js';
+import {
   listRemoteViewPillboxes,
   pickDirectionalRemotePillbox,
   pickInitialRemotePillbox,
@@ -75,6 +81,7 @@ export class MultiplayerGame {
   private builders = new Map<number, Builder>();
   private pillboxes = new Map<number, Pillbox>();
   private bases = new Map<number, Base>();
+  private allianceRelations: AllianceRelations = new Map();
 
   // FPS tracking
   private fps = 0;
@@ -152,6 +159,7 @@ export class MultiplayerGame {
       });
       this.playerId = welcomeState.playerId;
       this.mapName = welcomeState.mapName;
+      this.allianceRelations = buildAllianceRelations(welcome.alliances);
       this.refreshChatRecipientOptions();
     });
 
@@ -192,6 +200,9 @@ export class MultiplayerGame {
         update.hudMessages,
         this.hudMessageVisibility
       );
+      if (update.alliances) {
+        this.allianceRelations = buildAllianceRelations(update.alliances);
+      }
       for (const message of serverHudMessages) {
         this.enqueueHudMessage(message);
       }
@@ -329,8 +340,12 @@ export class MultiplayerGame {
   }
 
   private updateRemotePillboxView(inputState: Readonly<InputState>): void {
-    const myTeam = this.getMyTeam();
-    const candidates = listRemoteViewPillboxes(this.pillboxes.values(), myTeam);
+    const myAllianceId = this.getMyAllianceId();
+    const candidates = listRemoteViewPillboxes(
+      this.pillboxes.values(),
+      myAllianceId,
+      this.allianceRelations
+    );
     if (candidates.length === 0) {
       this.disableRemotePillboxView('Pillbox view unavailable: no owned pillboxes.');
       return;
@@ -398,8 +413,12 @@ export class MultiplayerGame {
       return;
     }
 
-    const myTeam = this.getMyTeam();
-    const candidates = listRemoteViewPillboxes(this.pillboxes.values(), myTeam);
+    const myAllianceId = this.getMyAllianceId();
+    const candidates = listRemoteViewPillboxes(
+      this.pillboxes.values(),
+      myAllianceId,
+      this.allianceRelations
+    );
     if (candidates.length === 0) {
       this.enqueueHudMessage('Pillbox view unavailable: no owned pillboxes.');
       return;
@@ -429,6 +448,7 @@ export class MultiplayerGame {
   private render(): void {
     const renderTanks = this.getRenderTanks();
     const renderBuilders = this.getRenderBuilders();
+    const myAllianceAllies = this.getMyAlliedAllianceIds();
     this.renderer.renderMultiplayer(
       this.world,
       renderTanks,
@@ -436,7 +456,8 @@ export class MultiplayerGame {
       renderBuilders,
       this.pillboxes,
       this.bases,
-      this.playerId
+      this.playerId,
+      myAllianceAllies
     );
   }
 
@@ -571,15 +592,21 @@ export class MultiplayerGame {
     this.refreshBuilderHudButtonState();
 
     if (hudPillboxes) {
+      const myAllianceId = getTankAllianceId(tank);
       hudPillboxes.innerHTML = buildPillboxHudChipsHtml(
         this.pillboxes.values(),
-        tank.team,
+        myAllianceId,
+        this.allianceRelations,
         tank.carriedPillbox
       );
     }
 
     if (hudBases) {
-      hudBases.innerHTML = buildBaseHudChipsHtml(this.bases.values(), tank.team);
+      hudBases.innerHTML = buildBaseHudChipsHtml(
+        this.bases.values(),
+        getTankAllianceId(tank),
+        this.allianceRelations
+      );
     }
 
     if (
@@ -596,7 +623,7 @@ export class MultiplayerGame {
         hudNearestBaseMines.textContent = '-';
       } else {
         hudNearestBaseOwner.textContent =
-          nearestBase.ownerTeam === 255 ? 'Neutral' : `Team ${nearestBase.ownerTeam}`;
+          nearestBase.ownerTeam === 255 ? 'Neutral' : `Alliance ${nearestBase.ownerTeam}`;
         hudNearestBaseArmor.textContent = `${nearestBase.armor}`;
         hudNearestBaseShells.textContent = `${nearestBase.shells}`;
         hudNearestBaseMines.textContent = `${nearestBase.mines}`;
@@ -607,7 +634,8 @@ export class MultiplayerGame {
       const tankMarkers = deriveTankHudMarkers({
         tanks: this.tanks.values(),
         myPlayerId: this.playerId,
-        myTeam: tank.team,
+        myAllianceId: getTankAllianceId(tank),
+        allianceRelations: this.allianceRelations,
       });
       const friendlyCount = tankMarkers.filter(marker => marker.relation === 'friendly').length;
       const hostileCount = tankMarkers.filter(marker => marker.relation === 'hostile').length;
@@ -626,15 +654,29 @@ export class MultiplayerGame {
   }
 
   private getNearestBaseToTank(tank: Tank): Base | null {
-    return selectNearestFriendlyVisibleBase(tank, this.bases.values(), this.camera);
+    return selectNearestFriendlyVisibleBase(
+      tank,
+      this.bases.values(),
+      this.camera,
+      this.allianceRelations
+    );
   }
 
-  private getMyTeam(): number | null {
+  private getMyAllianceId(): number | null {
     if (this.playerId === null) {
       return null;
     }
     const tank = this.tanks.get(this.playerId);
-    return tank?.team ?? null;
+    return tank ? getTankAllianceId(tank) : null;
+  }
+
+  private getMyAlliedAllianceIds(): ReadonlySet<number> | null {
+    const myAllianceId = this.getMyAllianceId();
+    if (myAllianceId === null) {
+      return null;
+    }
+    const allies = this.allianceRelations.get(myAllianceId);
+    return allies ?? new Set<number>();
   }
 
   private enqueueHudMessage(message: string): void {
@@ -676,7 +718,8 @@ export class MultiplayerGame {
     }
     tickerElement.innerHTML = formatHudTickerHtml(text, {
       myPlayerId: this.playerId,
-      myTeam: this.getMyTeam(),
+      myAllianceId: this.getMyAllianceId(),
+      allianceRelations: this.allianceRelations,
       tanks: this.tanks,
     });
     this.currentTickerText = text;
@@ -771,7 +814,7 @@ export class MultiplayerGame {
     const previouslySelected = new Set(
       Array.from(this.chatRecipientSelect.selectedOptions).map(option => Number(option.value))
     );
-    const myTeam = this.getMyTeam();
+    const myAllianceId = this.getMyAllianceId();
     const recipients = Array.from(this.tanks.values())
       .filter(tank => tank.id !== this.playerId)
       .sort((a, b) => a.id - b.id);
@@ -786,9 +829,13 @@ export class MultiplayerGame {
     for (const recipient of recipients) {
       const option = document.createElement('option');
       option.value = String(recipient.id);
-      const relation = myTeam === null
+      const relation = myAllianceId === null
         ? ''
-        : recipient.team === myTeam
+        : isFriendlyToLocalAlliance(
+          myAllianceId,
+          getTankAllianceId(recipient),
+          this.allianceRelations
+        )
           ? ' ally'
           : ' enemy';
       option.textContent = `P${recipient.id}${relation}`;

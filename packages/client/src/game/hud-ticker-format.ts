@@ -1,8 +1,14 @@
 import type {Tank} from '@shared';
+import {
+  type AllianceRelations,
+  getTankAllianceId,
+  isFriendlyToLocalAlliance,
+} from './alliance-relations.js';
 
 interface HudTickerFormatContext {
   myPlayerId: number | null;
-  myTeam: number | null;
+  myAllianceId: number | null;
+  allianceRelations: AllianceRelations;
   tanks: ReadonlyMap<number, Tank>;
 }
 
@@ -51,13 +57,16 @@ function getSenderRelationClass(
   }
 
   const senderTank = context.tanks.get(senderPlayerId);
-  if (!senderTank || context.myTeam === null) {
+  if (!senderTank || context.myAllianceId === null) {
     return 'hud-sender-neutral';
   }
 
-  if (senderTank.team === context.myTeam) {
+  if (isFriendlyToLocalAlliance(
+    context.myAllianceId,
+    getTankAllianceId(senderTank),
+    context.allianceRelations
+  )) {
     return 'hud-sender-friendly';
   }
   return 'hud-sender-hostile';
 }
-

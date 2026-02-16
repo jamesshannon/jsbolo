@@ -7,6 +7,7 @@ import {
   TANK_RESPAWN_TICKS,
   NEUTRAL_TEAM,
   TILE_SIZE_WORLD,
+  type AllianceSnapshot,
   type PlayerInput,
   encodeServerMessage,
   type WelcomeMessage,
@@ -604,6 +605,7 @@ export class GameSession {
       bases: this.bases.values(),
       matchEnded: this.matchState.isMatchEnded(),
       winningTeams: this.matchState.getWinningTeams(),
+      getAllianceSnapshots: () => this.buildAllianceSnapshots(),
     });
 
     const message = encodeServerMessage(welcome);
@@ -624,6 +626,7 @@ export class GameSession {
       winningTeams: this.matchState.getWinningTeams(),
       matchEndAnnounced: this.matchEndAnnounced,
       getHudMessagesForPlayer: playerId => this.hudMessages.drainForPlayer(playerId),
+      getAllianceSnapshots: () => this.buildAllianceSnapshots(),
     });
     this.matchEndAnnounced = result.matchEndAnnounced;
   }
@@ -658,11 +661,11 @@ export class GameSession {
     // Before acceptance, notify source and target teams separately.
     this.publishAllianceHudMessage({
       sourceTeam: fromTeam,
-      text: `Team ${fromTeam} requested alliance with Team ${toTeam}`,
+      text: `Alliance ${fromTeam} requested alliance with Alliance ${toTeam}`,
     });
     this.publishAllianceHudMessage({
       sourceTeam: toTeam,
-      text: `Team ${toTeam} received alliance request from Team ${fromTeam}`,
+      text: `Alliance ${toTeam} received alliance request from Alliance ${fromTeam}`,
     });
     return true;
   }
@@ -676,7 +679,7 @@ export class GameSession {
     // Emit after acceptance so both newly allied teams receive it in one publish.
     this.publishAllianceHudMessage({
       sourceTeam: toTeam,
-      text: `Team ${toTeam} accepted alliance with Team ${fromTeam}`,
+      text: `Alliance ${toTeam} accepted alliance with Alliance ${fromTeam}`,
     });
     return true;
   }
@@ -689,11 +692,11 @@ export class GameSession {
 
     this.publishAllianceHudMessage({
       sourceTeam: fromTeam,
-      text: `Team ${fromTeam} canceled alliance request to Team ${toTeam}`,
+      text: `Alliance ${fromTeam} canceled alliance request to Alliance ${toTeam}`,
     });
     this.publishAllianceHudMessage({
       sourceTeam: toTeam,
-      text: `Team ${toTeam} alliance request from Team ${fromTeam} was canceled`,
+      text: `Alliance ${toTeam} alliance request from Alliance ${fromTeam} was canceled`,
     });
     return true;
   }
@@ -706,7 +709,7 @@ export class GameSession {
     // Emit before break so both currently allied teams still receive the notice.
     this.publishAllianceHudMessage({
       sourceTeam: teamA,
-      text: `Team ${teamA} broke alliance with Team ${teamB}`,
+      text: `Alliance ${teamA} broke alliance with Alliance ${teamB}`,
     });
     this.matchState.breakAlliance(teamA, teamB);
   }
@@ -715,7 +718,7 @@ export class GameSession {
     // Emit before leave so allied recipients still receive the departure notice.
     this.publishAllianceHudMessage({
       sourceTeam: team,
-      text: `Team ${team} left all alliances`,
+      text: `Alliance ${team} left all alliances`,
     });
     this.matchState.leaveAlliance(team);
   }
@@ -740,7 +743,7 @@ export class GameSession {
     const text =
       args.previousOwnerTeam === NEUTRAL_TEAM
         ? `Player ${args.byTankId} captured a Neutral ${args.structure}`
-        : `Player ${args.byTankId} just stole ${args.structure.toLowerCase()} from Team ${args.previousOwnerTeam}`;
+        : `Player ${args.byTankId} just stole ${args.structure.toLowerCase()} from Alliance ${args.previousOwnerTeam}`;
 
     this.hudMessages.publishGlobal({
       tick: this.tick,
@@ -773,8 +776,8 @@ export class GameSession {
     }
 
     const text = winners.length === 1
-      ? `Team ${winners[0]} won the match`
-      : `Teams ${winners.join(', ')} won the match`;
+      ? `Alliance ${winners[0]} won the match`
+      : `Alliances ${winners.join(', ')} won the match`;
 
     this.hudMessages.publishGlobal({
       tick: this.tick,
@@ -889,6 +892,36 @@ export class GameSession {
     }
 
     return null;
+  }
+
+  /**
+   * Build a compact alliance graph snapshot for client-side relation rendering.
+   */
+  private buildAllianceSnapshots(): AllianceSnapshot[] {
+    const allianceIds = new Set<number>();
+    for (const player of this.players.values()) {
+      allianceIds.add(player.tank.team);
+    }
+    for (const pillbox of this.pillboxes.values()) {
+      if (pillbox.ownerTeam !== NEUTRAL_TEAM) {
+        allianceIds.add(pillbox.ownerTeam);
+      }
+    }
+    for (const base of this.bases.values()) {
+      if (base.ownerTeam !== NEUTRAL_TEAM) {
+        allianceIds.add(base.ownerTeam);
+      }
+    }
+
+    const orderedIds = Array.from(allianceIds).sort((a, b) => a - b);
+    return orderedIds.map(allianceId => ({
+      allianceId,
+      alliedAllianceIds: orderedIds.filter(
+        otherAllianceId =>
+          otherAllianceId !== allianceId &&
+          this.areTeamsAllied(allianceId, otherAllianceId)
+      ),
+    }));
   }
 
   private createBotSocket(): WebSocket {

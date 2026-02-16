@@ -8,6 +8,7 @@ describe('hud-structure-chips', () => {
         {id: 1, tileX: 10, tileY: 10, armor: 15, ownerTeam: 255, inTank: false},
       ],
       2,
+      new Map(),
       77
     );
 
@@ -20,7 +21,8 @@ describe('hud-structure-chips', () => {
       [
         {id: 2, tileX: 20, tileY: 20, armor: 90, shells: 40, mines: 40, ownerTeam: 255},
       ],
-      3
+      3,
+      new Map()
     );
 
     expect(html).toContain('base-chip neutral');

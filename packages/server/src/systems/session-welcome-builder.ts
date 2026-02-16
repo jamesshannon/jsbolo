@@ -1,4 +1,4 @@
-import type {WelcomeMessage} from '@jsbolo/shared';
+import type {AllianceSnapshot, WelcomeMessage} from '@jsbolo/shared';
 import type {ServerBase} from '../simulation/base.js';
 import type {ServerPillbox} from '../simulation/pillbox.js';
 import type {ServerTank} from '../simulation/tank.js';
@@ -18,6 +18,7 @@ export interface SessionWelcomeContext {
   bases: Iterable<ServerBase>;
   matchEnded: boolean;
   winningTeams: number[];
+  getAllianceSnapshots?: () => AllianceSnapshot[];
 }
 
 /**
@@ -61,6 +62,7 @@ export class SessionWelcomeBuilder {
     const tanks = Array.from(context.players, p => ({
       id: p.tank.id,
       team: p.tank.team,
+      allianceId: p.tank.team,
       x: p.tank.x,
       y: p.tank.y,
       direction: p.tank.direction,
@@ -109,6 +111,9 @@ export class SessionWelcomeBuilder {
       tanks,
       pillboxes,
       bases,
+      ...(context.getAllianceSnapshots && {
+        alliances: context.getAllianceSnapshots(),
+      }),
       ...(context.matchEnded && {
         matchEnded: context.matchEnded,
         winningTeams: context.winningTeams,

@@ -2,7 +2,15 @@
  * Binary network protocol using Protocol Buffers.
  */
 
-import type {BuildOrder, PlayerInput, Tank, Builder, Pillbox, Base} from './types.js';
+import type {
+  AllianceSnapshot,
+  Base,
+  BuildOrder,
+  Builder,
+  Pillbox,
+  PlayerInput,
+  Tank,
+} from './types.js';
 import * as proto from './generated/protocol.js';
 
 // Client -> Server Messages
@@ -42,6 +50,7 @@ export interface WelcomeMessage {
   tanks: Tank[];
   pillboxes: Pillbox[];
   bases: Base[];
+  alliances?: AllianceSnapshot[];
   matchEnded?: boolean;
   winningTeams?: number[];
 }
@@ -98,6 +107,7 @@ export interface UpdateMessage {
   terrainUpdates?: TerrainUpdate[];
   soundEvents?: SoundEvent[];
   hudMessages?: HudMessage[];
+  alliances?: AllianceSnapshot[];
   matchEnded?: boolean;
   winningTeams?: number[];
 }
@@ -175,6 +185,7 @@ function toProtoTank(tank: Tank): proto.jsbolo.ITank {
     mines: tank.mines,
     trees: tank.trees,
     team: tank.team,
+    allianceId: tank.allianceId ?? tank.team,
     onBoat: tank.onBoat,
     reload: tank.reload,
     firingRange: tank.firingRange,
@@ -184,6 +195,7 @@ function toProtoTank(tank: Tank): proto.jsbolo.ITank {
 }
 
 function fromProtoTank(tank: proto.jsbolo.ITank): Tank {
+  const team = tank.team ?? 0;
   return {
     id: tank.id ?? 0,
     x: tank.x ?? 0,
@@ -194,7 +206,8 @@ function fromProtoTank(tank: proto.jsbolo.ITank): Tank {
     shells: tank.shells ?? 0,
     mines: tank.mines ?? 0,
     trees: tank.trees ?? 0,
-    team: tank.team ?? 0,
+    team,
+    allianceId: tank.allianceId ?? team,
     onBoat: tank.onBoat ?? false,
     reload: tank.reload ?? 0,
     firingRange: tank.firingRange ?? 0,
@@ -216,11 +229,13 @@ function toProtoBuilder(builder: Builder): proto.jsbolo.IBuilder {
     hasMine: builder.hasMine,
     ...(builder.hasPillbox !== undefined && {hasPillbox: builder.hasPillbox}),
     team: builder.team,
+    allianceId: builder.allianceId ?? builder.team,
     ...(builder.respawnCounter !== undefined && {respawnCounter: builder.respawnCounter}),
   };
 }
 
 function fromProtoBuilder(builder: proto.jsbolo.IBuilder): Builder {
+  const team = builder.team ?? 0;
   return {
     id: builder.id ?? 0,
     ownerTankId: builder.ownerTankId ?? 0,
@@ -233,7 +248,8 @@ function fromProtoBuilder(builder: proto.jsbolo.IBuilder): Builder {
     hasMine: builder.hasMine ?? false,
     ...(builder.hasPillbox !== null &&
       builder.hasPillbox !== undefined && {hasPillbox: builder.hasPillbox}),
-    team: builder.team ?? 0,
+    team,
+    allianceId: builder.allianceId ?? team,
     ...(builder.respawnCounter !== null &&
       builder.respawnCounter !== undefined && {respawnCounter: builder.respawnCounter}),
   };
@@ -300,6 +316,12 @@ function toProtoWelcome(message: WelcomeMessage): proto.jsbolo.IWelcomeMessage {
     tanks: message.tanks.map(tank => toProtoTank(tank)),
     pillboxes: message.pillboxes,
     bases: message.bases,
+    ...(message.alliances !== undefined && {
+      alliances: message.alliances.map(alliance => ({
+        allianceId: alliance.allianceId,
+        alliedAllianceIds: alliance.alliedAllianceIds,
+      })),
+    }),
     ...(message.matchEnded !== undefined && {matchEnded: message.matchEnded}),
     ...(message.winningTeams !== undefined && {winningTeams: message.winningTeams}),
   };
@@ -373,6 +395,12 @@ function toProtoUpdate(message: UpdateMessage): proto.jsbolo.IUpdateMessage {
         text: hud.text,
       })),
     }),
+    ...(message.alliances !== undefined && {
+      alliances: message.alliances.map(alliance => ({
+        allianceId: alliance.allianceId,
+        alliedAllianceIds: alliance.alliedAllianceIds,
+      })),
+    }),
     ...(message.matchEnded !== undefined && {matchEnded: message.matchEnded}),
     ...(message.winningTeams !== undefined && {winningTeams: message.winningTeams}),
   };
@@ -402,6 +430,14 @@ function fromProtoWelcome(welcome: proto.jsbolo.IWelcomeMessage): WelcomeMessage
     tanks: welcome.tanks ? welcome.tanks.map(tank => fromProtoTank(tank)) : [],
     pillboxes: welcome.pillboxes ? [...welcome.pillboxes] as Pillbox[] : [],
     bases: welcome.bases ? [...welcome.bases] as Base[] : [],
+    ...(welcome.alliances && welcome.alliances.length > 0 && {
+      alliances: welcome.alliances.map(alliance => ({
+        allianceId: alliance.allianceId ?? 0,
+        alliedAllianceIds: alliance.alliedAllianceIds
+          ? [...alliance.alliedAllianceIds]
+          : [],
+      })),
+    }),
     ...(welcome.matchEnded !== null &&
       welcome.matchEnded !== undefined && {matchEnded: welcome.matchEnded}),
     ...(welcome.winningTeams && welcome.winningTeams.length > 0 && {
@@ -451,6 +487,15 @@ function fromProtoUpdate(update: proto.jsbolo.IUpdateMessage): UpdateMessage {
           tick: hud.tick ?? 0,
           class: fromProtoHudMessageClass(hud.class),
           text: hud.text ?? '',
+        })),
+      }),
+    ...(update.alliances &&
+      update.alliances.length > 0 && {
+        alliances: update.alliances.map(alliance => ({
+          allianceId: alliance.allianceId ?? 0,
+          alliedAllianceIds: alliance.alliedAllianceIds
+            ? [...alliance.alliedAllianceIds]
+            : [],
         })),
       }),
     ...(update.matchEnded !== null &&

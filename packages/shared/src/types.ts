@@ -28,6 +28,8 @@ export interface Tank {
   mines: number;
   trees: number;
   team: number;
+  /** Canonical alliance identity for relation checks. Falls back to `team` when omitted. */
+  allianceId?: number;
   onBoat: boolean;
   reload: number;
   firingRange: number;
@@ -47,7 +49,15 @@ export interface Builder {
   hasMine: boolean;
   hasPillbox?: boolean;
   team: number;
+  /** Canonical alliance identity for relation checks. Falls back to `team` when omitted. */
+  allianceId?: number;
   respawnCounter?: number;
+}
+
+/** Per-alliance visibility of allied alliances in the current match snapshot. */
+export interface AllianceSnapshot {
+  allianceId: number;
+  alliedAllianceIds: number[];
 }
 
 export enum BuilderOrder {

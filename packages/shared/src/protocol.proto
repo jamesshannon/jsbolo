@@ -70,6 +70,7 @@ message Tank {
   uint32 reload = 12;
   float firingRange = 13;
   optional uint32 carriedPillbox = 14;
+  optional uint32 allianceId = 15;
 }
 
 message Builder {
@@ -85,6 +86,12 @@ message Builder {
   bool hasPillbox = 10;
   uint32 team = 11;
   uint32 respawnCounter = 12;
+  optional uint32 allianceId = 13;
+}
+
+message AllianceSnapshot {
+  uint32 allianceId = 1;
+  repeated uint32 alliedAllianceIds = 2;
 }
 
 message Shell {
@@ -162,6 +169,7 @@ message WelcomeMessage {
   repeated Base bases = 8;
   optional bool matchEnded = 9;
   repeated uint32 winningTeams = 10;
+  repeated AllianceSnapshot alliances = 11;
 }
 
 message UpdateMessage {
@@ -180,6 +188,7 @@ message UpdateMessage {
   optional bool matchEnded = 13;
   repeated uint32 winningTeams = 14;
   repeated HudMessage hudMessages = 15;
+  repeated AllianceSnapshot alliances = 16;
 }
 
 message ClientMessage {

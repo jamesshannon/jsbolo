@@ -133,6 +133,35 @@ describe('SessionStateBroadcaster', () => {
     expect((ws.send as any).mock.calls.length).toBe(1);
   });
 
+  it('should include alliance snapshots in update payloads when provided', () => {
+    const broadcaster = new SessionStateBroadcaster(() => {});
+    const world = new ServerWorld();
+    const ws = createMockWs();
+    const tank = new ServerTank(30, 0, 40, 40);
+
+    broadcaster.broadcastState({
+      tick: 5,
+      players: [{id: 30, ws, tank}],
+      shells: [],
+      pillboxes: [],
+      bases: [],
+      world,
+      terrainChanges: new Set<string>(),
+      soundEvents: [],
+      matchEnded: false,
+      winningTeams: [],
+      matchEndAnnounced: false,
+      getAllianceSnapshots: () => [{allianceId: 0, alliedAllianceIds: [2]}],
+    });
+
+    const message = decodeServerMessage((ws.send as any).mock.calls[0][0]);
+    expect(message.alliances).toEqual([{allianceId: 0, alliedAllianceIds: [2]}]);
+    expect(message.tanks?.[0]).toMatchObject({
+      team: 0,
+      allianceId: 0,
+    });
+  });
+
   it('should deliver HUD messages only to intended recipients', () => {
     const broadcaster = new SessionStateBroadcaster(() => {});
     const world = new ServerWorld();

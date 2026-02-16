@@ -1,4 +1,5 @@
 import {
+  type AllianceSnapshot,
   encodeServerMessage,
   type HudMessage,
   type SoundEvent,
@@ -40,6 +41,7 @@ export interface SessionBroadcastContext {
   winningTeams: number[];
   matchEndAnnounced: boolean;
   getHudMessagesForPlayer?: (playerId: number) => HudMessage[];
+  getAllianceSnapshots?: () => AllianceSnapshot[];
 }
 
 export interface SessionBroadcastResult {
@@ -62,6 +64,7 @@ export class SessionStateBroadcaster {
     pillboxes: new Map<number, string>(),
     bases: new Map<number, string>(),
   };
+  private previousAllianceHash = '';
 
   constructor(
     private readonly log: (message: string) => void = console.log
@@ -95,6 +98,7 @@ export class SessionStateBroadcaster {
           mines: tank.mines,
           trees: tank.trees,
           team: tank.team,
+          allianceId: tank.team,
           onBoat: tank.onBoat,
           reload: tank.reload,
           firingRange: tank.firingRange,
@@ -121,6 +125,7 @@ export class SessionStateBroadcaster {
           hasMine: builder.hasMine,
           hasPillbox: builder.hasPillbox,
           team: builder.team,
+          allianceId: builder.team,
           respawnCounter: builder.respawnCounter,
         });
         this.previousState.builders.set(builder.id, builderHash);
@@ -249,12 +254,20 @@ export class SessionStateBroadcaster {
       ...(removedBaseIds.length > 0 && {removedBaseIds}),
       ...(terrainUpdates.length > 0 && {terrainUpdates}),
       ...(context.soundEvents.length > 0 && {soundEvents: context.soundEvents}),
+      ...(context.getAllianceSnapshots && {
+        alliances: context.getAllianceSnapshots(),
+      }),
       ...(context.matchEnded &&
         !context.matchEndAnnounced && {
           matchEnded: context.matchEnded,
           winningTeams: context.winningTeams,
         }),
     };
+    const allianceHash = JSON.stringify(update.alliances ?? []);
+    const hasAllianceChanges = allianceHash !== this.previousAllianceHash;
+    if (hasAllianceChanges) {
+      this.previousAllianceHash = allianceHash;
+    }
 
     // Drain per-player HUD streams once so we can both:
     // 1) include HUD-only ticks in broadcast decisions, and
@@ -280,6 +293,7 @@ export class SessionStateBroadcaster {
       removedBaseIds.length > 0 ||
       terrainUpdates.length > 0 ||
       context.soundEvents.length > 0 ||
+      hasAllianceChanges ||
       (context.matchEnded && !context.matchEndAnnounced) ||
       hasHudChanges;
 

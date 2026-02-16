@@ -29,20 +29,36 @@ describe('formatHudTickerHtml', () => {
     ]);
 
     expect(
-      formatHudTickerHtml('Player 1: hello', {myPlayerId: 1, myTeam: 2, tanks})
+      formatHudTickerHtml('Player 1: hello', {
+        myPlayerId: 1,
+        myAllianceId: 2,
+        allianceRelations: new Map(),
+        tanks,
+      })
     ).toContain('hud-sender-self');
     expect(
-      formatHudTickerHtml('Player 2: hello', {myPlayerId: 1, myTeam: 2, tanks})
+      formatHudTickerHtml('Player 2: hello', {
+        myPlayerId: 1,
+        myAllianceId: 2,
+        allianceRelations: new Map(),
+        tanks,
+      })
     ).toContain('hud-sender-friendly');
     expect(
-      formatHudTickerHtml('Player 3: hello', {myPlayerId: 1, myTeam: 2, tanks})
+      formatHudTickerHtml('Player 3: hello', {
+        myPlayerId: 1,
+        myAllianceId: 2,
+        allianceRelations: new Map(),
+        tanks,
+      })
     ).toContain('hud-sender-hostile');
   });
 
   it('escapes html in sender and body', () => {
     const html = formatHudTickerHtml('Player 2: <b>xss</b>', {
       myPlayerId: 1,
-      myTeam: 1,
+      myAllianceId: 1,
+      allianceRelations: new Map(),
       tanks: new Map([[2, tank(2, 9)]]),
     });
     expect(html).not.toContain('<b>');
@@ -52,10 +68,10 @@ describe('formatHudTickerHtml', () => {
   it('returns escaped plain text for non-chat messages', () => {
     const html = formatHudTickerHtml('Team 1 won <fast>', {
       myPlayerId: 1,
-      myTeam: 1,
+      myAllianceId: 1,
+      allianceRelations: new Map(),
       tanks: new Map(),
     });
     expect(html).toBe('Team 1 won &lt;fast&gt;');
   });
 });
-

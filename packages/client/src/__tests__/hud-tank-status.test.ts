@@ -26,7 +26,8 @@ describe('deriveTankHudMarkers', () => {
     const markers = deriveTankHudMarkers({
       tanks: [makeTank(1, 2), makeTank(2, 2), makeTank(3, 4)],
       myPlayerId: 1,
-      myTeam: 2,
+      myAllianceId: 2,
+      allianceRelations: new Map(),
     });
 
     expect(markers).toEqual([
@@ -40,7 +41,8 @@ describe('deriveTankHudMarkers', () => {
     const markers = deriveTankHudMarkers({
       tanks: [makeTank(3, 4), makeTank(1, 2)],
       myPlayerId: null,
-      myTeam: null,
+      myAllianceId: null,
+      allianceRelations: new Map(),
     });
 
     expect(markers).toEqual([

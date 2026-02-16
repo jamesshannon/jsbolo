@@ -1,4 +1,9 @@
 import {PIXEL_SIZE_WORLD, TILE_SIZE_PIXELS, type Base, type Tank} from '@shared';
+import {
+  type AllianceRelations,
+  getTankAllianceId,
+  isFriendlyToLocalAlliance,
+} from './alliance-relations.js';
 
 interface CameraLike {
   isVisible(worldX: number, worldY: number, padding?: number): boolean;
@@ -11,15 +16,18 @@ interface CameraLike {
 export function selectNearestFriendlyVisibleBase(
   tank: Tank,
   bases: Iterable<Base>,
-  camera: CameraLike
+  camera: CameraLike,
+  allianceRelations: AllianceRelations
 ): Base | null {
   let nearest: Base | null = null;
   let nearestDistance = Number.POSITIVE_INFINITY;
   const tankPixelX = tank.x / PIXEL_SIZE_WORLD;
   const tankPixelY = tank.y / PIXEL_SIZE_WORLD;
 
+  const localAllianceId = getTankAllianceId(tank);
+
   for (const base of bases) {
-    if (base.ownerTeam !== tank.team) {
+    if (!isFriendlyToLocalAlliance(localAllianceId, base.ownerTeam, allianceRelations)) {
       continue;
     }
 

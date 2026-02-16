@@ -54,6 +54,7 @@ describe('SessionWelcomeBuilder', () => {
     expect(welcome.tanks[0]).toMatchObject({
       id: tank.id,
       team: tank.team,
+      allianceId: tank.team,
       speed: tank.speed,
       onBoat: true,
       carriedPillbox: null,
@@ -80,6 +81,27 @@ describe('SessionWelcomeBuilder', () => {
 
     expect(welcome.matchEnded).toBeUndefined();
     expect(welcome.winningTeams).toBeUndefined();
+  });
+
+  it('should include alliance snapshots when provided by session context', () => {
+    const world = new ServerWorld();
+    const tank = new ServerTank(1, 0, 50, 50);
+    const builder = new SessionWelcomeBuilder(() => {});
+
+    const welcome = builder.buildWelcome({
+      playerId: 1,
+      assignedTeam: 0,
+      currentTick: 99,
+      world,
+      players: [{tank}],
+      pillboxes: [],
+      bases: [],
+      matchEnded: false,
+      winningTeams: [],
+      getAllianceSnapshots: () => [{allianceId: 0, alliedAllianceIds: [1]}],
+    });
+
+    expect(welcome.alliances).toEqual([{allianceId: 0, alliedAllianceIds: [1]}]);
   });
 
   it('should include match end fields when match has already ended', () => {

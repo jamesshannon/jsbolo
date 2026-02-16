@@ -1,4 +1,9 @@
 import type {Tank} from '@shared';
+import {
+  type AllianceRelations,
+  getTankAllianceId,
+  isFriendlyToLocalAlliance,
+} from './alliance-relations.js';
 
 export type TankHudRelation = 'self' | 'friendly' | 'hostile' | 'neutral';
 
@@ -10,7 +15,8 @@ export interface TankHudMarker {
 export interface DeriveTankHudMarkersInput {
   tanks: Iterable<Tank>;
   myPlayerId: number | null;
-  myTeam: number | null;
+  myAllianceId: number | null;
+  allianceRelations: AllianceRelations;
 }
 
 /**
@@ -31,12 +37,16 @@ export function deriveTankHudMarkers(input: DeriveTankHudMarkersInput): TankHudM
       continue;
     }
 
-    if (input.myTeam === null) {
+    if (input.myAllianceId === null) {
       markers.push({playerId: tank.id, relation: 'neutral'});
       continue;
     }
 
-    if (tank.team === input.myTeam) {
+    if (isFriendlyToLocalAlliance(
+      input.myAllianceId,
+      getTankAllianceId(tank),
+      input.allianceRelations
+    )) {
       markers.push({playerId: tank.id, relation: 'friendly'});
       continue;
     }

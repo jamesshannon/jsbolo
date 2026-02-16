@@ -335,6 +335,9 @@ export namespace jsbolo {
 
         /** Tank carriedPillbox */
         carriedPillbox?: (number|null);
+
+        /** Tank allianceId */
+        allianceId?: (number|null);
     }
 
     /** Represents a Tank. */
@@ -387,6 +390,9 @@ export namespace jsbolo {
 
         /** Tank carriedPillbox. */
         public carriedPillbox?: (number|null);
+
+        /** Tank allianceId. */
+        public allianceId?: (number|null);
 
         /**
          * Creates a new Tank instance using the specified properties.
@@ -504,6 +510,9 @@ export namespace jsbolo {
 
         /** Builder respawnCounter */
         respawnCounter?: (number|null);
+
+        /** Builder allianceId */
+        allianceId?: (number|null);
     }
 
     /** Represents a Builder. */
@@ -550,6 +559,9 @@ export namespace jsbolo {
 
         /** Builder respawnCounter. */
         public respawnCounter: number;
+
+        /** Builder allianceId. */
+        public allianceId?: (number|null);
 
         /**
          * Creates a new Builder instance using the specified properties.
@@ -623,6 +635,109 @@ export namespace jsbolo {
 
         /**
          * Gets the default type url for Builder
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of an AllianceSnapshot. */
+    interface IAllianceSnapshot {
+
+        /** AllianceSnapshot allianceId */
+        allianceId?: (number|null);
+
+        /** AllianceSnapshot alliedAllianceIds */
+        alliedAllianceIds?: (number[]|null);
+    }
+
+    /** Represents an AllianceSnapshot. */
+    class AllianceSnapshot implements IAllianceSnapshot {
+
+        /**
+         * Constructs a new AllianceSnapshot.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: jsbolo.IAllianceSnapshot);
+
+        /** AllianceSnapshot allianceId. */
+        public allianceId: number;
+
+        /** AllianceSnapshot alliedAllianceIds. */
+        public alliedAllianceIds: number[];
+
+        /**
+         * Creates a new AllianceSnapshot instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns AllianceSnapshot instance
+         */
+        public static create(properties?: jsbolo.IAllianceSnapshot): jsbolo.AllianceSnapshot;
+
+        /**
+         * Encodes the specified AllianceSnapshot message. Does not implicitly {@link jsbolo.AllianceSnapshot.verify|verify} messages.
+         * @param message AllianceSnapshot message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: jsbolo.IAllianceSnapshot, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified AllianceSnapshot message, length delimited. Does not implicitly {@link jsbolo.AllianceSnapshot.verify|verify} messages.
+         * @param message AllianceSnapshot message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: jsbolo.IAllianceSnapshot, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes an AllianceSnapshot message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns AllianceSnapshot
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): jsbolo.AllianceSnapshot;
+
+        /**
+         * Decodes an AllianceSnapshot message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns AllianceSnapshot
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): jsbolo.AllianceSnapshot;
+
+        /**
+         * Verifies an AllianceSnapshot message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates an AllianceSnapshot message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns AllianceSnapshot
+         */
+        public static fromObject(object: { [k: string]: any }): jsbolo.AllianceSnapshot;
+
+        /**
+         * Creates a plain object from an AllianceSnapshot message. Also converts values to other types if specified.
+         * @param message AllianceSnapshot
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: jsbolo.AllianceSnapshot, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this AllianceSnapshot to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for AllianceSnapshot
          * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
          * @returns The default type url
          */
@@ -1512,6 +1627,9 @@ export namespace jsbolo {
 
         /** WelcomeMessage winningTeams */
         winningTeams?: (number[]|null);
+
+        /** WelcomeMessage alliances */
+        alliances?: (jsbolo.IAllianceSnapshot[]|null);
     }
 
     /** Represents a WelcomeMessage. */
@@ -1552,6 +1670,9 @@ export namespace jsbolo {
 
         /** WelcomeMessage winningTeams. */
         public winningTeams: number[];
+
+        /** WelcomeMessage alliances. */
+        public alliances: jsbolo.IAllianceSnapshot[];
 
         /**
          * Creates a new WelcomeMessage instance using the specified properties.
@@ -1678,6 +1799,9 @@ export namespace jsbolo {
 
         /** UpdateMessage hudMessages */
         hudMessages?: (jsbolo.IHudMessage[]|null);
+
+        /** UpdateMessage alliances */
+        alliances?: (jsbolo.IAllianceSnapshot[]|null);
     }
 
     /** Represents an UpdateMessage. */
@@ -1733,6 +1857,9 @@ export namespace jsbolo {
 
         /** UpdateMessage hudMessages. */
         public hudMessages: jsbolo.IHudMessage[];
+
+        /** UpdateMessage alliances. */
+        public alliances: jsbolo.IAllianceSnapshot[];
 
         /**
          * Creates a new UpdateMessage instance using the specified properties.

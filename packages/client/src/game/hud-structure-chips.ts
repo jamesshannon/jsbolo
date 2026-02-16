@@ -1,17 +1,33 @@
 import type {Base, Pillbox} from '@shared';
+import {
+  type AllianceRelations,
+  isFriendlyToLocalAlliance,
+} from './alliance-relations.js';
 
-function pillboxChipClass(ownerTeam: number, myTeam: number): string {
-  if (ownerTeam === 255) {
+function pillboxChipClass(
+  ownerAllianceId: number,
+  myAllianceId: number,
+  allianceRelations: AllianceRelations
+): string {
+  if (ownerAllianceId === 255) {
     return 'neutral';
   }
-  return ownerTeam === myTeam ? 'owned' : 'enemy';
+  return isFriendlyToLocalAlliance(myAllianceId, ownerAllianceId, allianceRelations)
+    ? 'owned'
+    : 'enemy';
 }
 
-function baseChipClass(ownerTeam: number, myTeam: number): string {
-  if (ownerTeam === 255) {
+function baseChipClass(
+  ownerAllianceId: number,
+  myAllianceId: number,
+  allianceRelations: AllianceRelations
+): string {
+  if (ownerAllianceId === 255) {
     return 'neutral';
   }
-  return ownerTeam === myTeam ? 'owned' : 'enemy';
+  return isFriendlyToLocalAlliance(myAllianceId, ownerAllianceId, allianceRelations)
+    ? 'owned'
+    : 'enemy';
 }
 
 /**
@@ -20,7 +36,8 @@ function baseChipClass(ownerTeam: number, myTeam: number): string {
  */
 export function buildPillboxHudChipsHtml(
   pillboxes: Iterable<Pillbox>,
-  myTeam: number,
+  myAllianceId: number,
+  allianceRelations: AllianceRelations,
   carriedPillboxId?: number | null
 ): string {
   const chips: string[] = [];
@@ -32,7 +49,8 @@ export function buildPillboxHudChipsHtml(
     chips.push(
       `<span class="hud-chip hud-chip-square pillbox-chip ${pillboxChipClass(
         pillbox.ownerTeam,
-        myTeam
+        myAllianceId,
+        allianceRelations
       )}"></span>`
     );
   }
@@ -44,14 +62,16 @@ export function buildPillboxHudChipsHtml(
  */
 export function buildBaseHudChipsHtml(
   bases: Iterable<Base>,
-  myTeam: number
+  myAllianceId: number,
+  allianceRelations: AllianceRelations
 ): string {
   const chips: string[] = [];
   for (const base of bases) {
     chips.push(
       `<span class="hud-chip hud-chip-square base-chip ${baseChipClass(
         base.ownerTeam,
-        myTeam
+        myAllianceId,
+        allianceRelations
       )}"></span>`
     );
   }
