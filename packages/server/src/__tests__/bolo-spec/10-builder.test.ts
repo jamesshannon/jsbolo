@@ -243,6 +243,31 @@ describe('Bolo Manual Spec: 10. Builder / Man', () => {
         player.tank.builder.order
       );
     });
+
+    it('should not build road on deep sea', () => {
+      const session = new GameSession();
+      const ws = createMockWebSocket();
+      const id = session.addPlayer(ws);
+      const player = getPlayer(session, id);
+      const world = getWorld(session);
+
+      world.setTerrainAt(50, 50, TerrainType.DEEP_SEA);
+      placeTankAtTile(player.tank, 49, 50);
+      player.tank.trees = 10;
+      player.tank.builder.trees = 10;
+      player.tank.builder.x = (50 + 0.5) * TILE_SIZE_WORLD;
+      player.tank.builder.y = (50 + 0.5) * TILE_SIZE_WORLD;
+      player.tank.builder.targetX = player.tank.builder.x;
+      player.tank.builder.targetY = player.tank.builder.y;
+      player.tank.builder.order = BuilderOrder.BUILDING_ROAD;
+
+      tickSession(session, 20);
+
+      expect(world.getTerrainAt(50, 50)).toBe(TerrainType.DEEP_SEA);
+      expect([BuilderOrder.IN_TANK, BuilderOrder.RETURNING]).toContain(
+        player.tank.builder.order
+      );
+    });
   });
 
   describe('10d. Building Walls', () => {
@@ -275,6 +300,31 @@ describe('Bolo Manual Spec: 10. Builder / Man', () => {
       }
 
       expect(world.getTerrainAt(50, 50)).toBe(TerrainType.BUILDING);
+    });
+
+    it('should not build wall on deep sea', () => {
+      const session = new GameSession();
+      const ws = createMockWebSocket();
+      const id = session.addPlayer(ws);
+      const player = getPlayer(session, id);
+      const world = getWorld(session);
+
+      world.setTerrainAt(50, 50, TerrainType.DEEP_SEA);
+      placeTankAtTile(player.tank, 49, 50);
+      player.tank.trees = 10;
+      player.tank.builder.trees = 10;
+      player.tank.builder.x = (50 + 0.5) * TILE_SIZE_WORLD;
+      player.tank.builder.y = (50 + 0.5) * TILE_SIZE_WORLD;
+      player.tank.builder.targetX = player.tank.builder.x;
+      player.tank.builder.targetY = player.tank.builder.y;
+      player.tank.builder.order = BuilderOrder.BUILDING_WALL;
+
+      tickSession(session, 20);
+
+      expect(world.getTerrainAt(50, 50)).toBe(TerrainType.DEEP_SEA);
+      expect([BuilderOrder.IN_TANK, BuilderOrder.RETURNING]).toContain(
+        player.tank.builder.order
+      );
     });
 
     // "costs you 1/2 a tree"

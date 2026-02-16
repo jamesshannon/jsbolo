@@ -57,6 +57,14 @@ describe('Bolo Manual Spec: 4. Terrain Damage', () => {
       world.damageTerrainFromCollision(50, 50);
       expect(world.getTerrainAt(50, 50)).toBe(TerrainType.RIVER);
     });
+
+    // Deep sea is immutable in manual terrain rules.
+    it('should NOT change Deep Sea from direct-hit collision damage', () => {
+      world.setTerrainAt(50, 50, TerrainType.DEEP_SEA);
+      const changed = world.damageTerrainFromCollision(50, 50);
+      expect(changed).toBe(false);
+      expect(world.getTerrainAt(50, 50)).toBe(TerrainType.DEEP_SEA);
+    });
   });
 
   describe('4b. Explosion Damage', () => {
