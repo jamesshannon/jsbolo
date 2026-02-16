@@ -10,7 +10,7 @@
     "clean": "rm -rf dist",
     "type-check": "tsc --noEmit",
     "lint": "eslint \"src/**/*.ts\" --ignore-pattern \"src/**/*.test.ts\" --ignore-pattern \"src/**/__tests__/**\"",
-    "test": "vitest run",
+    "test": "pnpm --filter @jsbolo/shared build && vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage"
