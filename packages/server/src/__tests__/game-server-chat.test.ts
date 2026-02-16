@@ -39,6 +39,35 @@ describe('GameServer chat dispatch', () => {
     });
   });
 
+  it('routes decoded remote-view messages to session remote-view handler', () => {
+    const session = new GameSession();
+    const server = new GameServer(0, {
+      session,
+      createWebSocketServer: () => createMockWss() as any,
+    });
+    const ws = {} as any;
+    const remoteViewSpy = vi.spyOn(session, 'handleRemoteView');
+
+    (server as any).connections.set(ws, {playerId: 88, session});
+    (server as any).handleMessage(
+      ws,
+      encodeClientMessage({
+        type: 'remote_view',
+        remoteView: {pillboxId: 7},
+      }) as any
+    );
+    (server as any).handleMessage(
+      ws,
+      encodeClientMessage({
+        type: 'remote_view',
+        remoteView: {},
+      }) as any
+    );
+
+    expect(remoteViewSpy).toHaveBeenNthCalledWith(1, 88, 7);
+    expect(remoteViewSpy).toHaveBeenNthCalledWith(2, 88, null);
+  });
+
   it('smoke: decodes client chat and broadcasts scoped hud messages to recipients', () => {
     const session = new GameSession();
     const server = new GameServer(0, {

@@ -76,6 +76,7 @@ export class GameSession {
   private readonly matchState = this.updatePipeline.getMatchState();
   private readonly botPolicy: BotPolicyOptions;
   private readonly botPlayerIds = new Set<number>();
+  private readonly remoteViewPillboxByPlayer = new Map<number, number>();
   private botAllianceTeam: number | null = null;
   private tick = 0;
   private running = false;
@@ -173,6 +174,7 @@ export class GameSession {
 
   removePlayer(playerId: number): void {
     const player = this.players.get(playerId);
+    this.remoteViewPillboxByPlayer.delete(playerId);
     if (player?.controlType === 'bot') {
       this.botInputSystem.disableBotForPlayer(player);
       this.botPlayerIds.delete(playerId);
@@ -209,6 +211,24 @@ export class GameSession {
       const {buildOrder: _ignoredBuildOrder, ...movementInput} = input;
       player.lastInput = movementInput;
     }
+  }
+
+  /**
+   * Update server-authoritative remote pillbox view target for a player.
+   *
+   * `null` resets to normal tank-centered view.
+   */
+  public handleRemoteView(playerId: number, pillboxId: number | null): void {
+    if (!this.players.has(playerId)) {
+      return;
+    }
+
+    if (pillboxId === null) {
+      this.remoteViewPillboxByPlayer.delete(playerId);
+      return;
+    }
+
+    this.remoteViewPillboxByPlayer.set(playerId, pillboxId);
   }
 
   public handlePlayerChat(

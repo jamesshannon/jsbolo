@@ -29,7 +29,17 @@ export interface ClientChatMessage {
   };
 }
 
-export type ClientMessage = ClientInputMessage | ClientChatMessage;
+export interface ClientRemoteViewMessage {
+  type: 'remote_view';
+  remoteView: {
+    pillboxId?: number | null;
+  };
+}
+
+export type ClientMessage =
+  | ClientInputMessage
+  | ClientChatMessage
+  | ClientRemoteViewMessage;
 
 // Server -> Client Messages
 
@@ -274,6 +284,17 @@ export function encodeClientMessage(message: ClientMessage): Uint8Array {
     }).finish();
   }
 
+  if (message.type === 'remote_view') {
+    return proto.jsbolo.ClientMessage.encode({
+      remoteView: {
+        ...(message.remoteView.pillboxId !== undefined &&
+          message.remoteView.pillboxId !== null && {
+          pillboxId: message.remoteView.pillboxId,
+        }),
+      },
+    }).finish();
+  }
+
   throw new Error(`Unsupported client message type: ${(message as {type?: string}).type}`);
 }
 
@@ -294,6 +315,18 @@ export function decodeClientMessage(data: BinaryData): ClientMessage {
         allianceOnly: decoded.chat.allianceOnly ?? false,
         ...((decoded.chat.recipientPlayerIds?.length ?? 0) > 0
           && {recipientPlayerIds: decoded.chat.recipientPlayerIds?.map(id => Number(id)) ?? []}),
+      },
+    };
+  }
+
+  if (decoded.remoteView) {
+    return {
+      type: 'remote_view',
+      remoteView: {
+        ...(decoded.remoteView.pillboxId !== null &&
+          decoded.remoteView.pillboxId !== undefined && {
+          pillboxId: decoded.remoteView.pillboxId,
+        }),
       },
     };
   }

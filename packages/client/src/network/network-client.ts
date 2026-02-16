@@ -119,6 +119,20 @@ export class NetworkClient {
     this.ws.send(data);
   }
 
+  sendRemoteView(pillboxId: number | null): void {
+    if (!this.ws || !this.state.connected) {
+      return;
+    }
+
+    const data = encodeClientMessage({
+      type: 'remote_view',
+      remoteView: {
+        ...(pillboxId !== null && {pillboxId}),
+      },
+    });
+    this.ws.send(data);
+  }
+
   private handleMessage(data: ArrayBuffer | Uint8Array): void {
     try {
       const message: ServerMessage = decodeServerMessage(data);

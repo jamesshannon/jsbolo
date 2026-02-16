@@ -1947,6 +1947,9 @@ export namespace jsbolo {
 
         /** ClientMessage chat */
         chat?: (jsbolo.IChatMessage|null);
+
+        /** ClientMessage remoteView */
+        remoteView?: (jsbolo.IRemoteViewMessage|null);
     }
 
     /** Represents a ClientMessage. */
@@ -1964,8 +1967,11 @@ export namespace jsbolo {
         /** ClientMessage chat. */
         public chat?: (jsbolo.IChatMessage|null);
 
+        /** ClientMessage remoteView. */
+        public remoteView?: (jsbolo.IRemoteViewMessage|null);
+
         /** ClientMessage payload. */
-        public payload?: ("input"|"chat");
+        public payload?: ("input"|"chat"|"remoteView");
 
         /**
          * Creates a new ClientMessage instance using the specified properties.
@@ -2148,6 +2154,103 @@ export namespace jsbolo {
 
         /**
          * Gets the default type url for ChatMessage
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of a RemoteViewMessage. */
+    interface IRemoteViewMessage {
+
+        /** RemoteViewMessage pillboxId */
+        pillboxId?: (number|null);
+    }
+
+    /** Represents a RemoteViewMessage. */
+    class RemoteViewMessage implements IRemoteViewMessage {
+
+        /**
+         * Constructs a new RemoteViewMessage.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: jsbolo.IRemoteViewMessage);
+
+        /** RemoteViewMessage pillboxId. */
+        public pillboxId?: (number|null);
+
+        /**
+         * Creates a new RemoteViewMessage instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns RemoteViewMessage instance
+         */
+        public static create(properties?: jsbolo.IRemoteViewMessage): jsbolo.RemoteViewMessage;
+
+        /**
+         * Encodes the specified RemoteViewMessage message. Does not implicitly {@link jsbolo.RemoteViewMessage.verify|verify} messages.
+         * @param message RemoteViewMessage message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: jsbolo.IRemoteViewMessage, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified RemoteViewMessage message, length delimited. Does not implicitly {@link jsbolo.RemoteViewMessage.verify|verify} messages.
+         * @param message RemoteViewMessage message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: jsbolo.IRemoteViewMessage, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a RemoteViewMessage message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns RemoteViewMessage
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): jsbolo.RemoteViewMessage;
+
+        /**
+         * Decodes a RemoteViewMessage message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns RemoteViewMessage
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): jsbolo.RemoteViewMessage;
+
+        /**
+         * Verifies a RemoteViewMessage message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a RemoteViewMessage message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns RemoteViewMessage
+         */
+        public static fromObject(object: { [k: string]: any }): jsbolo.RemoteViewMessage;
+
+        /**
+         * Creates a plain object from a RemoteViewMessage message. Also converts values to other types if specified.
+         * @param message RemoteViewMessage
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: jsbolo.RemoteViewMessage, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this RemoteViewMessage to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for RemoteViewMessage
          * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
          * @returns The default type url
          */

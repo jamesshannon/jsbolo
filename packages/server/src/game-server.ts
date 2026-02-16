@@ -92,6 +92,11 @@ export class GameServer {
           allianceOnly: message.chat.allianceOnly,
           recipientPlayerIds: message.chat.recipientPlayerIds,
         });
+      } else if (message.type === 'remote_view') {
+        conn.session.handleRemoteView(
+          conn.playerId,
+          message.remoteView.pillboxId ?? null
+        );
       }
     } catch (error) {
       console.error('Error decoding message:', error);

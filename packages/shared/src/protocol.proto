@@ -195,6 +195,7 @@ message ClientMessage {
   oneof payload {
     PlayerInput input = 1;
     ChatMessage chat = 2;
+    RemoteViewMessage remoteView = 3;
   }
 }
 
@@ -202,6 +203,10 @@ message ChatMessage {
   string text = 1;
   bool allianceOnly = 2;
   repeated uint32 recipientPlayerIds = 3;
+}
+
+message RemoteViewMessage {
+  optional uint32 pillboxId = 1;
 }
 
 message ServerMessage {

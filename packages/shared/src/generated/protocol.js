@@ -5825,6 +5825,7 @@ export const jsbolo = $root.jsbolo = (() => {
          * @interface IClientMessage
          * @property {jsbolo.IPlayerInput|null} [input] ClientMessage input
          * @property {jsbolo.IChatMessage|null} [chat] ClientMessage chat
+         * @property {jsbolo.IRemoteViewMessage|null} [remoteView] ClientMessage remoteView
          */
 
         /**
@@ -5858,17 +5859,25 @@ export const jsbolo = $root.jsbolo = (() => {
          */
         ClientMessage.prototype.chat = null;
 
+        /**
+         * ClientMessage remoteView.
+         * @member {jsbolo.IRemoteViewMessage|null|undefined} remoteView
+         * @memberof jsbolo.ClientMessage
+         * @instance
+         */
+        ClientMessage.prototype.remoteView = null;
+
         // OneOf field names bound to virtual getters and setters
         let $oneOfFields;
 
         /**
          * ClientMessage payload.
-         * @member {"input"|"chat"|undefined} payload
+         * @member {"input"|"chat"|"remoteView"|undefined} payload
          * @memberof jsbolo.ClientMessage
          * @instance
          */
         Object.defineProperty(ClientMessage.prototype, "payload", {
-            get: $util.oneOfGetter($oneOfFields = ["input", "chat"]),
+            get: $util.oneOfGetter($oneOfFields = ["input", "chat", "remoteView"]),
             set: $util.oneOfSetter($oneOfFields)
         });
 
@@ -5900,6 +5909,8 @@ export const jsbolo = $root.jsbolo = (() => {
                 $root.jsbolo.PlayerInput.encode(message.input, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
             if (message.chat != null && Object.hasOwnProperty.call(message, "chat"))
                 $root.jsbolo.ChatMessage.encode(message.chat, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
+            if (message.remoteView != null && Object.hasOwnProperty.call(message, "remoteView"))
+                $root.jsbolo.RemoteViewMessage.encode(message.remoteView, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
             return writer;
         };
 
@@ -5942,6 +5953,10 @@ export const jsbolo = $root.jsbolo = (() => {
                     }
                 case 2: {
                         message.chat = $root.jsbolo.ChatMessage.decode(reader, reader.uint32());
+                        break;
+                    }
+                case 3: {
+                        message.remoteView = $root.jsbolo.RemoteViewMessage.decode(reader, reader.uint32());
                         break;
                     }
                 default:
@@ -5998,6 +6013,16 @@ export const jsbolo = $root.jsbolo = (() => {
                         return "chat." + error;
                 }
             }
+            if (message.remoteView != null && message.hasOwnProperty("remoteView")) {
+                if (properties.payload === 1)
+                    return "payload: multiple values";
+                properties.payload = 1;
+                {
+                    let error = $root.jsbolo.RemoteViewMessage.verify(message.remoteView);
+                    if (error)
+                        return "remoteView." + error;
+                }
+            }
             return null;
         };
 
@@ -6022,6 +6047,11 @@ export const jsbolo = $root.jsbolo = (() => {
                 if (typeof object.chat !== "object")
                     throw TypeError(".jsbolo.ClientMessage.chat: object expected");
                 message.chat = $root.jsbolo.ChatMessage.fromObject(object.chat);
+            }
+            if (object.remoteView != null) {
+                if (typeof object.remoteView !== "object")
+                    throw TypeError(".jsbolo.ClientMessage.remoteView: object expected");
+                message.remoteView = $root.jsbolo.RemoteViewMessage.fromObject(object.remoteView);
             }
             return message;
         };
@@ -6048,6 +6078,11 @@ export const jsbolo = $root.jsbolo = (() => {
                 object.chat = $root.jsbolo.ChatMessage.toObject(message.chat, options);
                 if (options.oneofs)
                     object.payload = "chat";
+            }
+            if (message.remoteView != null && message.hasOwnProperty("remoteView")) {
+                object.remoteView = $root.jsbolo.RemoteViewMessage.toObject(message.remoteView, options);
+                if (options.oneofs)
+                    object.payload = "remoteView";
             }
             return object;
         };
@@ -6356,6 +6391,224 @@ export const jsbolo = $root.jsbolo = (() => {
         };
 
         return ChatMessage;
+    })();
+
+    jsbolo.RemoteViewMessage = (function() {
+
+        /**
+         * Properties of a RemoteViewMessage.
+         * @memberof jsbolo
+         * @interface IRemoteViewMessage
+         * @property {number|null} [pillboxId] RemoteViewMessage pillboxId
+         */
+
+        /**
+         * Constructs a new RemoteViewMessage.
+         * @memberof jsbolo
+         * @classdesc Represents a RemoteViewMessage.
+         * @implements IRemoteViewMessage
+         * @constructor
+         * @param {jsbolo.IRemoteViewMessage=} [properties] Properties to set
+         */
+        function RemoteViewMessage(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null)
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * RemoteViewMessage pillboxId.
+         * @member {number|null|undefined} pillboxId
+         * @memberof jsbolo.RemoteViewMessage
+         * @instance
+         */
+        RemoteViewMessage.prototype.pillboxId = null;
+
+        // OneOf field names bound to virtual getters and setters
+        let $oneOfFields;
+
+        // Virtual OneOf for proto3 optional field
+        Object.defineProperty(RemoteViewMessage.prototype, "_pillboxId", {
+            get: $util.oneOfGetter($oneOfFields = ["pillboxId"]),
+            set: $util.oneOfSetter($oneOfFields)
+        });
+
+        /**
+         * Creates a new RemoteViewMessage instance using the specified properties.
+         * @function create
+         * @memberof jsbolo.RemoteViewMessage
+         * @static
+         * @param {jsbolo.IRemoteViewMessage=} [properties] Properties to set
+         * @returns {jsbolo.RemoteViewMessage} RemoteViewMessage instance
+         */
+        RemoteViewMessage.create = function create(properties) {
+            return new RemoteViewMessage(properties);
+        };
+
+        /**
+         * Encodes the specified RemoteViewMessage message. Does not implicitly {@link jsbolo.RemoteViewMessage.verify|verify} messages.
+         * @function encode
+         * @memberof jsbolo.RemoteViewMessage
+         * @static
+         * @param {jsbolo.IRemoteViewMessage} message RemoteViewMessage message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        RemoteViewMessage.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.pillboxId != null && Object.hasOwnProperty.call(message, "pillboxId"))
+                writer.uint32(/* id 1, wireType 0 =*/8).uint32(message.pillboxId);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified RemoteViewMessage message, length delimited. Does not implicitly {@link jsbolo.RemoteViewMessage.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof jsbolo.RemoteViewMessage
+         * @static
+         * @param {jsbolo.IRemoteViewMessage} message RemoteViewMessage message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        RemoteViewMessage.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a RemoteViewMessage message from the specified reader or buffer.
+         * @function decode
+         * @memberof jsbolo.RemoteViewMessage
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {jsbolo.RemoteViewMessage} RemoteViewMessage
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        RemoteViewMessage.decode = function decode(reader, length, error) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.jsbolo.RemoteViewMessage();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.pillboxId = reader.uint32();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a RemoteViewMessage message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof jsbolo.RemoteViewMessage
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {jsbolo.RemoteViewMessage} RemoteViewMessage
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        RemoteViewMessage.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a RemoteViewMessage message.
+         * @function verify
+         * @memberof jsbolo.RemoteViewMessage
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        RemoteViewMessage.verify = function verify(message) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            let properties = {};
+            if (message.pillboxId != null && message.hasOwnProperty("pillboxId")) {
+                properties._pillboxId = 1;
+                if (!$util.isInteger(message.pillboxId))
+                    return "pillboxId: integer expected";
+            }
+            return null;
+        };
+
+        /**
+         * Creates a RemoteViewMessage message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof jsbolo.RemoteViewMessage
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {jsbolo.RemoteViewMessage} RemoteViewMessage
+         */
+        RemoteViewMessage.fromObject = function fromObject(object) {
+            if (object instanceof $root.jsbolo.RemoteViewMessage)
+                return object;
+            let message = new $root.jsbolo.RemoteViewMessage();
+            if (object.pillboxId != null)
+                message.pillboxId = object.pillboxId >>> 0;
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a RemoteViewMessage message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof jsbolo.RemoteViewMessage
+         * @static
+         * @param {jsbolo.RemoteViewMessage} message RemoteViewMessage
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        RemoteViewMessage.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (message.pillboxId != null && message.hasOwnProperty("pillboxId")) {
+                object.pillboxId = message.pillboxId;
+                if (options.oneofs)
+                    object._pillboxId = "pillboxId";
+            }
+            return object;
+        };
+
+        /**
+         * Converts this RemoteViewMessage to JSON.
+         * @function toJSON
+         * @memberof jsbolo.RemoteViewMessage
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        RemoteViewMessage.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for RemoteViewMessage
+         * @function getTypeUrl
+         * @memberof jsbolo.RemoteViewMessage
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        RemoteViewMessage.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/jsbolo.RemoteViewMessage";
+        };
+
+        return RemoteViewMessage;
     })();
 
     jsbolo.ServerMessage = (function() {

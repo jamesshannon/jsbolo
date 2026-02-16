@@ -371,6 +371,7 @@ export class MultiplayerGame {
       );
       if (nextId !== this.remoteViewPillboxId) {
         this.remoteViewPillboxId = nextId;
+        this.network.sendRemoteView(this.remoteViewPillboxId);
       }
       this.lastRemoteNavigationTick = this.tick;
     }
@@ -436,12 +437,14 @@ export class MultiplayerGame {
     this.remotePillboxViewEnabled = true;
     this.remoteViewPillboxId = initialSelection;
     this.lastRemoteNavigationTick = this.tick;
+    this.network.sendRemoteView(this.remoteViewPillboxId);
     this.enqueueHudMessage('Pillbox view enabled.');
   }
 
   private disableRemotePillboxView(message: string): void {
     this.remotePillboxViewEnabled = false;
     this.remoteViewPillboxId = null;
+    this.network.sendRemoteView(null);
     this.enqueueHudMessage(message);
   }
 

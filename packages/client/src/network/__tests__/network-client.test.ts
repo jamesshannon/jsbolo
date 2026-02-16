@@ -176,4 +176,27 @@ describe('NetworkClient', () => {
       },
     });
   });
+
+  it('should encode remote-view requests with optional pillbox id', () => {
+    const client = new NetworkClient();
+    const ws = {send: vi.fn()} as any;
+    const internal = client as any;
+    internal.ws = ws;
+    internal.state.connected = true;
+
+    client.sendRemoteView(42);
+    client.sendRemoteView(null);
+
+    const first = decodeClientMessage(ws.send.mock.calls[0][0] as Uint8Array);
+    const second = decodeClientMessage(ws.send.mock.calls[1][0] as Uint8Array);
+
+    expect(first).toEqual({
+      type: 'remote_view',
+      remoteView: {pillboxId: 42},
+    });
+    expect(second).toEqual({
+      type: 'remote_view',
+      remoteView: {},
+    });
+  });
 });
