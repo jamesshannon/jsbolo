@@ -6,6 +6,21 @@
 
 ## Current Focus Updates
 
+### Date: 2026-02-16
+
+- WinBolo Part 1 parity hardening (non-deferred items):
+  - `TRN-02`: added explicit deep-sea immutability coverage and deep-sea non-buildable checks for roads/walls.
+  - `BLD-09`: builder replacement delay now targets "several minutes" parity (`BUILDER_RESPAWN_TICKS = 180s @ 50 TPS`), with tests updated to assert against shared constant.
+  - `HUD-02`: local tank relation marker now renders with an explicit hollow-style class (`hud-chip-self-hollow`) and UI tests assert this behavior.
+- Remote pillbox view v1 implemented:
+  - Toggle key: `V` (non-chat focus only).
+  - Camera locks to selected owned pillbox; arrow-key movement inputs are reused for directional selection while in view mode.
+  - Added deterministic selection helpers + tests in `packages/client/src/game/remote-pillbox-view.ts`.
+  - Current limitation: alliance-owned pillboxes are not yet included because alliance graph data is not present in client snapshots.
+- Spawn parity improvement for map-defined starts:
+  - If a map start tile is non-water, server now adjusts to nearest water tile so spawn begins on boat.
+  - Procedural fallback spawns remain unchanged (center-map fallback).
+
 ### Date: 2026-02-13
 
 - HUD message transport is now end-to-end:

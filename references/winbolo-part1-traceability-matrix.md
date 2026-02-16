@@ -28,7 +28,7 @@ Last audited: 2026-02-16
 
 | ID | Requirement | Manual Evidence | Owner Candidates | Test Candidates | Status | Notes |
 |---|---|---|---|---|---|---|
-| `BGN-01` | Tank begins out at sea on a boat. | `§2.9.2`, p.9 | `packages/server/src/simulation/map-loader.ts`, `packages/server/src/systems/session-player-manager.ts` | `packages/server/src/__tests__/bolo-spec/01-tank-spawning.test.ts` | `mapped` | Spawn is map/start-position driven; no universal "start at sea on boat" rule is enforced. |
+| `BGN-01` | Tank begins out at sea on a boat. | `§2.9.2`, p.9 | `packages/server/src/simulation/map-loader.ts`, `packages/server/src/systems/session-player-manager.ts` | `packages/server/src/__tests__/bolo-spec/01-tank-spawning.test.ts`, `packages/server/src/systems/__tests__/session-player-manager.test.ts` | `mapped` | Map-defined starts now auto-adjust to nearest water tile for boat spawn. Remaining gap: procedural/fallback spawns are still center-map and not force-sea by default. |
 | `BGN-02` | Boats cannot pass under low floating bridges; player must disembark or destroy bridge. | `§2.9.2`, p.9 | `packages/server/src/systems/player-simulation-system.ts`, `packages/server/src/simulation/world.ts` | `packages/server/src/__tests__/bolo-spec/06-boats.test.ts` | `verified` | Explicit spec coverage added for disembark when crossing `RIVER -> ROAD` bridge tile. |
 | `BGN-03` | Boats are sunk by one hit; tank dumped into water; deep sea without boat kills immediately. | `§2.9.2`, p.9 | `packages/server/src/systems/combat-system.ts`, `packages/server/src/systems/player-simulation-system.ts`, `packages/server/src/simulation/world.ts` | `packages/server/src/__tests__/bolo-spec/06-boats.test.ts`, `packages/server/src/__tests__/bolo-spec/02-tank-movement.test.ts` | `verified` |  |
 
@@ -37,7 +37,7 @@ Last audited: 2026-02-16
 | ID | Requirement | Manual Evidence | Owner Candidates | Test Candidates | Status | Notes |
 |---|---|---|---|---|---|---|
 | `TRN-01` | Water is very slow without boat and drains shells/mines over time. | `§2.9.3`, p.10 | `packages/server/src/systems/player-simulation-system.ts` | `packages/server/src/__tests__/bolo-spec/07-water-mechanics.test.ts` | `verified` |  |
-| `TRN-02` | Deep sea is instant death without boat, non-buildable, and immutable. | `§2.9.3`, p.10 | `packages/server/src/systems/player-simulation-system.ts`, `packages/server/src/systems/builder-system.ts`, `packages/server/src/simulation/world.ts` | `packages/server/src/__tests__/bolo-spec/02-tank-movement.test.ts`, `packages/server/src/__tests__/bolo-spec/10-builder.test.ts` | `mapped` | Instant-death + build restrictions are covered; explicit "immutable throughout game" assertion is not separately tested. |
+| `TRN-02` | Deep sea is instant death without boat, non-buildable, and immutable. | `§2.9.3`, p.10 | `packages/server/src/systems/player-simulation-system.ts`, `packages/server/src/systems/builder-system.ts`, `packages/server/src/simulation/world.ts` | `packages/server/src/__tests__/bolo-spec/02-tank-movement.test.ts`, `packages/server/src/__tests__/bolo-spec/04-terrain-damage.test.ts`, `packages/server/src/__tests__/bolo-spec/10-builder.test.ts` | `verified` | Added explicit deep-sea immutability assertion (direct collision damage no-op) plus deep-sea road/wall build rejection tests. |
 | `TRN-03` | Moored boats are boardable and provide fast travel by river/sea. | `§2.9.3`, p.10 | `packages/server/src/systems/player-simulation-system.ts` | `packages/server/src/__tests__/bolo-spec/06-boats.test.ts` | `verified` |  |
 | `TRN-04` | Swamp slows tanks significantly. | `§2.9.3`, p.10 | `packages/server/src/simulation/tank.ts`, `packages/server/src/simulation/world.ts` | `packages/server/src/__tests__/bolo-spec/02-tank-movement.test.ts` | `verified` | Speed-cap assertions include swamp (`0.25x`) parity. |
 | `TRN-05` | Mines can be laid on valid terrain and damage tanks on contact/explosion. | `§2.9.3`, p.10 | `packages/server/src/game-session.ts`, `packages/server/src/systems/player-simulation-system.ts`, `packages/server/src/simulation/world.ts` | `packages/server/src/__tests__/bolo-spec/05-mines.test.ts` | `verified` |  |
@@ -79,7 +79,7 @@ Last audited: 2026-02-16
 | `BLD-06` | Repairing enemy pillboxes is allowed; repair cost scales by damage; repair alone does not claim ownership. | `§2.9.6` + `§2.9.13`, pp.13,16 | `packages/server/src/systems/builder-system.ts`, `packages/server/src/systems/player-simulation-system.ts` | `packages/server/src/systems/__tests__/builder-system.test.ts`, `packages/server/src/__tests__/bolo-spec/08-pillboxes.test.ts` | `verified` |  |
 | `BLD-07` | Builder-laid mines are stealthier than quick mines and can be laid remotely. | `§2.9.6`, p.13 | `packages/server/src/systems/builder-system.ts`, `packages/server/src/systems/match-state-system.ts` | `packages/server/src/__tests__/bolo-spec/05-mines.test.ts`, `packages/server/src/__tests__/bolo-spec/10-builder.test.ts` | `verified` |  |
 | `BLD-08` | Mine intel is shared with allies only for mines laid during alliance period. | `§2.9.6`, p.13 | `packages/server/src/systems/match-state-system.ts` | `packages/server/src/__tests__/bolo-spec/05-mines.test.ts`, `packages/server/src/systems/__tests__/match-state-system.test.ts` | `verified` |  |
-| `BLD-09` | If builder dies outside tank, replacement builder arrives after delay. | `§2.9.6`, p.13 | `packages/server/src/simulation/builder.ts`, `packages/server/src/systems/respawn-system.ts`, `packages/server/src/systems/combat-system.ts` | `packages/server/src/__tests__/bolo-spec/10-builder.test.ts`, `packages/server/src/systems/__tests__/respawn-system.test.ts` | `mapped` | Respawn exists, but manual "several minutes" timing parity is not asserted. |
+| `BLD-09` | If builder dies outside tank, replacement builder arrives after delay. | `§2.9.6`, p.13 | `packages/server/src/simulation/builder.ts`, `packages/server/src/systems/respawn-system.ts`, `packages/server/src/systems/combat-system.ts` | `packages/server/src/__tests__/bolo-spec/10-builder.test.ts`, `packages/server/src/systems/__tests__/respawn-system.test.ts` | `verified` | Respawn delay is now pinned to several-minute parity (`BUILDER_RESPAWN_TICKS = 180s @ 50 TPS`) and asserted in spec tests. |
 | `BLD-10` | Forest regrows over time. | `§2.9.6`, p.13 | `packages/server/src/systems/terrain-effects-system.ts` | `packages/server/src/systems/__tests__/terrain-effects-system.test.ts` | `verified` |  |
 
 ### 2.9.7 Alliances
@@ -113,7 +113,7 @@ Last audited: 2026-02-16
 | ID | Requirement | Manual Evidence | Owner Candidates | Test Candidates | Status | Notes |
 |---|---|---|---|---|---|---|
 | `HUD-01` | Right-side info boxes report tank/pillbox/base status. | `§2.9.11`, p.15 | `packages/client/src/game/multiplayer-game.ts`, `packages/client/src/game/hud-tank-status.ts`, `packages/client/src/game/hud-structure-chips.ts` | `packages/client/src/__tests__/hud-tank-status.test.ts`, `packages/client/src/__tests__/hud-structure-chips.test.ts` | `verified` |  |
-| `HUD-02` | Color semantics: hostile red, friendly green; own-tank marker is special in tank status. | `§2.9.11`, p.15 | `packages/client/src/game/hud-tank-status.ts`, `packages/client/src/renderer/color-palette.ts` | `packages/client/src/__tests__/hud-tank-status.test.ts`, `packages/client/src/renderer/__tests__/color-palette.test.ts` | `mapped` | Team relation semantics are covered; exact hollow-circle shape parity is not explicitly asserted. |
+| `HUD-02` | Color semantics: hostile red, friendly green; own-tank marker is special in tank status. | `§2.9.11`, p.15 | `packages/client/src/game/hud-tank-status.ts`, `packages/client/src/renderer/color-palette.ts`, `packages/client/src/game/multiplayer-game.ts` | `packages/client/src/__tests__/hud-tank-status.test.ts`, `packages/client/src/renderer/__tests__/color-palette.test.ts`, `packages/client/src/__tests__/hud-chat-ui.test.ts` | `verified` | Added explicit self-marker hollow shape class (`hud-chip-self-hollow`) and UI assertions that it renders for the local tank. |
 | `HUD-03` | Carried pillboxes show shrunken status icon variants by relation. | `§2.9.11`, p.15 | `packages/client/src/game/hud-structure-chips.ts` | `packages/client/src/__tests__/hud-structure-chips.test.ts` | `verified` |  |
 | `HUD-04` | Neutral pillboxes and bases use special neutral patterns distinct from owned/hostile states. | `§2.9.11`, p.15 | `packages/client/src/game/hud-structure-chips.ts`, `packages/client/src/renderer/renderer.ts` | `packages/client/src/__tests__/hud-structure-chips.test.ts`, `packages/client/src/renderer/__tests__/renderer-structures.test.ts` | `verified` |  |
 | `HUD-05` | Base stock bars show nearest friendly base shells/mines/armor. | `§2.9.11`, p.15 | `packages/client/src/game/hud-nearest-base.ts`, `packages/client/src/game/multiplayer-game.ts` | `packages/client/src/__tests__/hud-nearest-base.test.ts` | `verified` |  |
@@ -125,7 +125,7 @@ Last audited: 2026-02-16
 
 | ID | Requirement | Manual Evidence | Owner Candidates | Test Candidates | Status | Notes |
 |---|---|---|---|---|---|---|
-| `REM-01` | Pillbox-view mode cycles through own/allied pillboxes; cursor keys navigate neighboring pillboxes. | `§2.9.12`, p.16 | `packages/client/src/game/multiplayer-game.ts`, `packages/client/src/renderer/camera.ts` | none | `missing` | No remote pillbox camera/view mode is currently implemented. |
+| `REM-01` | Pillbox-view mode cycles through own/allied pillboxes; cursor keys navigate neighboring pillboxes. | `§2.9.12`, p.16 | `packages/client/src/game/multiplayer-game.ts`, `packages/client/src/game/remote-pillbox-view.ts`, `packages/client/src/renderer/camera.ts` | `packages/client/src/__tests__/remote-pillbox-view.test.ts` | `mapped` | Implemented v1 remote pillbox camera mode (`V` toggle + directional navigation). Remaining parity gap: alliance-owned pillboxes are not yet included because alliance state is not in the client snapshot. |
 
 ### 2.9.13 Notes (Normative Mechanical Clause)
 
@@ -157,7 +157,4 @@ Last audited: 2026-02-16
 ## Immediate Non-Deferred Gaps
 
 1. Spawn/boot parity mapping remains incomplete: `BGN-01`.
-2. Deep-sea immutability assertion is not explicit: `TRN-02`.
-3. Builder respawn timing parity ("several minutes") is not yet pinned to spec: `BLD-09`.
-4. HUD visual parity still needs stricter own-marker icon-shape parity assertion: `HUD-02`.
-5. Remote pillbox camera/view mode is not implemented: `REM-01`.
+2. Remote pillbox mode still lacks alliance-pillbox selection parity in the client snapshot: `REM-01`.
