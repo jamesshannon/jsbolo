@@ -4,6 +4,7 @@
 
 import {
   TICK_LENGTH_MS,
+  TILE_SIZE_PIXELS,
   TILE_SIZE_WORLD,
   PIXEL_SIZE_WORLD,
   BuildAction,
@@ -16,6 +17,7 @@ import {
   type Base,
 } from '@shared';
 import {KeyboardInput} from '../input/keyboard.js';
+import type {InputState} from '../input/keyboard.js';
 import {BuilderInput} from '../input/builder-input.js';
 import {Camera} from '../renderer/camera.js';
 import {Renderer} from '../renderer/renderer.js';
@@ -41,6 +43,12 @@ import {
 } from './hud-structure-chips.js';
 import {selectNearestFriendlyVisibleBase} from './hud-nearest-base.js';
 import {formatHudTickerHtml} from './hud-ticker-format.js';
+import {
+  listRemoteViewPillboxes,
+  pickDirectionalRemotePillbox,
+  pickInitialRemotePillbox,
+  type RemotePillboxDirection,
+} from './remote-pillbox-view.js';
 
 export class MultiplayerGame {
   private readonly input: KeyboardInput;
@@ -83,6 +91,10 @@ export class MultiplayerGame {
   private readonly hudMessageVisibility: HudMessageVisibility = {
     ...DEFAULT_HUD_MESSAGE_VISIBILITY,
   };
+  private remotePillboxViewEnabled = false;
+  private remoteViewPillboxId: number | null = null;
+  private remoteViewToggleRequested = false;
+  private lastRemoteNavigationTick = -1000;
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -102,6 +114,7 @@ export class MultiplayerGame {
     this.bindHudChatInput();
     this.bindHudMessageFilters();
     this.bindColorblindModeToggle();
+    window.addEventListener('keydown', this.handleRemoteViewHotkey);
     this.setTickerText('Ready.');
 
     // Setup builder command handler
@@ -272,9 +285,20 @@ export class MultiplayerGame {
   private update(): void {
     const inputState = this.input.getState();
 
+    if (this.remoteViewToggleRequested) {
+      this.remoteViewToggleRequested = false;
+      this.toggleRemotePillboxView();
+    }
+
     // Debug input state
     if (inputState.accelerating || inputState.braking || inputState.turningLeft || inputState.turningRight) {
       console.log('Input state:', inputState);
+    }
+
+    if (this.remotePillboxViewEnabled) {
+      this.updateRemotePillboxView(inputState);
+      this.sendNeutralInput();
+      return;
     }
 
     // Send input to server
@@ -290,6 +314,116 @@ export class MultiplayerGame {
         this.camera.centerOn(pixelX, pixelY);
       }
     }
+  }
+
+  private sendNeutralInput(): void {
+    this.network.sendInput({
+      tick: this.tick,
+      accelerating: false,
+      braking: false,
+      turningClockwise: false,
+      turningCounterClockwise: false,
+      shooting: false,
+      rangeAdjustment: RangeAdjustment.NONE,
+    });
+  }
+
+  private updateRemotePillboxView(inputState: Readonly<InputState>): void {
+    const myTeam = this.getMyTeam();
+    const candidates = listRemoteViewPillboxes(this.pillboxes.values(), myTeam);
+    if (candidates.length === 0) {
+      this.disableRemotePillboxView('Pillbox view unavailable: no owned pillboxes.');
+      return;
+    }
+
+    if (this.remoteViewPillboxId === null || !candidates.some(pillbox => pillbox.id === this.remoteViewPillboxId)) {
+      const myTank = this.playerId === null ? null : this.tanks.get(this.playerId) ?? null;
+      const fallbackTileX = myTank?.x !== undefined ? Math.floor(myTank.x / TILE_SIZE_WORLD) : candidates[0]!.tileX;
+      const fallbackTileY = myTank?.y !== undefined ? Math.floor(myTank.y / TILE_SIZE_WORLD) : candidates[0]!.tileY;
+      this.remoteViewPillboxId = pickInitialRemotePillbox(candidates, fallbackTileX, fallbackTileY);
+    }
+
+    const direction = this.getRemoteNavigationDirection(inputState);
+    if (
+      direction &&
+      this.remoteViewPillboxId !== null &&
+      this.tick - this.lastRemoteNavigationTick >= 8
+    ) {
+      const nextId = pickDirectionalRemotePillbox(
+        candidates,
+        this.remoteViewPillboxId,
+        direction
+      );
+      if (nextId !== this.remoteViewPillboxId) {
+        this.remoteViewPillboxId = nextId;
+      }
+      this.lastRemoteNavigationTick = this.tick;
+    }
+
+    if (this.remoteViewPillboxId === null) {
+      return;
+    }
+
+    const selected = candidates.find(pillbox => pillbox.id === this.remoteViewPillboxId);
+    if (!selected) {
+      return;
+    }
+
+    const pixelX = (selected.tileX + 0.5) * TILE_SIZE_PIXELS;
+    const pixelY = (selected.tileY + 0.5) * TILE_SIZE_PIXELS;
+    this.camera.centerOn(pixelX, pixelY);
+  }
+
+  private getRemoteNavigationDirection(
+    inputState: Readonly<InputState>
+  ): RemotePillboxDirection | null {
+    if (inputState.accelerating) {
+      return 'up';
+    }
+    if (inputState.braking) {
+      return 'down';
+    }
+    if (inputState.turningLeft) {
+      return 'left';
+    }
+    if (inputState.turningRight) {
+      return 'right';
+    }
+    return null;
+  }
+
+  private toggleRemotePillboxView(): void {
+    if (this.remotePillboxViewEnabled) {
+      this.disableRemotePillboxView('Pillbox view disabled.');
+      return;
+    }
+
+    const myTeam = this.getMyTeam();
+    const candidates = listRemoteViewPillboxes(this.pillboxes.values(), myTeam);
+    if (candidates.length === 0) {
+      this.enqueueHudMessage('Pillbox view unavailable: no owned pillboxes.');
+      return;
+    }
+
+    const myTank = this.playerId === null ? null : this.tanks.get(this.playerId) ?? null;
+    const anchorTileX = myTank?.x !== undefined ? Math.floor(myTank.x / TILE_SIZE_WORLD) : candidates[0]!.tileX;
+    const anchorTileY = myTank?.y !== undefined ? Math.floor(myTank.y / TILE_SIZE_WORLD) : candidates[0]!.tileY;
+    const initialSelection = pickInitialRemotePillbox(candidates, anchorTileX, anchorTileY);
+    if (initialSelection === null) {
+      this.enqueueHudMessage('Pillbox view unavailable: no owned pillboxes.');
+      return;
+    }
+
+    this.remotePillboxViewEnabled = true;
+    this.remoteViewPillboxId = initialSelection;
+    this.lastRemoteNavigationTick = this.tick;
+    this.enqueueHudMessage('Pillbox view enabled.');
+  }
+
+  private disableRemotePillboxView(message: string): void {
+    this.remotePillboxViewEnabled = false;
+    this.remoteViewPillboxId = null;
+    this.enqueueHudMessage(message);
   }
 
   private render(): void {
@@ -484,7 +618,7 @@ export class MultiplayerGame {
 
       if (hudTankList) {
         const markerNodes = tankMarkers.map(marker =>
-          `<span class="hud-chip ${marker.relation}" title="P${marker.playerId}"></span>`
+          `<span class="hud-chip ${marker.relation}${marker.relation === 'self' ? ' hud-chip-self-hollow' : ''}" title="P${marker.playerId}"></span>`
         );
         hudTankList.innerHTML = markerNodes.join('');
       }
@@ -688,6 +822,26 @@ export class MultiplayerGame {
     this.chatInput.select();
   };
 
+  private readonly handleRemoteViewHotkey = (event: KeyboardEvent): void => {
+    if (
+      event.code !== 'KeyV' ||
+      event.defaultPrevented ||
+      event.repeat ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.altKey
+    ) {
+      return;
+    }
+
+    if (this.isEditableTarget(event.target)) {
+      return;
+    }
+
+    event.preventDefault();
+    this.remoteViewToggleRequested = true;
+  };
+
   private readonly handleHudChatInputKeyDown = (event: KeyboardEvent): void => {
     if (event.key === 'Escape') {
       event.preventDefault();
@@ -790,6 +944,7 @@ export class MultiplayerGame {
     this.builderInterpolator.clear();
     this.chatForm?.removeEventListener('submit', this.handleHudChatSubmit);
     window.removeEventListener('keydown', this.handleHudChatShortcut);
+    window.removeEventListener('keydown', this.handleRemoteViewHotkey);
     this.chatInput?.removeEventListener('keydown', this.handleHudChatInputKeyDown);
     this.colorblindToggle?.removeEventListener('change', this.handleColorblindModeChanged);
     (document.getElementById('hud-filter-newswire') as HTMLInputElement | null)

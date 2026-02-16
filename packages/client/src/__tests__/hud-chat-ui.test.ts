@@ -172,6 +172,7 @@ describe('HUD chat UI wiring', () => {
 
     const tankListHtml = (document.getElementById('hud-tank-list') as HTMLElement).innerHTML;
     expect(tankListHtml).toContain('hud-chip self');
+    expect(tankListHtml).toContain('hud-chip-self-hollow');
     expect(tankListHtml).toContain('hud-chip friendly');
     expect(tankListHtml).toContain('hud-chip hostile');
     expect((document.getElementById('hud-tank-summary') as HTMLElement).textContent).toBe(
