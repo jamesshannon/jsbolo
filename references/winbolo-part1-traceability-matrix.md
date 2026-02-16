@@ -21,8 +21,8 @@ Last audited: 2026-02-16
 
 | ID | Requirement | Manual Evidence | Owner Candidates | Test Candidates | Status | Notes |
 |---|---|---|---|---|---|---|
-| `DRV-01` | Default driving keys match documented controls (`Q/A`, `O/P`, `Tab`, `Space`). | `§2.9.1`, p.9 | `packages/client/src/input/keyboard.ts` | `packages/client/src/__tests__/input-mapping.test.ts` | `failing` | Current defaults are mixed (`Q`, `Z/S`, arrows, numpad, `Space`) and `Tab` quick-mine binding is not in client input. |
-| `DRV-02` | Key assignments can be changed by players. | `§2.9.1`, p.9 | `packages/client/src/input/keyboard.ts` | none | `missing` | No runtime keybinding/rebind UI/config is present. |
+| `DRV-01` | Default driving keys match documented controls (`Q/A`, `O/P`, `Tab`, `Space`). | `§2.9.1`, p.9 | `packages/client/src/input/keyboard.ts` | `packages/client/src/__tests__/input-mapping.test.ts` | `deferred` | Deferred by product decision: exact legacy key-default parity is postponed. |
+| `DRV-02` | Key assignments can be changed by players. | `§2.9.1`, p.9 | `packages/client/src/input/keyboard.ts` | none | `deferred` | Deferred by product decision: configurable keybind UI is postponed. |
 
 ### 2.9.2 Beginning the Game
 
@@ -103,10 +103,10 @@ Last audited: 2026-02-16
 
 | ID | Requirement | Manual Evidence | Owner Candidates | Test Candidates | Status | Notes |
 |---|---|---|---|---|---|---|
-| `MIN-01` | Two mine-laying modes exist: builder-laid and quick drop (`Tab`). | `§2.9.9`, p.15 | `packages/server/src/game-session.ts`, `packages/client/src/input/keyboard.ts`, `packages/client/src/input/builder-input.ts` | `packages/server/src/__tests__/bolo-spec/05-mines.test.ts`, `packages/client/src/__tests__/builder-input.test.ts` | `mapped` | Server supports quick-mine semantics (`dropQuickMine`), but client keybinding/UI path for quick mine is missing. |
+| `MIN-01` | Two mine-laying modes exist: builder-laid and quick drop (`Tab`). | `§2.9.9`, p.15 | `packages/server/src/game-session.ts`, `packages/client/src/input/keyboard.ts`, `packages/client/src/input/builder-input.ts` | `packages/server/src/__tests__/bolo-spec/05-mines.test.ts`, `packages/client/src/__tests__/builder-input.test.ts` | `deferred` | Deferred by product decision: client quick-mine keybinding/input path parity is postponed with keybinding work. |
 | `MIN-02` | Quick-dropped mines are visible to nearby tanks. | `§2.9.9`, p.15 | `packages/server/src/systems/match-state-system.ts`, `packages/server/src/game-session.ts` | `packages/server/src/__tests__/bolo-spec/05-mines.test.ts` | `verified` |  |
 | `CLR-01` | Adjustable gun range supports deliberate mine detonation. | `§2.9.10`, p.15 | `packages/server/src/simulation/tank.ts`, `packages/server/src/systems/combat-system.ts`, `packages/client/src/game/input-mapping.ts` | `packages/server/src/__tests__/bolo-spec/03-shooting.test.ts`, `packages/server/src/__tests__/bolo-spec/05-mines.test.ts`, `packages/client/src/__tests__/input-mapping.test.ts` | `verified` |  |
-| `CLR-02` | Manual range controls match documented keys (`+`, `9`) and scroll wheel behavior. | `§2.9.10`, p.15 | `packages/client/src/input/keyboard.ts`, `packages/client/src/game/multiplayer-game.ts` | `packages/client/src/__tests__/input-mapping.test.ts` | `failing` | Current controls use `=` and `-`; `9`/scroll-wheel behavior is not implemented as documented. |
+| `CLR-02` | Manual range controls match documented keys (`+`, `9`) and scroll wheel behavior. | `§2.9.10`, p.15 | `packages/client/src/input/keyboard.ts`, `packages/client/src/game/multiplayer-game.ts` | `packages/client/src/__tests__/input-mapping.test.ts` | `deferred` | Deferred by product decision: legacy range key and scroll-wheel parity is postponed with keybinding work. |
 
 ### 2.9.11 The Screen
 
@@ -137,19 +137,30 @@ Last audited: 2026-02-16
 
 | ID | Requirement | Manual Evidence | Owner Candidates | Test Candidates | Status | Notes |
 |---|---|---|---|---|---|---|
-| `MAP-01` | Client game setup supports choosing alternate map before start. | `§2.9.14`, p.17 | `packages/client` setup UI, `packages/server/src/game-server.ts` | none | `missing` | Server accepts map path at startup, but client-side "Choose Map" flow is not present. |
+| `MAP-01` | Client game setup supports choosing alternate map before start. | `§2.9.14`, p.17 | `packages/client` setup UI, `packages/server/src/game-server.ts` | none | `deferred` | Deferred by product decision: map-chooser UI flow is postponed. |
 
 ### 2.10 Brains / Play Without Network
 
 | ID | Requirement | Manual Evidence | Owner Candidates | Test Candidates | Status | Notes |
 |---|---|---|---|---|---|---|
-| `BRN-01` | Brain/autopilot can temporarily control tank when user leaves keyboard. | `§2.10`, p.18 | `packages/bots`, `packages/server/src/systems/bot-input-system.ts` | `packages/server/src/__tests__/bot-startup.test.ts`, `packages/server/src/systems/__tests__/bot-input-system.test.ts` | `mapped` | Server bots exist, but manual’s per-client brain handoff/menu flow is not implemented. |
-| `BRN-02` | "Allow computer tanks" style game setting controls bot availability. | `§2.10`, p.18 | `packages/server/src/index.ts`, `restart-dev.sh` | `packages/server/src/__tests__/game-server-bot-admin.test.ts`, `packages/server/src/__tests__/bot-lifecycle.test.ts` | `verified` | Implemented via startup/env policy (`ALLOW_BOTS`, `MAX_BOTS`, `BOT_COUNT`, profile options). |
-| `BRN-03` | Brains appear from a `Brains` folder and are selectable via client Brain menu. | `§2.10`, p.18 | `packages/bots`, future plugin loader package | none | `deferred` | Current implementation uses built-in server profiles; no dynamic client menu/plugin folder loading yet. |
-| `BRN-04` | One brain per running copy/client instance. | `§2.10`, p.18 | `packages/server/src/systems/bot-runtime-adapter.ts` | `packages/server/src/__tests__/bot-lifecycle.test.ts` | `mapped` | Runtime currently enforces bot-player lifecycle centrally, not per-legacy-client process semantics. |
+| `BRN-01` | Brain/autopilot can temporarily control tank when user leaves keyboard. | `§2.10`, p.18 | `packages/bots`, `packages/server/src/systems/bot-input-system.ts` | `packages/server/src/__tests__/bot-startup.test.ts`, `packages/server/src/systems/__tests__/bot-input-system.test.ts` | `deferred` | Deferred by product decision: legacy client-side brain handoff/menu semantics are postponed. |
+| `BRN-02` | "Allow computer tanks" style game setting controls bot availability. | `§2.10`, p.18 | `packages/server/src/index.ts`, `restart-dev.sh` | `packages/server/src/__tests__/game-server-bot-admin.test.ts`, `packages/server/src/__tests__/bot-lifecycle.test.ts` | `deferred` | Deferred by product decision: retain current bot controls, but manual-faithful brain setup UX is postponed. |
+| `BRN-03` | Brains appear from a `Brains` folder and are selectable via client Brain menu. | `§2.10`, p.18 | `packages/bots`, future plugin loader package | none | `deferred` | Deferred by product decision: dynamic brain discovery/menu loading remains future work. |
+| `BRN-04` | One brain per running copy/client instance. | `§2.10`, p.18 | `packages/server/src/systems/bot-runtime-adapter.ts` | `packages/server/src/__tests__/bot-lifecycle.test.ts` | `deferred` | Deferred by product decision: per-client brain-instance semantics are postponed. |
 
-## Immediate Gaps Highlighted by This Matrix
+## Deferred Scope (Product Decision)
 
-1. Input parity gaps: default key layout, key rebinding, and mine-clearing key semantics (`DRV-01`, `DRV-02`, `CLR-02`).
-2. Missing manual UI flows: remote pillbox view and map chooser (`REM-01`, `MAP-01`).
-3. Legacy brain/menu semantics are only partially represented by server-side bots (`BRN-01`, `BRN-03`, `BRN-04`).
+1. Input/keybinding parity and configurability: `DRV-01`, `DRV-02`, `MIN-01`, `CLR-02`.
+2. Map selection UX parity: `MAP-01`.
+3. Legacy brains/bot menu semantics: `BRN-01`, `BRN-02`, `BRN-03`, `BRN-04`.
+
+## Immediate Non-Deferred Gaps
+
+1. Spawn/boot parity mapping remains incomplete: `BGN-01`.
+2. Boat-vs-bridge rule lacks explicit parity assertion: `BGN-02`.
+3. Deep-sea immutability assertion is not explicit: `TRN-02`.
+4. Terrain speed parity needs stronger swamp/road/bridge verification: `TRN-04`, `TRN-07`.
+5. Moored-boat build restriction needs explicit coverage: `BLD-04`.
+6. Builder respawn timing parity ("several minutes") is not yet pinned to spec: `BLD-09`.
+7. HUD visual parity still needs stricter icon/bar/turret assertions: `HUD-02`, `HUD-06`, `HUD-07`.
+8. Remote pillbox camera/view mode is not implemented: `REM-01`.
