@@ -112,6 +112,14 @@ Status: Completed on February 12, 2026.
 
 ---
 
+## Security Audit
+
+Security audit findings, remediation status, and design decisions are tracked in `docs/security-audit.md`.
+
+**Phase 1 (fixes + tests) complete 2026-02-16.** Open items: D2 (connection rate limiting), I5 (sound scoping), and all Category 5 (auth/session tokens) items — all deferred to the auth phase.
+
+---
+
 ## Phase 4: Productization and Polish
 
 Status: In progress as of February 13, 2026.

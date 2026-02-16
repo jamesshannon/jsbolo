@@ -59,23 +59,27 @@ export class SessionWelcomeBuilder {
     this.log('Sample terrain at row 102:', terrain.slice(102 * width, 102 * width + 10));
     this.log('Sample terrain at row 241:', terrain.slice(241 * width, 241 * width + 10));
 
-    const tanks = Array.from(context.players, p => ({
-      id: p.tank.id,
-      team: p.tank.team,
-      allianceId: p.tank.team,
-      x: p.tank.x,
-      y: p.tank.y,
-      direction: p.tank.direction,
-      speed: p.tank.speed,
-      armor: p.tank.armor,
-      shells: p.tank.shells,
-      mines: p.tank.mines,
-      trees: p.tank.trees,
-      onBoat: p.tank.onBoat,
-      reload: p.tank.reload,
-      firingRange: p.tank.firingRange,
-      carriedPillbox: p.tank.carriedPillbox?.id ?? null,
-    }));
+    const tanks = Array.from(context.players, p => {
+      const isSelf = p.tank.id === context.playerId;
+      return {
+        id: p.tank.id,
+        team: p.tank.team,
+        allianceId: p.tank.team,
+        x: p.tank.x,
+        y: p.tank.y,
+        direction: p.tank.direction,
+        speed: p.tank.speed,
+        armor: p.tank.armor,
+        // Only reveal resource counts to the tank's own player
+        shells: isSelf ? p.tank.shells : 0,
+        mines: isSelf ? p.tank.mines : 0,
+        trees: isSelf ? p.tank.trees : 0,
+        onBoat: p.tank.onBoat,
+        reload: isSelf ? p.tank.reload : 0,
+        firingRange: isSelf ? p.tank.firingRange : 0,
+        carriedPillbox: p.tank.carriedPillbox?.id ?? null,
+      };
+    });
 
     const pillboxes = Array.from(context.pillboxes, pillbox => ({
       id: pillbox.id,

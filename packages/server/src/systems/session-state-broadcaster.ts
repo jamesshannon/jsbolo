@@ -164,7 +164,8 @@ export class SessionStateBroadcaster {
         }
 
         currentTankIds.add(candidate.tank.id);
-        const currentHash = this.getTankStateHash(candidate.tank);
+        const isSelf = candidate.id === player.id;
+        const currentHash = this.getTankStateHash(candidate.tank, isSelf);
         if (state.tanks.get(candidate.tank.id) !== currentHash) {
           tanks.push({
             id: candidate.tank.id,
@@ -173,14 +174,15 @@ export class SessionStateBroadcaster {
             direction: candidate.tank.direction,
             speed: candidate.tank.speed,
             armor: candidate.tank.armor,
-            shells: candidate.tank.shells,
-            mines: candidate.tank.mines,
-            trees: candidate.tank.trees,
+            // Only reveal resource counts to the tank's own player
+            shells: isSelf ? candidate.tank.shells : 0,
+            mines: isSelf ? candidate.tank.mines : 0,
+            trees: isSelf ? candidate.tank.trees : 0,
             team: candidate.tank.team,
             allianceId: candidate.tank.team,
             onBoat: candidate.tank.onBoat,
-            reload: candidate.tank.reload,
-            firingRange: candidate.tank.firingRange,
+            reload: isSelf ? candidate.tank.reload : 0,
+            firingRange: isSelf ? candidate.tank.firingRange : 0,
             carriedPillbox: candidate.tank.carriedPillbox?.id ?? null,
           });
           state.tanks.set(candidate.tank.id, currentHash);
@@ -468,8 +470,12 @@ export class SessionStateBroadcaster {
     };
   }
 
-  private getTankStateHash(tank: ServerTank): string {
-    return `${Math.round(tank.x)},${Math.round(tank.y)},${tank.direction},${tank.speed},${tank.armor},${tank.shells},${tank.mines},${tank.trees},${tank.onBoat},${tank.reload},${tank.firingRange},${tank.carriedPillbox?.id ?? 'null'}`;
+  private getTankStateHash(tank: ServerTank, isSelf: boolean): string {
+    if (isSelf) {
+      return `${Math.round(tank.x)},${Math.round(tank.y)},${tank.direction},${tank.speed},${tank.armor},${tank.shells},${tank.mines},${tank.trees},${tank.onBoat},${tank.reload},${tank.firingRange},${tank.carriedPillbox?.id ?? 'null'}`;
+    }
+    // Enemy tanks: only hash visible fields (resources are always 0)
+    return `${Math.round(tank.x)},${Math.round(tank.y)},${tank.direction},${tank.speed},${tank.armor},0,0,0,${tank.onBoat},0,0,${tank.carriedPillbox?.id ?? 'null'}`;
   }
 
   private getBuilderStateHash(builder: ServerBuilder): string {

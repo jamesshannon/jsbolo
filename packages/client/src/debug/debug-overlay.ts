@@ -93,7 +93,7 @@ export class DebugOverlay {
     // Map info
     if (data.mapName) {
       html += '<div style="margin-bottom: 10px;"><strong>MAP</strong></div>';
-      html += `<div>${data.mapName}</div>`;
+      html += `<div>${this.escapeHtml(data.mapName)}</div>`;
       html += '<div style="height: 5px;"></div>';
     }
 
@@ -113,7 +113,7 @@ export class DebugOverlay {
     if (data.terrainInfo) {
       html += '<div style="margin-bottom: 5px;"><strong>TERRAIN (UNDER TANK)</strong></div>';
       html += `<div style="margin-left: 10px;">`;
-      html += `Type: ${data.terrainInfo.terrain}<br>`;
+      html += `Type: ${this.escapeHtml(data.terrainInfo.terrain)}<br>`;
       html += `Life: ${data.terrainInfo.life}<br>`;
       html += `Mine: ${data.terrainInfo.hasMine ? 'Yes' : 'No'}<br>`;
       html += `</div>`;
@@ -203,6 +203,15 @@ export class DebugOverlay {
   destroy(): void {
     window.removeEventListener('keydown', this.handleKeyDown);
     this.overlayElement.remove();
+  }
+
+  private escapeHtml(str: string): string {
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
   }
 
   private getBuilderOrderName(order: BuilderOrder): string {

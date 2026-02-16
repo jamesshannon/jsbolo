@@ -7,8 +7,13 @@ import {
   TANK_RESPAWN_TICKS,
   NEUTRAL_TEAM,
   TILE_SIZE_WORLD,
+  MAX_PLAYERS,
+  MAP_SIZE_TILES,
+  BuildAction,
+  RangeAdjustment,
   type AllianceSnapshot,
   type PlayerInput,
+  type BuildOrder,
   encodeServerMessage,
   type WelcomeMessage,
   type SoundEvent,
@@ -56,6 +61,32 @@ const DEFAULT_BOT_POLICY: BotPolicyOptions = {
 const MAX_CHAT_MESSAGE_LENGTH = 160;
 const NEARBY_CHAT_RADIUS_TILES = 12;
 const QUICK_MINE_VISIBILITY_RADIUS_TILES = 24;
+
+/** Valid BuildAction enum values */
+const VALID_BUILD_ACTIONS = new Set<number>(
+  Object.values(BuildAction).filter((v): v is number => typeof v === 'number')
+);
+
+/** Valid RangeAdjustment enum values */
+const VALID_RANGE_ADJUSTMENTS = new Set<number>(
+  Object.values(RangeAdjustment).filter((v): v is number => typeof v === 'number')
+);
+
+/**
+ * Validate and sanitize a build order from client input.
+ * Returns null if the order is invalid.
+ */
+function sanitizeBuildOrder(order: BuildOrder): BuildOrder | null {
+  if (!VALID_BUILD_ACTIONS.has(order.action)) {
+    return null;
+  }
+  if (!Number.isFinite(order.targetX) || !Number.isFinite(order.targetY)) {
+    return null;
+  }
+  const targetX = Math.max(0, Math.min(MAP_SIZE_TILES - 1, Math.floor(order.targetX)));
+  const targetY = Math.max(0, Math.min(MAP_SIZE_TILES - 1, Math.floor(order.targetY)));
+  return {action: order.action, targetX, targetY};
+}
 
 export class GameSession {
   private readonly world: ServerWorld;
@@ -161,6 +192,10 @@ export class GameSession {
 
   addPlayer(ws: WebSocket, _legacyUnusedTeamOverride?: number): number {
     // NOTE: optional second arg is accepted for legacy test compatibility.
+    if (this.players.size >= MAX_PLAYERS) {
+      ws.close(1013, 'Server full');
+      return -1;
+    }
     const playerId = this.playerManager.addPlayer(ws);
     this.hudMessages.seedPlayerFromRecentGlobal(playerId, this.tick);
     this.hudMessages.publishGlobal({
@@ -204,7 +239,15 @@ export class GameSession {
       // Queue them so a subsequent movement packet in the same server tick
       // does not clobber the command before simulation consumes it.
       if (input.buildOrder) {
-        player.pendingBuildOrder = input.buildOrder;
+        const sanitized = sanitizeBuildOrder(input.buildOrder);
+        if (sanitized) {
+          player.pendingBuildOrder = sanitized;
+        }
+      }
+
+      // Validate rangeAdjustment before accepting
+      if (!VALID_RANGE_ADJUSTMENTS.has(input.rangeAdjustment)) {
+        input.rangeAdjustment = RangeAdjustment.NONE;
       }
 
       // Keep latest movement/fire/range state, but do not persist buildOrder here.
@@ -281,7 +324,9 @@ export class GameSession {
     }
 
     if ((options?.recipientPlayerIds?.length ?? 0) > 0) {
-      this.publishDirectedChat(playerId, sanitized, options?.recipientPlayerIds ?? []);
+      // Cap recipient list to prevent processing unbounded arrays
+      const capped = (options?.recipientPlayerIds ?? []).slice(0, MAX_PLAYERS);
+      this.publishDirectedChat(playerId, sanitized, capped);
       return;
     }
 

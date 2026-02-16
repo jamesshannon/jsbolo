@@ -3,8 +3,19 @@
 ## Policy Documents
 
 - HUD messaging and notification rules: `docs/hud-message-policy.md`
+- Security audit findings and status: `docs/security-audit.md`
 
 ## Current Focus Updates
+
+### Date: 2026-02-16 (Security Audit Phase 1)
+
+Security audit Phase 1 complete. 13 of 22 findings fixed; remainder deferred or design decisions.
+
+**Fixed:** S1 (maxPayload), S3 (recipient cap), S4 (error counting), S5-S6 (XSS), G1 (rate limiting), G2-G4 (input validation), G5 (mine chain cap), D4 (MAX_PLAYERS), I2+I4 (enemy tank data scoping).
+
+**Open:** D2 (connection rate limiting), I5 (sound scoping), A1-A4 (auth/session tokens — deferred).
+
+See `docs/security-audit.md` for full finding table and design decisions. Tests in `packages/server/src/__tests__/security/` and `packages/client/src/__tests__/security/`.
 
 ### Date: 2026-02-16
 

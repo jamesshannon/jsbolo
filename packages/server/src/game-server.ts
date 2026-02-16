@@ -21,10 +21,25 @@ interface GameServerOptions {
   allowBotOnlySimulation?: boolean;
 }
 
+/** Security: max WebSocket message size (16 KB) */
+const MAX_PAYLOAD_BYTES = 16_384;
+/** Security: disconnect after this many consecutive decode errors */
+const MAX_CONSECUTIVE_ERRORS = 5;
+/** Security: max messages per rate-limit window */
+const RATE_LIMIT_MAX_MESSAGES = 100;
+/** Security: rate-limit window duration in ms */
+const RATE_LIMIT_WINDOW_MS = 1_000;
+
+interface ConnectionState {
+  consecutiveErrors: number;
+  messageTimestamps: number[];
+}
+
 export class GameServer {
   private readonly wss: WebSocketServerLike;
   private readonly session: GameSession; // Single session for Phase 2
   private readonly connections = new Map<WebSocket, PlayerConnection>();
+  private readonly connectionState = new Map<WebSocket, ConnectionState>();
   private readonly allowBotOnlySimulation: boolean;
 
   constructor(port: number, mapPathOrOptions?: string | GameServerOptions, maybeOptions?: GameServerOptions) {
@@ -37,7 +52,7 @@ export class GameServer {
 
     this.wss = options?.createWebSocketServer
       ? options.createWebSocketServer(port)
-      : new WebSocketServer({port});
+      : new WebSocketServer({port, maxPayload: MAX_PAYLOAD_BYTES});
     this.session = options?.session ?? new GameSession(mapPath);
     this.allowBotOnlySimulation = options?.allowBotOnlySimulation ?? false;
 
@@ -52,6 +67,7 @@ export class GameServer {
       // Add player to session
       const playerId = this.session.addPlayer(ws);
       this.connections.set(ws, {playerId, session: this.session});
+      this.connectionState.set(ws, {consecutiveErrors: 0, messageTimestamps: []});
 
       // Start or resume on first active human connection.
       if (this.connections.size === 1) {
@@ -78,9 +94,30 @@ export class GameServer {
       return;
     }
 
+    // Rate limiting: drop messages exceeding threshold
+    const state = this.connectionState.get(ws);
+    if (state) {
+      const now = Date.now();
+      state.messageTimestamps.push(now);
+      // Trim timestamps outside window
+      const windowStart = now - RATE_LIMIT_WINDOW_MS;
+      while (state.messageTimestamps.length > 0 && state.messageTimestamps[0]! < windowStart) {
+        state.messageTimestamps.shift();
+      }
+      if (state.messageTimestamps.length > RATE_LIMIT_MAX_MESSAGES) {
+        // Drop excessive messages silently
+        return;
+      }
+    }
+
     try {
       const payload = Array.isArray(data) ? Buffer.concat(data) : data;
       const message: ClientMessage = decodeClientMessage(payload as Uint8Array);
+
+      // Reset error counter on successful decode
+      if (state) {
+        state.consecutiveErrors = 0;
+      }
 
       if (message.type === 'input' && message.input) {
         if (message.input.accelerating || message.input.braking) {
@@ -102,6 +139,14 @@ export class GameServer {
       }
     } catch (error) {
       console.error('Error decoding message:', error);
+      // Track consecutive errors; disconnect after threshold
+      if (state) {
+        state.consecutiveErrors++;
+        if (state.consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
+          console.warn(`Disconnecting player ${conn.playerId} after ${MAX_CONSECUTIVE_ERRORS} consecutive decode errors`);
+          ws.close(1008, 'Too many invalid messages');
+        }
+      }
     }
   }
 
@@ -110,6 +155,7 @@ export class GameServer {
     if (conn) {
       conn.session.removePlayer(conn.playerId);
       this.connections.delete(ws);
+      this.connectionState.delete(ws);
       if (
         this.connections.size === 0 &&
         conn.session.getPlayerCount() > 0 &&

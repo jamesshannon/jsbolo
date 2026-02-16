@@ -477,10 +477,14 @@ export class ServerWorld {
     return affectedTiles;
   }
 
+  /** Maximum mine detonations in a single chain reaction to bound CPU cost. */
+  static readonly MAX_CHAIN_DETONATIONS = 256;
+
   /**
    * Trigger mine explosion with chain reactions.
    * Returns exploded mine positions and affected terrain tiles with original terrain types.
    * Uses BFS to find adjacent mines within explosion radius.
+   * Chain reaction is capped at MAX_CHAIN_DETONATIONS to prevent CPU spikes.
    */
   triggerMineExplosion(tileX: number, tileY: number, radius: number): {
     explodedMines: Array<{x: number; y: number}>;
@@ -494,6 +498,10 @@ export class ServerWorld {
     queue.push({x: tileX, y: tileY});
 
     while (queue.length > 0) {
+      if (explodedMines.length >= ServerWorld.MAX_CHAIN_DETONATIONS) {
+        break;
+      }
+
       const current = queue.shift()!;
       const key = `${current.x},${current.y}`;
 
