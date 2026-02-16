@@ -46,7 +46,9 @@ export const TANK_SLIDE_TICKS = 8;
 
 /** Builder/LGM constants */
 export const BUILDER_SPEED = 16; // world units per tick
-export const BUILDER_RESPAWN_TICKS = 255;
+// Manual parity: replacement builder can take "several minutes" to parachute back in.
+// At 50 ticks/s, 180 seconds ~= 3 minutes.
+export const BUILDER_RESPAWN_TICKS = 180 * TICKS_PER_SECOND;
 export const BUILDER_TREE_HARVEST = 4; // trees gained from harvesting forest
 export const BUILDER_WALL_COST = 0.5; // trees per road/wall/building segment
 export const BUILDER_BOAT_COST = 5; // trees per boat

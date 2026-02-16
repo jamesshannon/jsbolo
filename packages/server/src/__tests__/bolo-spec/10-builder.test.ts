@@ -71,9 +71,9 @@ describe('Bolo Manual Spec: 10. Builder / Man', () => {
       expect(builder.order).toBe(BuilderOrder.RETURNING);
     });
 
-    // "A new man will be parachuted in for you" (respawn delay = 255 ticks)
-    it('should have respawn delay of 255 ticks when killed', () => {
-      expect(BUILDER_RESPAWN_TICKS).toBe(255);
+    // "A new man will be parachuted in for you ... this may take several minutes"
+    it('should have respawn delay of several minutes when killed', () => {
+      expect(BUILDER_RESPAWN_TICKS).toBeGreaterThanOrEqual(6000);
     });
   });
 
@@ -632,7 +632,7 @@ describe('Bolo Manual Spec: 10. Builder / Man', () => {
 
       // Verify builder is dead
       expect(player1.tank.builder.isDead()).toBe(true);
-      expect(player1.tank.builder.respawnCounter).toBe(255);
+      expect(player1.tank.builder.respawnCounter).toBe(BUILDER_RESPAWN_TICKS);
       expect(player1.tank.builder.order).toBe(BuilderOrder.IN_TANK);
     });
 
@@ -649,7 +649,7 @@ describe('Bolo Manual Spec: 10. Builder / Man', () => {
       // Kill builder manually
       player.tank.builder.kill();
       expect(player.tank.builder.isDead()).toBe(true);
-      expect(player.tank.builder.respawnCounter).toBe(255);
+      expect(player.tank.builder.respawnCounter).toBe(BUILDER_RESPAWN_TICKS);
 
       // Try to send builder to build a road
       player.tank.builder.trees = 5;
@@ -668,7 +668,7 @@ describe('Bolo Manual Spec: 10. Builder / Man', () => {
       expect(world.getTerrainAt(51, 50)).toBe(TerrainType.GRASS);
     });
 
-    it('should parachute new builder after respawn delay (255 ticks)', () => {
+    it('should parachute new builder after respawn delay', () => {
       const session = new GameSession();
       const ws = createMockWebSocket();
       const id = session.addPlayer(ws);
@@ -679,12 +679,10 @@ describe('Bolo Manual Spec: 10. Builder / Man', () => {
       // Kill builder
       player.tank.builder.kill();
       expect(player.tank.builder.isDead()).toBe(true);
-      expect(player.tank.builder.respawnCounter).toBe(255);
+      expect(player.tank.builder.respawnCounter).toBe(BUILDER_RESPAWN_TICKS);
 
-      // Run for 254 ticks - builder should still be dead
-      for (let i = 0; i < 254; i++) {
-        tickSession(session, 1);
-      }
+      // Run until one tick before respawn - builder should still be dead.
+      tickSession(session, BUILDER_RESPAWN_TICKS - 1);
       expect(player.tank.builder.isDead()).toBe(true);
       expect(player.tank.builder.respawnCounter).toBe(1);
 

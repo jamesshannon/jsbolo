@@ -41,6 +41,21 @@ describe('SessionPlayerManager', () => {
     expect(player.tank.onBoat).toBe(true);
   });
 
+  it('should adjust map start position to nearest water tile for classic boat spawn', () => {
+    const world = {
+      getStartPositions: () => [{tileX: 100, tileY: 100, direction: 0}],
+      getTerrainAt: (tileX: number, tileY: number) =>
+        tileX === 101 && tileY === 100 ? TerrainType.RIVER : TerrainType.GRASS,
+    } as unknown as ServerWorld;
+
+    const manager = new SessionPlayerManager(world, () => {}, () => {});
+    const id = manager.addPlayer(createMockWs());
+    const player = manager.getPlayer(id)!;
+
+    expect(player.tank.getTilePosition()).toEqual({x: 101, y: 100});
+    expect(player.tank.onBoat).toBe(true);
+  });
+
   it('should report session-empty status after final disconnect', () => {
     const world = new ServerWorld();
     const manager = new SessionPlayerManager(world, () => {}, () => {});

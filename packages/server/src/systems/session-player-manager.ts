@@ -1,4 +1,4 @@
-import {TerrainType, type PlayerInput} from '@jsbolo/shared';
+import {MAP_SIZE_TILES, TerrainType, type PlayerInput} from '@jsbolo/shared';
 import type {ServerTank} from '../simulation/tank.js';
 import type {ServerWorld} from '../simulation/world.js';
 import {ServerTank as Tank} from '../simulation/tank.js';
@@ -44,7 +44,18 @@ export class SessionPlayerManager {
       const startPos = startPositions[(playerId - 1) % startPositions.length]!;
       spawnX = startPos.tileX;
       spawnY = startPos.tileY;
-      const terrain = this.world.getTerrainAt(spawnX, spawnY);
+      let terrain = this.world.getTerrainAt(spawnX, spawnY);
+      if (!this.isWaterTerrain(terrain)) {
+        const nearestWater = this.findNearestWaterTile(spawnX, spawnY);
+        if (nearestWater) {
+          spawnX = nearestWater.tileX;
+          spawnY = nearestWater.tileY;
+          terrain = this.world.getTerrainAt(spawnX, spawnY);
+          this.log(
+            `Player ${playerId} adjusted to nearest sea start (${spawnX}, ${spawnY}) for classic boat spawn`
+          );
+        }
+      }
       this.log(
         `Player ${playerId} spawning at start position (${spawnX}, ${spawnY}) - terrain: ${terrain}`
       );
@@ -86,6 +97,42 @@ export class SessionPlayerManager {
     this.onPlayerJoined(player);
     this.log(`Player ${playerId} joined (total: ${this.players.size})`);
     return playerId;
+  }
+
+  private isWaterTerrain(terrain: TerrainType): boolean {
+    return terrain === TerrainType.DEEP_SEA || terrain === TerrainType.RIVER;
+  }
+
+  private findNearestWaterTile(
+    startTileX: number,
+    startTileY: number
+  ): {tileX: number; tileY: number} | null {
+    let best: {tileX: number; tileY: number} | null = null;
+    let bestDistance = Number.POSITIVE_INFINITY;
+
+    for (let tileY = 0; tileY < MAP_SIZE_TILES; tileY++) {
+      for (let tileX = 0; tileX < MAP_SIZE_TILES; tileX++) {
+        const terrain = this.world.getTerrainAt(tileX, tileY);
+        if (!this.isWaterTerrain(terrain)) {
+          continue;
+        }
+
+        const dx = tileX - startTileX;
+        const dy = tileY - startTileY;
+        const distance = dx * dx + dy * dy;
+        if (
+          distance < bestDistance ||
+          (distance === bestDistance &&
+            best !== null &&
+            (tileY < best.tileY || (tileY === best.tileY && tileX < best.tileX)))
+        ) {
+          bestDistance = distance;
+          best = {tileX, tileY};
+        }
+      }
+    }
+
+    return best;
   }
 
   removePlayer(playerId: number): {removed: boolean; isEmpty: boolean} {

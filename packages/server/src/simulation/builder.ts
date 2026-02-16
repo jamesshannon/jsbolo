@@ -7,6 +7,7 @@ import {
   BuilderOrder,
   TerrainType,
   BuildAction,
+  BUILDER_RESPAWN_TICKS,
 } from '@jsbolo/shared';
 
 export class ServerBuilder {
@@ -252,7 +253,7 @@ export class ServerBuilder {
    * Kill builder and start respawn timer
    */
   kill(): void {
-    this.respawnCounter = 255; // BUILDER_RESPAWN_TICKS
+    this.respawnCounter = BUILDER_RESPAWN_TICKS;
     this.order = BuilderOrder.IN_TANK; // Return to tank (virtually)
     this.hasMine = false; // Drop mine
   }
