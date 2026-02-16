@@ -966,13 +966,15 @@ export class GameSession {
 
     const requestedRemoteViewId = this.remoteViewPillboxByPlayer.get(playerId);
     if (requestedRemoteViewId === undefined) {
-      return player.tank.getTilePosition();
+      const tile = player.tank.getTilePosition();
+      return {tileX: tile.x, tileY: tile.y};
     }
 
     const pillbox = this.pillboxes.get(requestedRemoteViewId);
     if (!pillbox || !this.canUseRemoteViewPillbox(player, pillbox)) {
       this.remoteViewPillboxByPlayer.delete(playerId);
-      return player.tank.getTilePosition();
+      const tile = player.tank.getTilePosition();
+      return {tileX: tile.x, tileY: tile.y};
     }
 
     return {
