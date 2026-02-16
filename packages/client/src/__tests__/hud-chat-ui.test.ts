@@ -2,6 +2,7 @@ import {describe, expect, it, vi, afterEach} from 'vitest';
 import {MultiplayerGame} from '../game/multiplayer-game.js';
 import {NetworkClient} from '../network/network-client.js';
 import {Renderer} from '../renderer/renderer.js';
+import type {Tank} from '@shared';
 
 function mountHudChatDom(): HTMLCanvasElement {
   document.body.innerHTML = `
@@ -18,12 +19,50 @@ function mountHudChatDom(): HTMLCanvasElement {
       <input id="hud-chat-input" type="text" />
       <button id="hud-chat-send" type="submit">Send</button>
     </form>
+    <span id="hud-armor"></span>
+    <div id="hud-armor-bar"></div>
+    <span id="hud-shells"></span>
+    <span id="hud-mines"></span>
+    <span id="hud-trees"></span>
+    <span id="hud-player-kills"></span>
+    <span id="hud-player-deaths"></span>
+    <span id="hud-builder-mode"></span>
+    <span id="hud-builder-mode-side"></span>
+    <span id="hud-range"></span>
+    <span id="hud-player-shield"></span>
+    <div id="hud-pillbox-list"></div>
+    <div id="hud-base-list"></div>
+    <span id="hud-nearest-base-owner"></span>
+    <span id="hud-nearest-base-armor"></span>
+    <span id="hud-nearest-base-shells"></span>
+    <span id="hud-nearest-base-mines"></span>
+    <div id="hud-tank-list"></div>
+    <span id="hud-tank-summary"></span>
   `;
 
   const canvas = document.createElement('canvas');
   canvas.width = 640;
   canvas.height = 480;
   return canvas;
+}
+
+function makeTank(id: number, team: number, overrides: Partial<Tank> = {}): Tank {
+  return {
+    id,
+    x: 256 * 20,
+    y: 256 * 20,
+    direction: 0,
+    speed: 0,
+    armor: 40,
+    shells: 40,
+    mines: 0,
+    trees: 0,
+    team,
+    onBoat: false,
+    reload: 0,
+    firingRange: 7,
+    ...overrides,
+  };
 }
 
 describe('HUD chat UI wiring', () => {
@@ -99,6 +138,46 @@ describe('HUD chat UI wiring', () => {
     checkbox.dispatchEvent(new Event('change', {bubbles: true}));
 
     expect(setColorModeSpy).toHaveBeenCalledWith('colorblind');
+    game.destroy();
+  });
+
+  it('updates HUD stock bars and tank relation chips', () => {
+    const canvas = mountHudChatDom();
+    const game = new MultiplayerGame(canvas, {} as CanvasRenderingContext2D);
+
+    const selfTank = makeTank(1, 2, {
+      armor: 31,
+      shells: 12,
+      mines: 7,
+      trees: 9,
+      firingRange: 6.5,
+    });
+
+    (game as any).playerId = 1;
+    (game as any).tanks = new Map([
+      [1, selfTank],
+      [2, makeTank(2, 2)],
+      [3, makeTank(3, 9)],
+    ]);
+
+    (game as any).updateHUD(selfTank);
+
+    expect((document.getElementById('hud-armor') as HTMLElement).textContent).toBe('31/40');
+    expect((document.getElementById('hud-shells') as HTMLElement).textContent).toBe('12/40');
+    expect((document.getElementById('hud-mines') as HTMLElement).textContent).toBe('7/40');
+    expect((document.getElementById('hud-trees') as HTMLElement).textContent).toBe('9/40');
+    expect((document.getElementById('hud-player-shield') as HTMLElement).textContent).toBe('31/40');
+    expect((document.getElementById('hud-range') as HTMLElement).textContent).toBe('6.5 tiles');
+    expect((document.getElementById('hud-armor-bar') as HTMLElement).style.width).toBe('77.5%');
+
+    const tankListHtml = (document.getElementById('hud-tank-list') as HTMLElement).innerHTML;
+    expect(tankListHtml).toContain('hud-chip self');
+    expect(tankListHtml).toContain('hud-chip friendly');
+    expect(tankListHtml).toContain('hud-chip hostile');
+    expect((document.getElementById('hud-tank-summary') as HTMLElement).textContent).toBe(
+      '1 friendly / 1 hostile'
+    );
+
     game.destroy();
   });
 });

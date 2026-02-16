@@ -1,6 +1,7 @@
 import {describe, expect, it, vi, beforeEach} from 'vitest';
 import {TerrainType, type Base, type Pillbox, type Tank, type Shell, type Builder} from '@shared';
 import {Camera} from '../camera.js';
+import {getRelationPalette} from '../color-palette.js';
 import {Renderer} from '../renderer.js';
 
 type DrawCall = {x: number; y: number};
@@ -138,5 +139,82 @@ describe('Renderer structures', () => {
     expect(hudCalls.some(call => call.x === 0 && call.y === 0)).toBe(true);
     // Neutral base glyph.
     expect(hudCalls.some(call => call.x === 16 && call.y === 0)).toBe(true);
+  });
+
+  it('draws turret markers using self/friendly/hostile relation colors', () => {
+    const ctx = createContext();
+    const strokeColors: string[] = [];
+    const strokeSpy = vi.fn(() => {
+      strokeColors.push(String((ctx as any).strokeStyle));
+    });
+    (ctx as any).stroke = strokeSpy;
+
+    const camera = new Camera(640, 480);
+    camera.centerOn(320, 240);
+    const renderer = new Renderer(ctx, camera);
+    const world = createWorldStub() as any;
+
+    const tanks = new Map<number, Tank>([
+      [1, {
+        id: 1,
+        x: 256 * 20,
+        y: 256 * 20,
+        direction: 0,
+        speed: 0,
+        armor: 40,
+        shells: 40,
+        mines: 0,
+        trees: 0,
+        team: 2,
+        onBoat: false,
+        reload: 0,
+        firingRange: 7,
+      }],
+      [2, {
+        id: 2,
+        x: 256 * 21,
+        y: 256 * 20,
+        direction: 0,
+        speed: 0,
+        armor: 40,
+        shells: 40,
+        mines: 0,
+        trees: 0,
+        team: 2,
+        onBoat: false,
+        reload: 0,
+        firingRange: 7,
+      }],
+      [3, {
+        id: 3,
+        x: 256 * 22,
+        y: 256 * 20,
+        direction: 0,
+        speed: 0,
+        armor: 40,
+        shells: 40,
+        mines: 0,
+        trees: 0,
+        team: 9,
+        onBoat: false,
+        reload: 0,
+        firingRange: 7,
+      }],
+    ]);
+
+    renderer.renderMultiplayer(
+      world,
+      tanks,
+      new Map<number, Shell>(),
+      new Map<number, Builder>(),
+      new Map<number, Pillbox>(),
+      new Map<number, Base>(),
+      1
+    );
+
+    const palette = getRelationPalette('default');
+    expect(strokeColors).toContain(palette.self);
+    expect(strokeColors).toContain(palette.friendly);
+    expect(strokeColors).toContain(palette.hostile);
   });
 });

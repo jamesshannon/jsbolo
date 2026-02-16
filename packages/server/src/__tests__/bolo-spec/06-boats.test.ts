@@ -155,6 +155,36 @@ describe('Bolo Manual Spec: 6. Boats', () => {
       expect(world.getTerrainAt(50, 50)).toBe(TerrainType.BOAT);
     });
 
+    // "Boats can sail up rivers, but not under the low floating bridges"
+    // In our terrain model, bridges are represented as ROAD over water.
+    // Entering ROAD from RIVER must force disembark.
+    it('should disembark when a boat reaches a bridge road tile', () => {
+      const session = new GameSession();
+      const ws = createMockWebSocket();
+      const id = session.addPlayer(ws);
+      const player = getPlayer(session, id);
+      const world = getWorld(session);
+
+      world.setTerrainAt(50, 50, TerrainType.RIVER);
+      world.setTerrainAt(51, 50, TerrainType.ROAD); // Bridge tile representation
+      placeTankAtTile(player.tank, 50, 50);
+      player.tank.onBoat = true;
+      player.tank.direction = 0; // East
+      player.tank.speed = 12;
+      player.lastInput = createDefaultInput({accelerating: true});
+
+      for (let i = 0; i < 40; i++) {
+        tickSession(session, 1);
+        if (!player.tank.onBoat) {
+          break;
+        }
+      }
+
+      expect(player.tank.onBoat).toBe(false);
+      expect(world.getTerrainAt(50, 50)).toBe(TerrainType.BOAT);
+      expect(world.getTerrainAt(51, 50)).toBe(TerrainType.ROAD);
+    });
+
     // "Boat faces opposite direction on disembark (for easy re-boarding)"
     it('should orient boat opposite to tank direction on disembark', () => {
       const session = new GameSession();
