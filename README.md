@@ -85,6 +85,7 @@ cd packages/client && pnpm dev
 - Configure `ALLOWED_WS_ORIGINS` for deployment (comma-separated origins), for example:
   - `ALLOWED_WS_ORIGINS=https://play.example.com,https://staging.example.com`
 - Default local origins are `http://localhost:3000` and `http://127.0.0.1:3000`.
+- Bot control HTTP API binds to `127.0.0.1` by default; set `CONTROL_HOST` explicitly to expose it.
 
 ## Bot Startup Configuration
 
@@ -96,6 +97,14 @@ Used by `restart-dev.sh` and `packages/server/src/main.ts`:
 - `BOT_COUNT` (integer startup bots)
 - `BOT_PROFILE` (`tactical`, `patrol`, `idle`)
 - `ALLOW_BOT_ONLY_SIM` (`true`/`false`)
+- `CONTROL_HOST` (defaults to `127.0.0.1`)
+
+### Debug Logging Flags
+
+- `DEBUG_NETWORK_INPUT=true` enables detailed per-input server logs.
+- `DEBUG_PROTOCOL_ERRORS=true` enables full decode error stack logging.
+- `DEBUG_WELCOME_TERRAIN=true` enables verbose welcome terrain histogram/sample logging.
+- `DEBUG_TERRAIN_UPDATES=true` enables verbose terrain update broadcast logs.
 
 ## Testing and Quality
 

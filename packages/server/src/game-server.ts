@@ -14,11 +14,14 @@ interface PlayerConnection {
 }
 
 type WebSocketServerLike = Pick<WebSocketServer, 'on' | 'close'>;
+interface CreateWebSocketServerOptions {
+  maxPayload: number;
+}
 
 interface GameServerOptions {
   mapPath?: string;
   session?: GameSession;
-  createWebSocketServer?: (port: number) => WebSocketServerLike;
+  createWebSocketServer?: (port: number, options: CreateWebSocketServerOptions) => WebSocketServerLike;
   allowBotOnlySimulation?: boolean;
   allowedOrigins?: string[];
 }
@@ -31,11 +34,27 @@ const MAX_CONSECUTIVE_ERRORS = 5;
 const RATE_LIMIT_MAX_MESSAGES = 100;
 /** Security: rate-limit window duration in ms */
 const RATE_LIMIT_WINDOW_MS = 1_000;
+/** Security: max inbound connection attempts per source window */
+const CONNECTION_RATE_LIMIT_MAX = 20;
+/** Security: connection-rate limit window duration in ms */
+const CONNECTION_RATE_LIMIT_WINDOW_MS = 10_000;
+/** Security: max protocol decode errors logged per connection window (non-debug mode) */
+const MAX_DECODE_ERROR_LOGS_PER_WINDOW = 3;
+/** Security: protocol decode error log window in ms */
+const DECODE_ERROR_LOG_WINDOW_MS = 10_000;
 
 interface ConnectionState {
   consecutiveErrors: number;
   rateTokens: number;
   lastRateRefillMs: number;
+  decodeErrorWindowStartMs: number;
+  decodeErrorsLoggedInWindow: number;
+}
+
+interface ConnectionRateState {
+  tokens: number;
+  lastRefillMs: number;
+  lastSeenMs: number;
 }
 
 export class GameServer {
@@ -43,8 +62,11 @@ export class GameServer {
   private readonly session: GameSession; // Single session for Phase 2
   private readonly connections = new Map<WebSocket, PlayerConnection>();
   private readonly connectionState = new Map<WebSocket, ConnectionState>();
+  private readonly connectionRateBySource = new Map<string, ConnectionRateState>();
   private readonly allowBotOnlySimulation: boolean;
   private readonly allowedOrigins: Set<string>;
+  private readonly debugNetworkInputLogs = process.env['DEBUG_NETWORK_INPUT'] === 'true';
+  private readonly debugProtocolErrorLogs = process.env['DEBUG_PROTOCOL_ERRORS'] === 'true';
 
   constructor(port: number, mapPathOrOptions?: string | GameServerOptions, maybeOptions?: GameServerOptions) {
     const options = typeof mapPathOrOptions === 'string'
@@ -55,7 +77,7 @@ export class GameServer {
       : options?.mapPath;
 
     this.wss = options?.createWebSocketServer
-      ? options.createWebSocketServer(port)
+      ? options.createWebSocketServer(port, {maxPayload: MAX_PAYLOAD_BYTES})
       : new WebSocketServer({port, maxPayload: MAX_PAYLOAD_BYTES});
     this.session = options?.session ?? new GameSession(mapPath);
     this.allowBotOnlySimulation = options?.allowBotOnlySimulation ?? false;
@@ -72,6 +94,13 @@ export class GameServer {
 
   private setupEventHandlers(): void {
     this.wss.on('connection', (ws: WebSocket, request?: IncomingMessage) => {
+      const sourceKey = this.getConnectionSourceKey(request);
+      if (!this.consumeConnectionRateToken(sourceKey, Date.now())) {
+        console.warn(`Rejecting WebSocket connection due to rate limit (source=${sourceKey})`);
+        ws.close(1013, 'Connection rate limit exceeded');
+        return;
+      }
+
       const originHeader = request?.headers.origin;
       if (!this.isOriginAllowed(originHeader)) {
         const origin = this.getOriginHeaderValue(originHeader);
@@ -94,6 +123,8 @@ export class GameServer {
         consecutiveErrors: 0,
         rateTokens: RATE_LIMIT_MAX_MESSAGES,
         lastRateRefillMs: Date.now(),
+        decodeErrorWindowStartMs: Date.now(),
+        decodeErrorsLoggedInWindow: 0,
       });
 
       // Start or resume on first active human connection.
@@ -143,7 +174,10 @@ export class GameServer {
       }
 
       if (message.type === 'input' && message.input) {
-        if (message.input.accelerating || message.input.braking) {
+        if (
+          this.debugNetworkInputLogs &&
+          (message.input.accelerating || message.input.braking)
+        ) {
           console.log(`Player ${conn.playerId} input:`, message.input);
         }
         conn.session.handlePlayerInput(conn.playerId, message.input);
@@ -161,7 +195,14 @@ export class GameServer {
         );
       }
     } catch (error) {
-      console.error('Error decoding message:', error);
+      const now = Date.now();
+      if (state) {
+        this.logDecodeError(conn.playerId, state, now, error);
+      } else if (this.debugProtocolErrorLogs) {
+        console.error('Error decoding message:', error);
+      } else {
+        console.warn('Error decoding message from untracked connection');
+      }
       // Track consecutive errors; disconnect after threshold
       if (state) {
         state.consecutiveErrors++;
@@ -170,6 +211,83 @@ export class GameServer {
           ws.close(1008, 'Too many invalid messages');
         }
       }
+    }
+  }
+
+  /**
+   * Resolve a stable per-source key for handshake rate limiting.
+   */
+  private getConnectionSourceKey(request?: IncomingMessage): string {
+    if (!request) {
+      return 'unknown';
+    }
+
+    const xForwardedFor = request.headers['x-forwarded-for'];
+    if (typeof xForwardedFor === 'string' && xForwardedFor.trim().length > 0) {
+      return xForwardedFor.split(',')[0]!.trim();
+    }
+
+    return request.socket?.remoteAddress ?? 'unknown';
+  }
+
+  /**
+   * Token bucket for handshake connection attempts per source.
+   */
+  private consumeConnectionRateToken(sourceKey: string, nowMs: number): boolean {
+    this.pruneConnectionRateState(nowMs);
+
+    const state = this.connectionRateBySource.get(sourceKey) ?? {
+      tokens: CONNECTION_RATE_LIMIT_MAX,
+      lastRefillMs: nowMs,
+      lastSeenMs: nowMs,
+    };
+
+    const elapsedMs = Math.max(0, nowMs - state.lastRefillMs);
+    if (elapsedMs > 0) {
+      const refillPerMs = CONNECTION_RATE_LIMIT_MAX / CONNECTION_RATE_LIMIT_WINDOW_MS;
+      state.tokens = Math.min(CONNECTION_RATE_LIMIT_MAX, state.tokens + elapsedMs * refillPerMs);
+      state.lastRefillMs = nowMs;
+    }
+    state.lastSeenMs = nowMs;
+
+    if (state.tokens < 1) {
+      this.connectionRateBySource.set(sourceKey, state);
+      return false;
+    }
+
+    state.tokens -= 1;
+    this.connectionRateBySource.set(sourceKey, state);
+    return true;
+  }
+
+  private pruneConnectionRateState(nowMs: number): void {
+    const staleAfterMs = CONNECTION_RATE_LIMIT_WINDOW_MS * 5;
+    for (const [sourceKey, state] of this.connectionRateBySource.entries()) {
+      if (nowMs - state.lastSeenMs > staleAfterMs) {
+        this.connectionRateBySource.delete(sourceKey);
+      }
+    }
+  }
+
+  private logDecodeError(
+    playerId: number,
+    state: ConnectionState,
+    nowMs: number,
+    error: unknown
+  ): void {
+    if (this.debugProtocolErrorLogs) {
+      console.error(`Error decoding message from player ${playerId}:`, error);
+      return;
+    }
+
+    if (nowMs - state.decodeErrorWindowStartMs >= DECODE_ERROR_LOG_WINDOW_MS) {
+      state.decodeErrorWindowStartMs = nowMs;
+      state.decodeErrorsLoggedInWindow = 0;
+    }
+
+    if (state.decodeErrorsLoggedInWindow < MAX_DECODE_ERROR_LOGS_PER_WINDOW) {
+      state.decodeErrorsLoggedInWindow += 1;
+      console.warn(`Decode error from player ${playerId} (enable DEBUG_PROTOCOL_ERRORS=true for full stack)`);
     }
   }
 

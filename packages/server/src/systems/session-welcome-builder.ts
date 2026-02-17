@@ -30,6 +30,8 @@ export interface SessionWelcomeContext {
  * - Keeps welcome payload format aligned as networking evolves.
  */
 export class SessionWelcomeBuilder {
+  private readonly debugWelcomeTerrainLogs = process.env['DEBUG_WELCOME_TERRAIN'] === 'true';
+
   constructor(
     private readonly log: (message: string, ...args: unknown[]) => void = console.log
   ) {}
@@ -50,14 +52,17 @@ export class SessionWelcomeBuilder {
       }
     }
 
-    // Keep these diagnostics to validate map transfer during active development.
-    const terrainHistogram = new Map<number, number>();
-    for (const terrainId of terrain) {
-      terrainHistogram.set(terrainId, (terrainHistogram.get(terrainId) || 0) + 1);
+    if (this.debugWelcomeTerrainLogs) {
+      // Keep these diagnostics available during deep map-transfer debugging without
+      // emitting high-volume logs in normal operation.
+      const terrainHistogram = new Map<number, number>();
+      for (const terrainId of terrain) {
+        terrainHistogram.set(terrainId, (terrainHistogram.get(terrainId) || 0) + 1);
+      }
+      this.log('Sending terrain histogram:', Object.fromEntries(terrainHistogram));
+      this.log('Sample terrain at row 102:', terrain.slice(102 * width, 102 * width + 10));
+      this.log('Sample terrain at row 241:', terrain.slice(241 * width, 241 * width + 10));
     }
-    this.log('Sending terrain histogram:', Object.fromEntries(terrainHistogram));
-    this.log('Sample terrain at row 102:', terrain.slice(102 * width, 102 * width + 10));
-    this.log('Sample terrain at row 241:', terrain.slice(241 * width, 241 * width + 10));
 
     const tanks = Array.from(context.players, p => {
       const isSelf = p.tank.id === context.playerId;

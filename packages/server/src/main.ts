@@ -16,6 +16,7 @@ const ENABLE_BOT_CONTROL =
   process.env['ENABLE_BOT_CONTROL'] !== 'false' && process.env['NODE_ENV'] !== 'production';
 const ALLOW_BOT_ONLY_SIM = process.env['ALLOW_BOT_ONLY_SIM'] === 'true';
 const DEFAULT_WS_ORIGINS = ['http://localhost:3000', 'http://127.0.0.1:3000'];
+const CONTROL_HOST = process.env['CONTROL_HOST']?.trim() || '127.0.0.1';
 
 // Get directory of current module (for resolving map path)
 const moduleFileName = fileURLToPath(import.meta.url);
@@ -82,8 +83,8 @@ function main(): void {
       res.status(200).json({bots: server.listBots()});
     });
 
-    controlServer = app.listen(CONTROL_PORT, () => {
-      console.log(`Bot status API running on http://localhost:${CONTROL_PORT}`);
+    controlServer = app.listen(CONTROL_PORT, CONTROL_HOST, () => {
+      console.log(`Bot status API running on http://${CONTROL_HOST}:${CONTROL_PORT}`);
     });
   }
 
@@ -105,7 +106,7 @@ function main(): void {
   console.log(`Server running on ws://localhost:${PORT}`);
   console.log(`Allowed WebSocket origins: ${allowedWsOrigins.join(', ')}`);
   if (ENABLE_BOT_CONTROL) {
-    console.log(`Bot status API: http://localhost:${CONTROL_PORT}`);
+    console.log(`Bot status API: http://${CONTROL_HOST}:${CONTROL_PORT}`);
   }
   console.log('Press Ctrl+C to stop');
 }

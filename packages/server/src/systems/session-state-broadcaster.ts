@@ -79,6 +79,7 @@ export class SessionStateBroadcaster {
   private static readonly VIEWPORT_WIDTH_TILES = 20;
   private static readonly VIEWPORT_HEIGHT_TILES = 15;
   private static readonly TERRAIN_PREFETCH_TILES = 1;
+  private readonly debugTerrainUpdateLogs = process.env['DEBUG_TERRAIN_UPDATES'] === 'true';
 
   private readonly previousStateByPlayerId = new Map<number, PlayerBroadcastState>();
   private previousAllianceHash = '';
@@ -115,9 +116,11 @@ export class SessionStateBroadcaster {
       }
       const cell = mapData[y]![x]!;
 
-      this.log(
-        `[DEBUG] Broadcasting terrain update: (${x}, ${y}) terrain=${cell.terrain} (was potentially road)`
-      );
+      if (this.debugTerrainUpdateLogs) {
+        this.log(
+          `[DEBUG] Broadcasting terrain update: (${x}, ${y}) terrain=${cell.terrain} (was potentially road)`
+        );
+      }
 
       changedTerrainEntries.push(this.toTerrainUpdate(x, y, cell));
     }

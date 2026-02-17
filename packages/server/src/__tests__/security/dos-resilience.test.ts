@@ -5,7 +5,7 @@
  * D1-D5 (resource exhaustion), G1 (input rate limiting), G5 (mine chain cap).
  */
 
-import {describe, it, expect, beforeEach, vi} from 'vitest';
+import {describe, it, expect, vi} from 'vitest';
 import {GameServer} from '../../game-server.js';
 import {GameSession} from '../../game-session.js';
 import {ServerWorld} from '../../simulation/world.js';
@@ -27,27 +27,31 @@ const createMockWebSocket = () => {
   }) as unknown as WebSocket;
 };
 
-const createConnectionRequest = (origin = 'http://localhost:3000') =>
-  ({
-    headers: {origin},
-  }) as any;
+function createConnectionRequest(options?: {
+  origin?: string;
+  remoteAddress?: string;
+}): any {
+  return {
+    headers: {origin: options?.origin ?? 'http://localhost:3000'},
+    socket: {remoteAddress: options?.remoteAddress ?? '127.0.0.1'},
+  };
+}
 
 describe('Security: DoS Resilience', () => {
   describe('S1/D1: WebSocket maxPayload', () => {
     it('should configure maxPayload on WebSocketServer', () => {
       const mockWss = new EventEmitter();
       Object.assign(mockWss, {close: vi.fn()});
+      let capturedMaxPayload = 0;
 
       const server = new GameServer(0, {
-        createWebSocketServer: (_port: number) => {
-          // The real test is that GameServer passes maxPayload.
-          // Here we just verify the server can be constructed.
+        createWebSocketServer: (_port: number, options: {maxPayload: number}) => {
+          capturedMaxPayload = options.maxPayload;
           return mockWss as any;
         },
       });
 
-      // Server should be created without errors
-      expect(server).toBeDefined();
+      expect(capturedMaxPayload).toBe(16_384);
       server.close();
     });
   });
@@ -181,7 +185,7 @@ describe('Security: DoS Resilience', () => {
       });
 
       const ws = createMockWebSocket();
-      mockWss.emit('connection', ws, createConnectionRequest('https://evil.example'));
+      mockWss.emit('connection', ws, createConnectionRequest({origin: 'https://evil.example'}));
 
       expect(ws.close).toHaveBeenCalledWith(1008, 'Origin not allowed');
       expect((server as any).connections.has(ws)).toBe(false);
@@ -249,6 +253,34 @@ describe('Security: DoS Resilience', () => {
 
       server.close();
       session.stop();
+    });
+  });
+
+  describe('D2: Connection rate limiting', () => {
+    it('should reject rapid connection bursts from the same source', () => {
+      const mockWss = new EventEmitter();
+      Object.assign(mockWss, {close: vi.fn()});
+      const server = new GameServer(0, {
+        createWebSocketServer: () => mockWss as any,
+      });
+
+      const sockets = Array.from({length: 25}, () => createMockWebSocket());
+      for (const ws of sockets) {
+        mockWss.emit(
+          'connection',
+          ws,
+          createConnectionRequest({remoteAddress: '10.0.0.1'})
+        );
+      }
+
+      const rejected = sockets.filter(ws =>
+        (ws.close as unknown as ReturnType<typeof vi.fn>).mock.calls.some(
+          call => call[0] === 1013 && call[1] === 'Connection rate limit exceeded'
+        )
+      );
+      expect(rejected.length).toBeGreaterThan(0);
+
+      server.close();
     });
   });
 
