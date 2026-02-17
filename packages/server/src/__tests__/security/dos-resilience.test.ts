@@ -27,10 +27,14 @@ const createMockWebSocket = () => {
   }) as unknown as WebSocket;
 };
 
+const createConnectionRequest = (origin = 'http://localhost:3000') =>
+  ({
+    headers: {origin},
+  }) as any;
+
 describe('Security: DoS Resilience', () => {
   describe('S1/D1: WebSocket maxPayload', () => {
     it('should configure maxPayload on WebSocketServer', () => {
-      let capturedOptions: any;
       const mockWss = new EventEmitter();
       Object.assign(mockWss, {close: vi.fn()});
 
@@ -58,7 +62,7 @@ describe('Security: DoS Resilience', () => {
       });
 
       const ws = createMockWebSocket();
-      mockWss.emit('connection', ws);
+      mockWss.emit('connection', ws, createConnectionRequest());
 
       // Send garbage data — should not crash
       const garbageData = Buffer.from([0xff, 0xfe, 0xfd, 0xfc]);
@@ -86,7 +90,7 @@ describe('Security: DoS Resilience', () => {
       });
 
       const ws = createMockWebSocket();
-      mockWss.emit('connection', ws);
+      mockWss.emit('connection', ws, createConnectionRequest());
 
       const garbageData = Buffer.from([0xff, 0xfe, 0xfd, 0xfc]);
 
@@ -132,7 +136,7 @@ describe('Security: DoS Resilience', () => {
       });
 
       const ws = createMockWebSocket();
-      mockWss.emit('connection', ws);
+      mockWss.emit('connection', ws, createConnectionRequest());
 
       const validMessage = encodeClientMessage({
         type: 'input',
@@ -160,6 +164,28 @@ describe('Security: DoS Resilience', () => {
 
       // Connection should NOT be closed (rate limiting drops, doesn't disconnect)
       expect(ws.close).not.toHaveBeenCalled();
+      const state = (server as any).connectionState.get(ws);
+      expect(state).toBeDefined();
+      expect(state.rateTokens).toBeGreaterThanOrEqual(0);
+      expect(state.rateTokens).toBeLessThanOrEqual(100);
+      expect((state as any).messageTimestamps).toBeUndefined();
+
+      server.close();
+    });
+
+    it('should reject WebSocket connections from disallowed origins', () => {
+      const mockWss = new EventEmitter();
+      Object.assign(mockWss, {close: vi.fn()});
+      const server = new GameServer(0, {
+        createWebSocketServer: () => mockWss as any,
+      });
+
+      const ws = createMockWebSocket();
+      mockWss.emit('connection', ws, createConnectionRequest('https://evil.example'));
+
+      expect(ws.close).toHaveBeenCalledWith(1008, 'Origin not allowed');
+      expect((server as any).connections.has(ws)).toBe(false);
+      expect((server as any).connectionState.has(ws)).toBe(false);
 
       server.close();
     });
@@ -196,6 +222,32 @@ describe('Security: DoS Resilience', () => {
       expect(result).toBe(-1);
       expect(rejectedWs.close).toHaveBeenCalledWith(1013, 'Server full');
 
+      session.stop();
+    });
+
+    it('should not track rejected full-server connections in GameServer maps', () => {
+      const session = new GameSession();
+      session.start();
+      for (let i = 0; i < MAX_PLAYERS; i++) {
+        const ws = createMockWebSocket();
+        session.addPlayer(ws);
+      }
+
+      const mockWss = new EventEmitter();
+      Object.assign(mockWss, {close: vi.fn()});
+      const server = new GameServer(0, {
+        session,
+        createWebSocketServer: () => mockWss as any,
+      });
+
+      const rejectedWs = createMockWebSocket();
+      mockWss.emit('connection', rejectedWs, createConnectionRequest());
+
+      expect(rejectedWs.close).toHaveBeenCalledWith(1013, 'Server full');
+      expect((server as any).connections.has(rejectedWs)).toBe(false);
+      expect((server as any).connectionState.has(rejectedWs)).toBe(false);
+
+      server.close();
       session.stop();
     });
   });

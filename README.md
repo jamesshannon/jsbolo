@@ -79,6 +79,13 @@ cd packages/client && pnpm dev
 - Game WebSocket server: `ws://localhost:8080`
 - Server control/status HTTP API: `http://localhost:8081` (non-production default)
 
+## Deployment Security Note
+
+- WebSocket handshake origin validation is enforced by server allowlist.
+- Configure `ALLOWED_WS_ORIGINS` for deployment (comma-separated origins), for example:
+  - `ALLOWED_WS_ORIGINS=https://play.example.com,https://staging.example.com`
+- Default local origins are `http://localhost:3000` and `http://127.0.0.1:3000`.
+
 ## Bot Startup Configuration
 
 Used by `restart-dev.sh` and `packages/server/src/main.ts`:

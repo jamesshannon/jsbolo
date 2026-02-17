@@ -6,6 +6,7 @@ import {WebSocketServer, type RawData, type WebSocket} from 'ws';
 import {listBuiltInBotProfiles} from '@jsbolo/bots';
 import {GameSession, type SessionBotSummary} from './game-session.js';
 import {decodeClientMessage, type ClientMessage} from '@jsbolo/shared';
+import type {IncomingMessage} from 'node:http';
 
 interface PlayerConnection {
   playerId: number;
@@ -19,6 +20,7 @@ interface GameServerOptions {
   session?: GameSession;
   createWebSocketServer?: (port: number) => WebSocketServerLike;
   allowBotOnlySimulation?: boolean;
+  allowedOrigins?: string[];
 }
 
 /** Security: max WebSocket message size (16 KB) */
@@ -32,7 +34,8 @@ const RATE_LIMIT_WINDOW_MS = 1_000;
 
 interface ConnectionState {
   consecutiveErrors: number;
-  messageTimestamps: number[];
+  rateTokens: number;
+  lastRateRefillMs: number;
 }
 
 export class GameServer {
@@ -41,6 +44,7 @@ export class GameServer {
   private readonly connections = new Map<WebSocket, PlayerConnection>();
   private readonly connectionState = new Map<WebSocket, ConnectionState>();
   private readonly allowBotOnlySimulation: boolean;
+  private readonly allowedOrigins: Set<string>;
 
   constructor(port: number, mapPathOrOptions?: string | GameServerOptions, maybeOptions?: GameServerOptions) {
     const options = typeof mapPathOrOptions === 'string'
@@ -55,19 +59,42 @@ export class GameServer {
       : new WebSocketServer({port, maxPayload: MAX_PAYLOAD_BYTES});
     this.session = options?.session ?? new GameSession(mapPath);
     this.allowBotOnlySimulation = options?.allowBotOnlySimulation ?? false;
+    this.allowedOrigins = new Set(
+      (options?.allowedOrigins ?? [
+        'http://localhost:3000',
+        'http://127.0.0.1:3000',
+      ]).map(origin => this.normalizeOrigin(origin))
+    );
 
     this.setupEventHandlers();
     console.log(`WebSocket server listening on port ${port}`);
   }
 
   private setupEventHandlers(): void {
-    this.wss.on('connection', (ws: WebSocket) => {
+    this.wss.on('connection', (ws: WebSocket, request?: IncomingMessage) => {
+      const originHeader = request?.headers.origin;
+      if (!this.isOriginAllowed(originHeader)) {
+        const origin = this.getOriginHeaderValue(originHeader);
+        console.warn(`Rejecting WebSocket connection from disallowed origin: ${origin ?? '<missing>'}`);
+        ws.close(1008, 'Origin not allowed');
+        return;
+      }
+
       console.log('New WebSocket connection');
 
       // Add player to session
       const playerId = this.session.addPlayer(ws);
+      if (playerId < 0) {
+        // Session rejected this connection (for example MAX_PLAYERS reached).
+        // Do not track a failed connection in server state maps.
+        return;
+      }
       this.connections.set(ws, {playerId, session: this.session});
-      this.connectionState.set(ws, {consecutiveErrors: 0, messageTimestamps: []});
+      this.connectionState.set(ws, {
+        consecutiveErrors: 0,
+        rateTokens: RATE_LIMIT_MAX_MESSAGES,
+        lastRateRefillMs: Date.now(),
+      });
 
       // Start or resume on first active human connection.
       if (this.connections.size === 1) {
@@ -98,16 +125,12 @@ export class GameServer {
     const state = this.connectionState.get(ws);
     if (state) {
       const now = Date.now();
-      state.messageTimestamps.push(now);
-      // Trim timestamps outside window
-      const windowStart = now - RATE_LIMIT_WINDOW_MS;
-      while (state.messageTimestamps.length > 0 && state.messageTimestamps[0]! < windowStart) {
-        state.messageTimestamps.shift();
-      }
-      if (state.messageTimestamps.length > RATE_LIMIT_MAX_MESSAGES) {
+      this.refillRateLimitTokens(state, now);
+      if (state.rateTokens < 1) {
         // Drop excessive messages silently
         return;
       }
+      state.rateTokens -= 1;
     }
 
     try {
@@ -148,6 +171,56 @@ export class GameServer {
         }
       }
     }
+  }
+
+  /**
+   * Return the origin header as a single string (or null when missing/invalid).
+   */
+  private getOriginHeaderValue(header: string | string[] | undefined): string | null {
+    if (typeof header === 'string') {
+      return header;
+    }
+    if (Array.isArray(header)) {
+      return header[0] ?? null;
+    }
+    return null;
+  }
+
+  /**
+   * Normalize origins to a canonical form so allowlist checks are stable.
+   */
+  private normalizeOrigin(origin: string): string {
+    return origin.trim().replace(/\/+$/, '');
+  }
+
+  /**
+   * Validate browser Origin for WebSocket handshake.
+   *
+   * Note: non-browser WebSocket clients may omit Origin. We allow missing Origin
+   * for compatibility, but reject explicit origins outside the allowlist.
+   */
+  private isOriginAllowed(header: string | string[] | undefined): boolean {
+    const origin = this.getOriginHeaderValue(header);
+    if (!origin) {
+      return true;
+    }
+    return this.allowedOrigins.has(this.normalizeOrigin(origin));
+  }
+
+  /**
+   * Token bucket refill: bounded memory O(1) limiter.
+   */
+  private refillRateLimitTokens(state: ConnectionState, nowMs: number): void {
+    const elapsedMs = Math.max(0, nowMs - state.lastRateRefillMs);
+    if (elapsedMs === 0) {
+      return;
+    }
+    const refillPerMs = RATE_LIMIT_MAX_MESSAGES / RATE_LIMIT_WINDOW_MS;
+    state.rateTokens = Math.min(
+      RATE_LIMIT_MAX_MESSAGES,
+      state.rateTokens + elapsedMs * refillPerMs
+    );
+    state.lastRateRefillMs = nowMs;
   }
 
   private handleDisconnect(ws: WebSocket): void {
