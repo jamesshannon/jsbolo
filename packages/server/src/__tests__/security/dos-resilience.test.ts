@@ -271,6 +271,9 @@ describe('Security: DoS Resilience', () => {
           ws,
           createConnectionRequest({remoteAddress: '10.0.0.1'})
         );
+        // Keep player count low so rejections come from connection-rate limiting,
+        // not MAX_PLAYERS saturation.
+        ws.emit('close');
       }
 
       const rejected = sockets.filter(ws =>

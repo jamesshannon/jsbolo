@@ -101,6 +101,8 @@ Used by `restart-dev.sh` and `packages/server/src/main.ts`:
 
 ### Debug Logging Flags
 
+- `DEBUG=true` enables all debug streams by default.
+- Per-stream flags override `DEBUG` when explicitly set (`true` or `false`).
 - `DEBUG_NETWORK_INPUT=true` enables detailed per-input server logs.
 - `DEBUG_PROTOCOL_ERRORS=true` enables full decode error stack logging.
 - `DEBUG_WELCOME_TERRAIN=true` enables verbose welcome terrain histogram/sample logging.

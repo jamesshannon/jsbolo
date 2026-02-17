@@ -65,8 +65,9 @@ export class GameServer {
   private readonly connectionRateBySource = new Map<string, ConnectionRateState>();
   private readonly allowBotOnlySimulation: boolean;
   private readonly allowedOrigins: Set<string>;
-  private readonly debugNetworkInputLogs = process.env['DEBUG_NETWORK_INPUT'] === 'true';
-  private readonly debugProtocolErrorLogs = process.env['DEBUG_PROTOCOL_ERRORS'] === 'true';
+  private readonly debugEnabled = process.env['DEBUG'] === 'true';
+  private readonly debugNetworkInputLogs = this.resolveDebugFlag('DEBUG_NETWORK_INPUT');
+  private readonly debugProtocolErrorLogs = this.resolveDebugFlag('DEBUG_PROTOCOL_ERRORS');
 
   constructor(port: number, mapPathOrOptions?: string | GameServerOptions, maybeOptions?: GameServerOptions) {
     const options = typeof mapPathOrOptions === 'string'
@@ -289,6 +290,21 @@ export class GameServer {
       state.decodeErrorsLoggedInWindow += 1;
       console.warn(`Decode error from player ${playerId} (enable DEBUG_PROTOCOL_ERRORS=true for full stack)`);
     }
+  }
+
+  /**
+   * Resolve a debug stream flag with global DEBUG fallback.
+   * Per-stream flag overrides global DEBUG when explicitly set.
+   */
+  private resolveDebugFlag(flagName: string): boolean {
+    const value = process.env[flagName];
+    if (value === 'true') {
+      return true;
+    }
+    if (value === 'false') {
+      return false;
+    }
+    return this.debugEnabled;
   }
 
   /**

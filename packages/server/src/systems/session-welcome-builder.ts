@@ -30,7 +30,8 @@ export interface SessionWelcomeContext {
  * - Keeps welcome payload format aligned as networking evolves.
  */
 export class SessionWelcomeBuilder {
-  private readonly debugWelcomeTerrainLogs = process.env['DEBUG_WELCOME_TERRAIN'] === 'true';
+  private readonly debugEnabled = process.env['DEBUG'] === 'true';
+  private readonly debugWelcomeTerrainLogs = this.resolveDebugFlag('DEBUG_WELCOME_TERRAIN');
 
   constructor(
     private readonly log: (message: string, ...args: unknown[]) => void = console.log
@@ -128,5 +129,19 @@ export class SessionWelcomeBuilder {
         winningTeams: context.winningTeams,
       }),
     };
+  }
+
+  /**
+   * Resolve per-stream debug flag with global DEBUG fallback.
+   */
+  private resolveDebugFlag(flagName: string): boolean {
+    const value = process.env[flagName];
+    if (value === 'true') {
+      return true;
+    }
+    if (value === 'false') {
+      return false;
+    }
+    return this.debugEnabled;
   }
 }

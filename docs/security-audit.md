@@ -118,8 +118,11 @@ Chat content is not sanitized server-side because the server only relays text in
 ### Logging and DoS posture
 
 High-volume diagnostics remain available under explicit debug flags:
+- `DEBUG=true` (global debug umbrella)
 - `DEBUG_NETWORK_INPUT=true`
 - `DEBUG_PROTOCOL_ERRORS=true`
 - `DEBUG_WELCOME_TERRAIN=true`
+- `DEBUG_TERRAIN_UPDATES=true`
 
+Per-stream flags override `DEBUG` when set explicitly (`true` or `false`).
 Default logs are bounded to avoid attacker-amplified log floods while preserving high-signal security warnings (origin rejection, rate-limit rejections, invalid-protocol disconnects).

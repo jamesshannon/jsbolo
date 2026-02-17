@@ -79,7 +79,8 @@ export class SessionStateBroadcaster {
   private static readonly VIEWPORT_WIDTH_TILES = 20;
   private static readonly VIEWPORT_HEIGHT_TILES = 15;
   private static readonly TERRAIN_PREFETCH_TILES = 1;
-  private readonly debugTerrainUpdateLogs = process.env['DEBUG_TERRAIN_UPDATES'] === 'true';
+  private readonly debugEnabled = process.env['DEBUG'] === 'true';
+  private readonly debugTerrainUpdateLogs = this.resolveDebugFlag('DEBUG_TERRAIN_UPDATES');
 
   private readonly previousStateByPlayerId = new Map<number, PlayerBroadcastState>();
   private previousAllianceHash = '';
@@ -491,5 +492,19 @@ export class SessionStateBroadcaster {
 
   private getBaseStateHash(base: ServerBase): string {
     return `${base.armor},${base.shells},${base.mines},${base.ownerTeam}`;
+  }
+
+  /**
+   * Resolve per-stream debug flag with global DEBUG fallback.
+   */
+  private resolveDebugFlag(flagName: string): boolean {
+    const value = process.env[flagName];
+    if (value === 'true') {
+      return true;
+    }
+    if (value === 'false') {
+      return false;
+    }
+    return this.debugEnabled;
   }
 }
